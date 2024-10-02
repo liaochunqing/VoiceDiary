@@ -137,7 +137,7 @@ struct DiaryPageViewController<Page: View>: UIViewControllerRepresentable {
             if completed, let visibleViewController = pageViewController.viewControllers?.first,
                let index = controllers.firstIndex(of: visibleViewController)
             {
-                parent.currentPage = index
+//                parent.currentPage = index
             }
         }
     }
