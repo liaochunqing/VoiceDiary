@@ -26,28 +26,6 @@ struct DiaryView: View {
                       content: "昨天的日记内容。")
         ]
     }
-
-    // 更新 selectedDate，调整日期
-//    func updateSelectedDate(for page: Int) {
-//        if page == 0 {
-//            // 用户向左滑，日期减一天
-//            selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate)!
-//        } else if page == 2 {
-//            // 用户向右滑，日期加一天
-//            selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!
-//        }
-//        print("selectedDate:\(selectedDate)")
-//
-//        // 重置 currentPage 为中间页
-////        currentPage = 1
-//    }
-
-    // 格式化日期
-//    func formattedDate(for date: Date) -> String {
-//        let formatter = DateFormatter()
-//        formatter.dateStyle = .medium
-//        return formatter.string(from: date)
-//    }
 }
 
 struct DiaryPage: View {
@@ -89,18 +67,19 @@ struct DiaryPageViewController<Page: View>: UIViewControllerRepresentable {
 
         pageViewController.dataSource = context.coordinator
         pageViewController.delegate = context.coordinator
-        print("today:\(Date())")
-
-        print("Current Pages Dates==:")
-        for page in pages {
-            if let diaryPage = (page as? DiaryPage) {
-                print(diaryPage.formattedDate(for: diaryPage.date))
+        // 移除用于翻页的单击手势，但保留其他点击手势
+        for recognizer in pageViewController.gestureRecognizers {
+            if let tapGesture = recognizer as? UITapGestureRecognizer, tapGesture.numberOfTapsRequired == 1 {
+                pageViewController.view.removeGestureRecognizer(tapGesture)
             }
         }
+        
+//        for page in pages {
+//            if let diaryPage = (page as? DiaryPage) {
+//                print(diaryPage.formattedDate(for: diaryPage.date))
+//            }
+//        }
         // 设置初始页为中间页（今天）
-        // 防止越界访问，确保 controllers 数量足够
-//        let controllersCount = context.coordinator.controllers.count
-//        let orgPage: Int = (context.coordinator.controllers.count == 2) ? 0 : 1
         pageViewController.setViewControllers(
             [context.coordinator.controllers[1]], direction: .forward, animated: false
         )
@@ -109,15 +88,6 @@ struct DiaryPageViewController<Page: View>: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ pageViewController: UIPageViewController, context: Context) {
-//        let visibleViewController = pageViewController.viewControllers?.first
-//        let currentVisibleIndex = context.coordinator.controllers.firstIndex(of: visibleViewController!)
-//
-//        if currentVisibleIndex != currentPage {
-//            pageViewController.setViewControllers(
-//                [context.coordinator.controllers[currentPage]], direction: .forward, animated: true
-//            )
-//        }
-//        print("selectedDate:\(selectedDate)")
 
     }
 
@@ -135,6 +105,15 @@ struct DiaryPageViewController<Page: View>: UIViewControllerRepresentable {
             viewControllerBefore viewController: UIViewController
         ) -> UIViewController? {
             guard let index = controllers.firstIndex(of: viewController) else { return nil }
+            
+            //禁止翻页到明天
+            if let diaryPage = (parent.pages[index] as? DiaryPage){
+                // 判断当前页面是否是今天，如果是今天则不允许翻到前一页
+                if Calendar.current.isDateInToday(diaryPage.date) {
+                    return nil
+                }
+            }
+            
             return index == 0 ? nil : controllers[index - 1]
         }
 
@@ -160,13 +139,13 @@ struct DiaryPageViewController<Page: View>: UIViewControllerRepresentable {
 
                 // 打印 pages 中的所有 date
                 let dp = parent.pages[index] as! DiaryPage
-                print(dp.formattedDate(for: dp.date))
-
-                for page in parent.pages {
-                    if let diaryPage = (page as? DiaryPage) {
-                        print(diaryPage.formattedDate(for: diaryPage.date))
-                    }
-                }
+//                print(dp.formattedDate(for: dp.date))
+//
+//                for page in parent.pages {
+//                    if let diaryPage = (page as? DiaryPage) {
+//                        print(diaryPage.formattedDate(for: diaryPage.date))
+//                    }
+//                }
                 // 动态更新 pages 数组，确保当前页面为中间页
                 if index == 0 {
                     // 向前翻页（显示昨天）
@@ -183,17 +162,15 @@ struct DiaryPageViewController<Page: View>: UIViewControllerRepresentable {
                 }
                 
                 // 打印 pages 中的所有 date
-                        print("Current Pages Dates:")
-                        for page in parent.pages {
-                            if let diaryPage = (page as? DiaryPage) {
-                                print(diaryPage.formattedDate(for: diaryPage.date))
-                            }
-                        }
+//                print("Current Pages Dates:")
+//                for page in parent.pages {
+//                    if let diaryPage = (page as? DiaryPage) {
+//                        print(diaryPage.formattedDate(for: diaryPage.date))
+//                    }
+//                }
 
                 // 保证当前页面始终在中间
                 controllers = parent.pages.map { UIHostingController(rootView: $0) }
-
-//                parent.currentIndex = 1
                 pageViewController.setViewControllers([self.controllers[1]], direction: .forward, animated: false)
             }
         }
