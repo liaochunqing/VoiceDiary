@@ -9,68 +9,28 @@ import Foundation
 
 import SwiftUI
 import Combine
+import SwiftData
 
 struct mainListView: View {
-    @StateObject var groupManager = GroupManager()
-
     @State private var selectedTab: Int = 0
     @Binding var offset: CGFloat  // 初始偏移量为负值，隐藏设置界面
     @Binding var startLocation:CGFloat // 手势起点
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
+
     
+//    let defaultTitle = "欢迎使用日记 App"
+    let defaultContent = "这是一条默认的日记，你可以添加更多日记。"
+
     var body: some View {
         VStack {
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ForEach(groupManager.groups.indices, id: \.self) { index in
-                            Text(groupManager.groups[index].title)
-                                .font(.headline)
-                                .padding(10)
-                                .cornerRadius(8)
-                                .frame(minHeight: 30, maxHeight: 60) // 动态高度
-                                .id(index)
-                                .onTapGesture {
-                                    withAnimation {
-                                        selectedTab = index
-                                        proxy.scrollTo(index, anchor: .center) // 点击时滚动到中间
-                                    }
-                                }
-                                .overlay(
-                                        Rectangle() // 底部的黑色横线
-                                            .frame(height: 1) // 线的高度
-                                            .foregroundColor(selectedTab == index ? Color.black : Color.clear) // 根据是否选中显示线
-                                            .padding(.horizontal,12).padding(.top,-10), // 线与文字的间隔
-                                        alignment: .bottom // 对齐到底部
-
-                                    )
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                .onChange(of: selectedTab, { oldValue, newValue in
-                    withAnimation {
-                        proxy.scrollTo(newValue, anchor: .center) // TabView 切换时滚动标题到中间
-                    }
-                })
-            }      
-//            .background(Color.gray.opacity(0.5))
-
             TabView(selection: $selectedTab) {
-                ForEach(groupManager.groups.indices, id: \.self) { index in
-                            VStack
-                            {
-                                DiaryListView(entries: [
-                                    DiaryEntry(title: "今日记录", content: "今天是个好天气", tags: ["天气", "生活"]),
-                                    DiaryEntry(title: "今日记录", content: "今天是个好天气", tags: ["天气", "生活"]),
-                                    DiaryEntry(title: "今日记录", content: "今天是个好天气", tags: ["天气", "生活"]),
-                                    DiaryEntry(title: "今日记录", content: "今天是个好天气", tags: ["天气", "生活"])
-                                        ])
-                    
-                            }
-//                            .background(Color.red)
+                VStack
+                {
+                    DiaryListView(entries: diaryEntries,
+                                  modelContext: modelContext)
                 }
             }
-            
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .onChange(of: selectedTab) {oldValue,  newValue in
                 // 当TabView切换时，上面的ScrollView也会滚动标题到中间
@@ -78,88 +38,97 @@ struct mainListView: View {
                     selectedTab = newValue
                 }
             }
+//            .gesture(DragGesture()
+//                            .onChanged { value in
+//                                let threshold: CGFloat = -22 // 自定义滑动阈值，判断为超出右边界
+//                                if value.translation.width < threshold
+//                                {
+//                                    withAnimation(.easeIn)
+//                                    {
+//                                        rotationAngle = -90 // 增加旋转角度
+//                                    }
+//                                }
+//                            }
+//                    )
         }
-
+        .onAppear()
+        {
+            checkAndInsertDefaultEntry()
+//            print("checkAndInsertDefaultEntry")
+        }
     }
-        
-        
-        
+    
+    
+    // **检查数据库中是否有默认日记，如果没有就插入**
+    private func checkAndInsertDefaultEntry()
+    {
+        let hasDefaultEntry = diaryEntries.contains
+                                {
+                                    $0.content == defaultContent
+                                }
+//        print(hasDefaultEntry)
 
-//        VStack
-//        {
-//            DiaryListView(entries: [
-//                        DiaryEntry(date: Date(), content: "爱死机"),
-//                        DiaryEntry(date: Date().addingTimeInterval(-86400 * 1), content: "日记，心情，备忘组件..."),
-//                        DiaryEntry(date: Date().addingTimeInterval(-86400 * 2), content: "Places of interest\nroast duck..."),
-//                        DiaryEntry(date: Date().addingTimeInterval(-86400 * 3), content: "幸福三要素\n1.选择的自由...")
-//                    ])
-//            
-//        }
-//        .background(Color(UIColor.secondarySystemBackground)) // 设置背景色
-//        .gesture(
-//            DragGesture()
-//                .onChanged { value in
-//                    // 当手势从屏幕左侧边缘开始，记录起点
-//                    if startLocation == -1 {
-//                        startLocation = value.startLocation.x
-//                        print("++ \(startLocation)")
-//                    }
-//                    
-//                    // 如果从左侧滑动，改变偏移量
-//                    if startLocation < 15 && value.translation.width > 0 {
-//                        offset = min(value.translation.width - UIScreen.main.bounds.width, 0)
-//                        //                                print("==\(offset)")
-//                    }
-//                    
-//                }
-//                .onEnded { value in
-//                    if startLocation < 15 {
-//                        print("== \(startLocation)")
-//                        
-//                        // 当滑动超过一定距离时，显示设置界面
-//                        if value.translation.width > 100 {
-//                            withAnimation {
-//                                offset = 0
-//                            }
-//                        } else {
-//                            // 否则还原到初始位置
-//                            withAnimation {
-//                                offset = -UIScreen.main.bounds.width
-//                            }
-//                        }
-//                    }
-//                    
-//                    // 重置起点
-//                    startLocation = -1
-//                }
-//        )
+        if !hasDefaultEntry
+        {
+            let defaultEntry = DiaryEntry(id: UUID(), content: defaultContent, date: Date())
+            modelContext.insert(defaultEntry)
+        }
+    }
 }
 
 struct DiaryListView: View {
     let entries: [DiaryEntry]
+    let modelContext: ModelContext
+    @EnvironmentObject var globalData: GlobalData
     
     var body: some View {
-        List(entries, id: \.date) { entry in
-            VStack(alignment: .leading) {
-                Text(formatDate(entry.date))
-                    .font(.system(size: W_SCALE(18)))
-                    .foregroundColor(Color(UIColor.secondaryLabel))
-                    .frame(maxWidth: .infinity)
-                    .multilineTextAlignment(.leading)  // 左对齐
-                
-                Text(entry.content)
-                    .multilineTextAlignment(.leading)  // 左对齐
-                    .foregroundColor(Color(UIColor.label))
-                    .font(.system(size: W_SCALE(23)))
-                    .padding(.top, H_SCALE(5))
+        List {
+            ForEach(entries, id: \.id) { entry in
+                VStack(alignment: .leading, spacing: H_SCALE(5)) { // 增加垂直间距控制
+                    Text(formatDate(entry.date))
+                        .font(.system(size: W_SCALE(16))) // 缩小字号
+                        .foregroundColor(Color(UIColor.secondaryLabel)) // 更浅的颜色
+                        .frame(maxWidth: .infinity, alignment: .leading) // 确保左对齐[5](@ref)
+                        .multilineTextAlignment(.leading)
+
+                    Text(entry.content!)
+                        .multilineTextAlignment(.leading)
+                        .foregroundColor(Color(UIColor.label))
+                        .font(.system(size: W_SCALE(23)))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading) // 占据剩余空间[5,7](@ref)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading) // 容器整体对齐[3](@ref)
+                .listRowSeparator(.hidden)  // 隐藏底部的横线
+                .listRowBackground(Color.white)  // 每行的背景
+                .contentShape(Rectangle()) // 定义完整点击区域
+                .onTapGesture
+                {
+                    let currentIndex = entries.firstIndex(where: { $0.id == entry.id }) ?? 0
+                                    
+                    DispatchQueue.main.async
+                    {
+                        withAnimation(.easeIn(duration: 0.5))
+                        {
+                            globalData.listRotationAngle = -90 // 增加旋转角度
+                        }completion: {
+                            globalData.targetPageIndex = currentIndex // 触发跳转
+                        }
+                    }
+                }
             }
-            .frame(height: H_SCALE(90))
-            .listRowSeparator(.hidden)  // 隐藏底部的横线
-            .listRowBackground(Color.white)  // 每行的背景
+            .onDelete(perform: deleteItem)
+
         }
         .listRowSpacing(H_SCALE(20))
         .listStyle(PlainListStyle())  // 设置为 plain 样式
-        .padding(.horizontal)
+    }
+    
+    func deleteItem(at offsets: IndexSet) {
+        for index in offsets {
+            let entry = entries[index]
+            // 在此处处理要删除的记录实例，例如：
+            modelContext.delete(entry)
+        }
     }
     
     func formatDate(_ date: Date) -> String {

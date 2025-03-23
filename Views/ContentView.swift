@@ -9,16 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var isSettingsPresented = false
-//    @State private var isDiaryPresented = false
-
     @State private var offset: CGFloat = -Screen.width // 初始偏移量为负值，隐藏设置界面
     @State private var startLocation: CGFloat = -1 // 手势起点
-    
-//    @State private var showSettingsView = false
     @State private var selectedItem: Int? = nil // 选中的项目索引
-
-//    @State private var flipped = false
-    @State private var rotationAngle: Double = 0.0
+    @EnvironmentObject var globalData: GlobalData
+    @State private var showEditor = false
 
     var body: some View {
         ZStack {
@@ -28,23 +23,32 @@ struct ContentView: View {
             
             VStack {
                 //头部显示区域
+                Spacer(minLength: 50)
+                
                 ZStack {
-                    VStack
-                    {
-                        FlipCalendarView()
-                        HistoryTodayView()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white) // 设置背景色
-                    
                     optionButtonView()
+                    
+                    Text("目录")
+//                        .background(Color.yellow)
+                        .font(.title)
+                        .frame(maxWidth: .infinity, alignment: .center)  // 强制占满剩余空间并居中
                 }
+
+//                ZStack {
+//                    VStack
+//                    {
+//                        FlipCalendarView()
+//                        HistoryTodayView()
+//                    }
+//                    .frame(maxWidth: .infinity)
+//                    .background(Color.white) // 设置背景色
+                    
+//                }
                 
                             
                 ZStack {
 
                     mainListView(offset: $offset, startLocation: $startLocation)
-    //                SettingsView(offset: $offset, startLocation: $startLocation)
                         
                     VStack {
                         Spacer()
@@ -52,73 +56,60 @@ struct ContentView: View {
                             Spacer()
                                 
                             // 新添日记按钮
-                            Button(action: {
-//                                isDiaryPresented = true
-                                withAnimation(.easeIn(duration: 1)) {
-                                    
-                                    rotationAngle = -90 // 增加旋转角度
-                                }
-                            })
-                            {
-                                NeumorphicButton(iconName: "plus").scaleEffect(1.5)
+                            Button(action: { showEditor.toggle() }) {
+                                NeumorphicButton(iconName: "plus")
+                                    .scaleEffect(1.5)
                             }
-//                            .fullScreenCover(isPresented: $isDiaryPresented) {
-    //                            DiaryView()
-//                            }
+                            .sheet(isPresented: $showEditor) {
+                                AddDiaryView(isPresented: $showEditor)
+//                                    .presentationDetents([.medium, .large])
+//                                    .presentationDragIndicator(.visible)
+                                
+                                    .presentationDetents([.fraction(0.995)]) // 核心高度控制[3](@ref)
+                                    .presentationDragIndicator(.visible)
+                                    .ignoresSafeArea(.container, edges: .bottom) // 底部安全区处理
+                            }
                         }
-                        .padding().padding(.bottom).padding(.bottom)
+                        .padding(.trailing) // 只需要一次 padding 来控制按钮位置
+                        .padding(.bottom)
                     }
                     .padding()
                 }
 
                 Spacer()
             }
-            .ignoresSafeArea(edges: [.bottom])  // 忽略底部的安全区域
             .background(Color(.secondarySystemBackground))  // 使用系统默认背景颜色
-            .rotation3DEffect(Angle(degrees:rotationAngle),
+            .rotation3DEffect(Angle(degrees:globalData.listRotationAngle),
                                       axis: (x: 0.0, y: 1.0, z: 0.0),
                               anchor: .leading,
-                                      anchorZ: 0.0,
-                              perspective:0.6
+                                      anchorZ: 0,
+                              perspective:0.2
                                 )
-            .allowsHitTesting(rotationAngle == 0)
+            .allowsHitTesting(globalData.listRotationAngle == 0)
         }  // 只有当未旋转时允许点击
+        .ignoresSafeArea(.all)  //
     }
 }
 
 struct optionButtonView: View {
-//    @State private var isSettingsPresented = false
-//    @State private var isDiaryPresented = false
-
-//    @State private var offset: CGFloat = -Screen.width // 初始偏移量为负值，隐藏设置界面
-//    @State private var startLocation: CGFloat = -1 // 手势起点
     
-    @State private var showSettingsView = false
-//    @State private var selectedItem: Int? = nil // 选中的项目索引
+//    @State private var showSettingsView = false
     
     var body: some View {
         HStack
         {
             Button{
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    showSettingsView = true
-//                    offset = 0  // 将偏移量设为 0，动画展示
-//                    startLocation = 1
-                                    }
+                
             }  label: {
                 Image(systemName: "list.bullet") // 添加系统图片
                     .font(.system(size: 25))
                     .foregroundColor(.black)
                     .shadow(color: .gray, radius: 10,x: 0,y: 10)
             }
-//            .fullScreenCover(isPresented: $showSettingsView) { // 弹出详情页
-//                SettingsView(offset: $offset, startLocation: $startLocation)
-//            }
 
             Spacer()
         }
         .padding()
-        .offset(x: 0, y: -40) // 偏移量可以调整
     }
 }
 
