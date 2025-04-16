@@ -11,10 +11,10 @@ import SwiftUI
 import Combine
 import SwiftData
 
-struct mainListView: View {
+struct MainListView: View {
     @State private var selectedTab: Int = 0
-    @Binding var offset: CGFloat  // 初始偏移量为负值，隐藏设置界面
-    @Binding var startLocation:CGFloat // 手势起点
+//    @Binding var offset: CGFloat  // 初始偏移量为负值，隐藏设置界面
+//    @Binding var startLocation:CGFloat // 手势起点
     @Environment(\.modelContext) private var modelContext
     @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
 
@@ -77,6 +77,8 @@ struct mainListView: View {
 }
 
 struct DiaryListView: View {
+    @State private var isTapDisabled = false
+
     let entries: [DiaryEntry]
     let modelContext: ModelContext
     @EnvironmentObject var globalData: GlobalData
@@ -85,38 +87,60 @@ struct DiaryListView: View {
         List {
             ForEach(entries, id: \.id) { entry in
                 VStack(alignment: .leading, spacing: H_SCALE(5)) { // 增加垂直间距控制
-                    Text(formatDate(entry.date))
-                        .font(.system(size: W_SCALE(16))) // 缩小字号
-                        .foregroundColor(Color(UIColor.secondaryLabel)) // 更浅的颜色
-                        .frame(maxWidth: .infinity, alignment: .leading) // 确保左对齐[5](@ref)
-                        .multilineTextAlignment(.leading)
+                    //时间
+                    HStack (spacing: W_SCALE(10)){
+                        Text(formatDate(entry.date))
+                            .font(.system(size: W_SCALE(16))) // 缩小字号
+                            .foregroundColor(Color(UIColor.secondaryLabel)) // 更浅的颜色
+                            .frame(alignment: .leading) // 确保左对齐[5](@ref)
+                            .multilineTextAlignment(.leading)
+                        
+                        Text("\(entry.selectedMood)")
+                            .font(.body)
+                        Spacer()
+                    }
 
+                    //正文
                     Text(entry.content!)
                         .multilineTextAlignment(.leading)
                         .foregroundColor(Color(UIColor.label))
                         .font(.system(size: W_SCALE(23)))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading) // 占据剩余空间[5,7](@ref)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    
+                    //地点
+                    Text(entry.location!)
+                        .font(.system(size: W_SCALE(16))) // 缩小字号
+                        .foregroundColor(Color(UIColor.secondaryLabel)) // 更浅的颜色
+                        .frame(maxWidth: .infinity, alignment: .leading) // 确保左对齐[5](@ref)
+                        .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading) // 容器整体对齐[3](@ref)
+                .frame(height: Screen.height * 0.1) // 高度为屏幕高度的10%
                 .listRowSeparator(.hidden)  // 隐藏底部的横线
                 .listRowBackground(Color.white)  // 每行的背景
                 .contentShape(Rectangle()) // 定义完整点击区域
                 .onTapGesture
                 {
+                    guard !isTapDisabled else { return }
+                    
+                    isTapDisabled = true
                     let currentIndex = entries.firstIndex(where: { $0.id == entry.id }) ?? 0
                                     
                     DispatchQueue.main.async
                     {
-                        withAnimation(.easeIn(duration: 0.5))
-                        {
-                            globalData.listRotationAngle = -90 // 增加旋转角度
-                        }completion: {
-                            globalData.targetPageIndex = currentIndex // 触发跳转
+                        if globalData.targetPageIndex == -1{
+                            globalData.targetPageIndex = currentIndex + 3 // 触发跳转
                         }
+//                        print("page:\(globalData.targetPageIndex)")
+                    }
+                    
+                    // 在0.5秒后重新启用点击手势
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isTapDisabled = false
                     }
                 }
             }
-            .onDelete(perform: deleteItem)
+//            .onDelete(perform: deleteItem)
 
         }
         .listRowSpacing(H_SCALE(20))
@@ -130,14 +154,19 @@ struct DiaryListView: View {
             modelContext.delete(entry)
         }
     }
-    
-    func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/MM/dd  HH:mm"
-        return formatter.string(from: date)
-    }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(GlobalData())
+        .modelContainer(
+                    // ✅ 创建专用于预览的内存存储容器
+                    try! ModelContainer(
+                        for: DiaryEntry.self,
+                        configurations: ModelConfiguration(
+                            isStoredInMemoryOnly: true  // 内存存储不污染正式数据
+                        )
+                    )
+                )
+
 }

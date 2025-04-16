@@ -2,141 +2,46 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 
-
 struct DiaryView: View {
-    @State private var selectedDate = Date() // 当前的日期
-    @State private var backToList:Bool = false
     @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
 
     var body: some View {
         VStack {
-            // 将空白页添加到 diaryEntries 的前面
-            let diaryPages: [DiaryPage] = diaryEntries.map {
-                DiaryPage(id: $0.id, date: $0.date, content: $0.content ?? "", backToList: $backToList)
-            }
+                    // 创建封面、设置和主列表的 HostingController
+                    let coverHostingController = UIHostingController(rootView: AnyView(CoverView()))
+                    let settingHostingController = UIHostingController(rootView: AnyView(SettingsView()))
+                    let mainListHostingController = UIHostingController(rootView: AnyView(MainListView()))
 
-            // Diary Pages
-            DiaryPageViewController(pages: diaryPages, backToList: $backToList)
-                .ignoresSafeArea() // 全屏显示
-        }
+                    // 创建日记页面的 HostingController 数组
+                    let diaryPages: [UIHostingController<AnyView>] = {
+                        var pages = diaryEntries.map {
+                            let dp = DiaryPage(id: $0.id, date: $0.date, content: $0.content ?? "")
+                            return UIHostingController(rootView: AnyView(dp))
+                        }
+
+                        pages.insert(mainListHostingController, at: 0)
+                        pages.insert(settingHostingController, at: 0)
+                        pages.insert(coverHostingController, at: 0)
+
+                        return pages
+                    }()
+
+                    // 将 diaryPages 传递给 DiaryPageViewController
+                    DiaryPageViewController(pages: diaryPages)
+                        .ignoresSafeArea() // 全屏显示
+                }
     }
 }
 
-struct DiaryPage: View {
-    let id:UUID
-    let date: Date
-    @State private var content: String
-    var onBackToIndex: (() -> Void)?  // 触发目录跳转的回调
-    @Binding var backToList: Bool
-    
-    let isNew:Bool
-    @FocusState private var isContentFocused: Bool
-    @Environment(\.modelContext) private var modelContext
-//    @Query private var diaryEntries: [DiaryEntry]
-    @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
-
-    init(id: UUID,date: Date, content: String = "", isNew:Bool = false,backToList:Binding<Bool>) {
-        self.id = id
-        self.date = date
-        self._content = State(initialValue: content)
-        self.isNew = isNew
-        self._backToList = backToList // 绑定 backToList
-
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // 回到列表
-            HStack {
-                Button("回到目录") {
-                    backToList = true // 触发跳转
-                    onBackToIndex?()  // 点击时触发闭包
-
-                }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-                .padding(.trailing)
-                
-                Spacer()
-
-                // 完成按钮
-                if isContentFocused {
-                    HStack {
-                        Button("完成") {
-                            if isNew{
-                                if content.isEmpty == false {
-                                    // 插入新的 DiaryEntry 数据
-                                    let newEntry = DiaryEntry(id: UUID(),content: content, date: Date())
-                                    modelContext.insert(newEntry)
-                                }
-                            }else{
-                                if let entry : DiaryEntry = fetchDiaryEntry(byID: id){
-                                    entry.content = content
-                                }
-                                
-                            }
-                            // 取消焦点以隐藏键盘
-                            isContentFocused = false
-                        }
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        .padding(.trailing)
-                    }
-                }
-            }
-            
-            
-            
-            // 日期显示
-            Text(date, style: .date)
-                .font(.headline)
-                .padding(.top)
-
-            // 日记内容编辑器
-            TextEditor(text: $content)
-                .focused($isContentFocused)
-                .padding()
-                .background(Color(UIColor.secondarySystemBackground))
-                .cornerRadius(8)
-                .onAppear {
-                    // 如果内容为空，则自动聚焦以弹出键盘
-                    if content.isEmpty {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            isContentFocused = true
-                        }
-                    }
-                }
-
-            Spacer()
-
-            
-        }
-        .padding()
-        .onTapGesture {
-            // 点击视图其他区域时收起键盘
-            isContentFocused = false
-        }
-    }
-    
-    func fetchDiaryEntry(byID id: UUID) -> DiaryEntry? {
-        let descriptor = FetchDescriptor<DiaryEntry>(
-            predicate: #Predicate { $0.id == id }
-        )
-        return try? modelContext.fetch(descriptor).first  // 返回唯一结果[1](@ref)
-    }
-}
 
 struct DiaryPageViewController: UIViewControllerRepresentable {
-    var pages: [DiaryPage] // ✅ 匹配传入的数组类型
-    @Binding var backToList:Bool
+//    var pages: [DiaryPage]
+    var pages: [UIHostingController<AnyView>]
+
     @EnvironmentObject var globalData: GlobalData
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self, globalData: globalData) // 🚀 关键注入点
+        Coordinator(parent: self, globalData: globalData) //
     }
 
     func makeUIViewController(context: Context) -> UIPageViewController {
@@ -148,6 +53,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
         pageViewController.dataSource = context.coordinator
         pageViewController.delegate = context.coordinator
+        
         // 移除用于翻页的单击手势，但保留其他点击手势
         for recognizer in pageViewController.gestureRecognizers {
             if let tapGesture = recognizer as? UITapGestureRecognizer, tapGesture.numberOfTapsRequired == 1 {
@@ -155,71 +61,47 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             }
         }
         
-        // 设置初始页为中间页（今天）
-        if let firstVC = context.coordinator.controllers.first
-        {
-            pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
-        }
-
+        // 设置初始页为主列表页
+        let firstVC = context.coordinator.controllers[2]
+        pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
+        context.coordinator.currentIndex = 2;
+        
         return pageViewController
     }
 
-    // 确保 SwiftUI 在 pages 变化时更新 ViewController
+
     func updateUIViewController(_ pageViewController: UIPageViewController, context: Context) {
+        // 检查页面数量是否发生变化
+        if context.coordinator.controllers.count != pages.count {
+            context.coordinator.controllers = pages.map { $0 }
+
+            // 获取当前显示的视图控制器
+            if let currentVC = pageViewController.viewControllers?.first,
+               let currentIndex = context.coordinator.controllers.firstIndex(of: currentVC) {
+                // 更新当前索引
+                context.coordinator.currentIndex = currentIndex
+            } else {
+                // 如果无法确定当前视图控制器，默认显示主列表页
+                let mainListVC = context.coordinator.controllers[2]
+                pageViewController.setViewControllers([mainListVC], direction: .forward, animated: false)
+                context.coordinator.currentIndex = 2
+            }
+        }
         
         //响应返回列表按钮
-        if backToList {
-            if context.coordinator.currentIndex == 0
-            {
-                context.coordinator.moveToList()
-            }
-            else
-            {
-                context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: 0) {
-                    context.coordinator.moveToList()
-                }
-            }
-            
-            DispatchQueue.main.async
-            {
-                backToList = false
+        if globalData.backToList {
+            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: 2) {}
+            DispatchQueue.main.async {
+                globalData.backToList = false
             }
         }
         
         //打开详情页
         if globalData.targetPageIndex >= 0 {
-            context.coordinator.animateMoveToPage(
-                pageViewController: pageViewController,
-                targetIndex: globalData.targetPageIndex
-            )
+            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: globalData.targetPageIndex)
             DispatchQueue.main.async {
                 globalData.targetPageIndex = -1 // 重置状态避免重复触发
-            }
-        }
-        
-        // 同步数据库的增删改除
-        if context.coordinator.parent.pages.count != pages.count {
-            // 更新 Coordinator 的数据
-            context.coordinator.parent.pages = pages
-            context.coordinator.controllers = pages.map { UIHostingController(rootView: $0) }
-            
-            // 强制刷新 UIPageViewController 的当前页
-            if let currentVC = pageViewController.viewControllers?.first,
-               let currentIndex = context.coordinator.controllers.firstIndex(of: currentVC) {
-                // 处理已被删除的情况，例如回到第一页
-                let newIndex = min(currentIndex, context.coordinator.controllers.count - 1)
-                pageViewController.setViewControllers(
-                    [context.coordinator.controllers[newIndex]],
-                    direction: .forward,
-                    animated: false
-                )
-            } else {
-                // 默认显示第一页
-                pageViewController.setViewControllers(
-                    [context.coordinator.controllers[0]],
-                    direction: .forward,
-                    animated: false
-                )
+                print("-1")
             }
         }
     }
@@ -228,22 +110,19 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
     class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: DiaryPageViewController
         var currentIndex: Int = 0
-        var globalData: GlobalData // ✅ 通过属性持有
+        var globalData: GlobalData //
 
         private var pageSoundPlayer: AVAudioPlayer?
 
-        lazy var controllers: [UIViewController] = {
-                parent.pages.map { page in
-                    UIHostingController(rootView: page)
-                }
-            }()
+         var controllers: [UIViewController]// = {return parent.pages}()
         
             
-            // ✅ 正确初始化器
+            // 正确初始化器
         init(parent: DiaryPageViewController, globalData: GlobalData) {
             self.parent = parent
             self.globalData = globalData
-            
+            self.controllers = parent.pages.map { $0 }
+
             // 初始化音频播放器
             if let soundURL = Bundle.main.url(forResource: "page_flip", withExtension: "mp3") {
                 pageSoundPlayer = try? AVAudioPlayer(contentsOf: soundURL)
@@ -258,88 +137,54 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             
             let step = currentIndex > targetIndex ? -1 : 1
             let direction: UIPageViewController.NavigationDirection = (step > 0) ? .forward : .reverse
+            let fromIndex = currentIndex > targetIndex ? currentIndex-1 : currentIndex+1
 
-            for index in stride(from: currentIndex, through: targetIndex, by: step)
+            for index in stride(from: fromIndex, through: targetIndex, by: step)
             {
                 
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(currentIndex - index)) * 0.05)
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.05)
                 {
                     self.playPageSound()
                     let vc = self.controllers[index]
                     pageViewController.setViewControllers([vc], direction:direction, animated: true) { Bool in
                         self.currentIndex = index
-                        if direction == .reverse, index == targetIndex{
-                            completion?()
-                        }
                     }
                 }
             }
         }
         
-        func moveToList() {
-                DispatchQueue.main.async {
-                    withAnimation(.easeIn(duration: 0.5)) {
-                        self.globalData.listRotationAngle = 0
-                    }
-                }
-        }
         
         // 音频播放方法
-            private func playPageSound() {
-                guard let player = pageSoundPlayer else { return }
-                if player.isPlaying {
-                    player.currentTime = 0  // 重置播放进度实现即时重播
-                }
-                player.play()
-            }
+        private func playPageSound() {
+//            guard let player = pageSoundPlayer else { return }
+//            if player.isPlaying {
+//                player.currentTime = 0  // 重置播放进度实现即时重播
+//            }
+//            player.play()
+        }
         
-        func pageViewController(
-            _ pageViewController: UIPageViewController,
-            viewControllerBefore viewController: UIViewController
-        ) -> UIViewController? {
-            guard let currentIndex = controllers.firstIndex(of: viewController) else { return nil }
-            
-            //第一页往前翻是目录
-            let previousIndex = currentIndex - 1
-            if previousIndex < 0 {
-                withAnimation(.easeIn(duration: 1)) {
-                    parent.globalData.listRotationAngle = 0
-                }
-                    return nil
-            }
-            
+        func pageViewController(_ pageViewController: UIPageViewController,viewControllerBefore viewController: UIViewController) -> UIViewController? {
+            guard let index = controllers.firstIndex(of: viewController), index > 0 else { return nil }
+
             playPageSound()
 
-            return currentIndex == 0 ? nil : controllers[currentIndex - 1]
+            return controllers[index - 1]
         }
 
-        func pageViewController(
-            _ pageViewController: UIPageViewController,
-            viewControllerAfter viewController: UIViewController
-        ) -> UIViewController? {
-            guard let currentIndex = controllers.firstIndex(of: viewController) else {
-                    return nil
-                }
-                let nextIndex = currentIndex + 1
-                guard nextIndex < controllers.count else {
-                    return nil
-                }
+        func pageViewController(_ pageViewController: UIPageViewController,viewControllerAfter viewController: UIViewController) -> UIViewController? {
+            guard let index = controllers.firstIndex(of: viewController), index < controllers.count - 1 else { return nil }
+            
             playPageSound()
 
-                return controllers[nextIndex]
+            return controllers[index + 1]
         }
 
         // 当翻页动画完成时，更新 currentPage
-        func pageViewController(
-            _ pageViewController: UIPageViewController,
-            didFinishAnimating finished: Bool,
-            previousViewControllers: [UIViewController],
-            transitionCompleted completed: Bool) {
+        func pageViewController(_ pageViewController: UIPageViewController,didFinishAnimating finished: Bool,previousViewControllers: [UIViewController],transitionCompleted completed: Bool) {
             
             if completed,
-                let visibleViewController = pageViewController.viewControllers?.first,
-               let index = controllers.firstIndex(of: visibleViewController)
-            {
+               let visibleViewController = pageViewController.viewControllers?.first,
+               let index = controllers.firstIndex(of: visibleViewController){
                 currentIndex = index
             }
         }
@@ -347,6 +192,178 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
     }
 }
 
+struct DiaryPage: View {
+    let infoRowSpacing: CGFloat = W_SCALE(10)
+    
+    let id:UUID
+    let date: Date
+    @State private var content: String
+    let isNew:Bool
+    @FocusState private var isContentFocused: Bool
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
+    @EnvironmentObject var globalData: GlobalData
+    
+    init(id: UUID,date: Date, content: String = "", isNew:Bool = false) {
+        self.id = id
+        self.date = date
+        self._content = State(initialValue: content)
+        self.isNew = isNew
+    }
+    
+    var body: some View {
+        ZStack {
+            Color(.secondarySystemBackground)
+                    .ignoresSafeArea() // 使背景颜色扩展到安全区域之外
+            
+            VStack(alignment: .leading, spacing: H_SCALE(10)) {
+                
+                // 顶部导航
+                HStack {
+                    Button(action: {
+                        globalData.backToList = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: W_SCALE(40), height: W_SCALE(40))
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                            Image(systemName: "arrow.uturn.backward")
+                                .foregroundColor(.black)
+                        }
+                    }
+                    
+                    //                Text(formatDate_onlyDate(Date()))
+                    //                    .font(.custom("HelveticaNeue-Regular", size: W_SCALE(32)))
+                    //                    .tracking(-1)
+                    
+                    Spacer()
+                    
+                    //                if isContentFocused {
+                    //                    Button("完成") {
+                    //                        if isNew {
+                    //                            if !content.isEmpty {
+                    //                                let newEntry = DiaryEntry(id: UUID(), content: content, date: Date())
+                    //                                modelContext.insert(newEntry)
+                    //                            }
+                    //                        } else {
+                    //                            if let entry = fetchDiaryEntry(byID: id) {
+                    //                                entry.content = content
+                    //                            }
+                    //                        }
+                    //                        isContentFocused = false
+                    //                    }
+                    //                    .padding()
+                    //                    .background(Color.blue)
+                    //                    .foregroundColor(.white)
+                    //                    .cornerRadius(8)
+                    //                    .padding(.trailing)
+                    //                }
+                }
+                .padding(.horizontal)
+                .onTapGesture {
+                    isContentFocused = false
+                }
+                
+                // 信息区
+                if let entry = fetchDiaryEntry(byID: id) {
+                    
+                    //                ScrollView {
+                    //                    Text(entry.content ?? "")
+                    //                        .font(.body)
+                    //                        .foregroundColor(.primary)
+                    //                        .frame(maxWidth: .infinity, alignment: .leading)
+                    //                        .padding()
+                    //                }
+                    //                .background(Color(UIColor.secondarySystemBackground))
+                    //                .cornerRadius(8)
+                    //                .padding()
+                    ScrollView {
+                        Text(entry.content ?? "")
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                    }
+                    .background(Color(UIColor.white))
+                    .cornerRadius(8)
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 2, y: 2) // 添加阴影
+                    .padding()
+                    
+                    HStack(spacing: infoRowSpacing) {
+                        Image(systemName: "clock")
+                            .foregroundColor(.gray)
+                        
+                        Text(formatDate(entry.date))
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        Text("\(entry.selectedMood)")
+                            .font(.body)
+                        Spacer()
+                    }
+                    .padding([.leading])
+                    
+                    HStack(spacing: infoRowSpacing) {
+                        Image(systemName: "character")
+                            .foregroundColor(.gray)
+                        Text("字数 \(entry.content?.count ?? 0)")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    
+                    HStack(spacing: infoRowSpacing) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .foregroundColor(.gray)
+                        Text(entry.location ?? "")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                }
+                
+                // 编辑器
+                //            TextEditor(text: $content)
+                //                .focused($isContentFocused)
+                //                .padding()
+                //                .background(Color(UIColor.secondarySystemBackground))
+                //                .cornerRadius(8)
+                //                .onAppear {
+                //                    if content.isEmpty {
+                //                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                //                            isContentFocused = true
+                //                        }
+                //                    }
+                //                }
+                
+                Spacer()
+            }
+        }
+    }
+    
+    func fetchDiaryEntry(byID id: UUID) -> DiaryEntry? {
+               let descriptor = FetchDescriptor<DiaryEntry>(
+                   predicate: #Predicate { $0.id == id }
+               )
+               return try? modelContext.fetch(descriptor).first  // 返回唯一结果[1](@ref)
+           }
+}
+
 #Preview {
     ContentView()
+        .environmentObject(GlobalData())
+        .modelContainer(
+                    // ✅ 创建专用于预览的内存存储容器
+                    try! ModelContainer(
+                        for: DiaryEntry.self,
+                        configurations: ModelConfiguration(
+                            isStoredInMemoryOnly: true  // 内存存储不污染正式数据
+                        )
+                    )
+                )
+
 }

@@ -97,3 +97,15 @@ func openURL(_ urlString: String) {
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
     }
 }
+//格式化日期
+func formatDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy/MM/dd  HH:mm"
+    return formatter.string(from: date)
+}
+
+func formatDate_onlyDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy.MM.dd"
+    return formatter.string(from: date)
+}
