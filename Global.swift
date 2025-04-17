@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 
 // MARK: - 屏幕尺寸相关
 struct Screen {
@@ -109,3 +110,14 @@ func formatDate_onlyDate(_ date: Date) -> String {
     formatter.dateFormat = "yyyy.MM.dd"
     return formatter.string(from: date)
 }
+//
+////数据库
+//struct DiaryEntryFetcher {
+//    static func fetch(byID id: UUID, modelContext: ModelContext) -> DiaryEntry? {
+//        let descriptor = FetchDescriptor<DiaryEntry>(
+//            predicate: #Predicate { $0.id == id }
+//        )
+//        return try? modelContext.fetch(descriptor).first
+//    }
+//}
+

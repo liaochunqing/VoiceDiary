@@ -49,7 +49,7 @@ struct ContentView: View {
             .ignoresSafeArea(.all)
         }
         .fullScreenCover(isPresented: $showAddDiaryView) {
-            AddDiaryView(isPresented: $showAddDiaryView)
+            AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
         }
     }
 }

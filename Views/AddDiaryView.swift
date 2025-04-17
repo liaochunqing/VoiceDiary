@@ -14,116 +14,47 @@ import CoreLocation
 import Combine
 
 struct AddDiaryView: View {
-    let infoRowSpacing: CGFloat = W_SCALE(10)
-
+    // MARK: - 输入参数
+    var existingEntry: DiaryEntry?
     @Binding var isPresented: Bool
-    @State private var diaryContent: String = ""
-    @FocusState private var isFocused: Bool
+
+    // MARK: - 状态
     @Environment(\.modelContext) private var modelContext
     @StateObject private var locationManager = LocationManager()
+    @FocusState private var isFocused: Bool
+
+    @State private var date: Date = Date()
+    @State private var diaryContent: String = ""
+    @State private var address: String = ""
     @State private var selectedMood: String = "🙂"
     @State private var showMoodPicker = false
-    
+
+    let infoRowSpacing: CGFloat = W_SCALE(10)
+
+    // MARK: - 逻辑判断
+    var isEditing: Bool {
+        existingEntry != nil
+    }
+
+    // MARK: - 主体视图
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(.secondarySystemBackground)
-                    .ignoresSafeArea() // 使背景颜色扩展到安全区域之外
-                
-                VStack (spacing: H_SCALE(10)){
-                    // 心情
-                    HStack(spacing: infoRowSpacing) {
-                        Image(systemName: "face.smiling")
-//                            .foregroundColor(.gray)
-                        Text("\(selectedMood)(可选)")
-                            .font(.body)
-//                            .foregroundColor(.gray)
-                        Spacer()
-                    }
-                    .padding(.top)
-                    .padding(.horizontal)
-                    .onTapGesture {
-                        showMoodPicker = true
-                    }
-                    .confirmationDialog("选择你的心情", isPresented: $showMoodPicker, titleVisibility: .visible) {
-                        Button("😄 开心") { selectedMood = "😄" }
-                        Button("😊 满足") { selectedMood = "😊" }
-                        Button("🤔 思考") { selectedMood = "🤔" }
-                        Button("😐 平静") { selectedMood = "😐" }
-                        Button("😢 难过") { selectedMood = "😢" }
-                        Button("😭 崩溃") { selectedMood = "😭" }
-                        Button("😡 生气") { selectedMood = "😡" }
-                        Button("😤 烦躁") { selectedMood = "😤" }
-                        Button("😴 疲惫") { selectedMood = "😴" }
-                        Button("🤒 不舒服") { selectedMood = "🤒" }
-                        Button("🥳 兴奋") { selectedMood = "🥳" }
-                        Button("🤯 累炸了") { selectedMood = "🤯" }
-                        Button("取消", role: .cancel) { }
-                    }
+                    .ignoresSafeArea()
 
-                    
-                    // 字数
-                    HStack(spacing: infoRowSpacing) {
-                        Image(systemName: "character")
-                            .foregroundColor(.gray)
-                        Text("字数 \(diaryContent.count)")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    
-                    // 地点
-                    HStack(spacing: infoRowSpacing) {
-                        Image(systemName: "mappin.and.ellipse")
-                            .foregroundColor(.gray)
-                        Text(locationManager.address)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom)
-                    
-                    // 编辑框
-                    ZStack(alignment: .topLeading) {
-                        Rectangle()
-                            .fill(Color(.secondarySystemBackground))
-                            .cornerRadius(25)
-                            .shadow(color: Color.white.opacity(1.0), radius: 0, x: -2, y: -2)
-                        
-                        if diaryContent.isEmpty {
-                            Text("写点什么…")
-                                .foregroundColor(.gray)
-                                .font(.system(.body, design: .rounded))
-                                .padding(.horizontal, 24)
-                                .padding(.top, 24)
-                        }
-
-                        TextEditor(text: $diaryContent)
-                            .scrollContentBackground(.hidden) // 隐藏默认背景
-                            .background(Color.clear)
-                            .padding()
-                            .focused($isFocused)
-                            .onAppear {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                                    isFocused = true
-                                }
-                            }
-                        
-//                        TextEditor(text: $diaryContent)
-//                            .scrollContentBackground(.hidden) // 隐藏默认背景
-//                            .background(Color.yellow)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: H_SCALE(10)) {
+                    moodPicker
+                    wordCount
+                    locationInfo
+                    diaryEditor
                 }
                 .padding(.vertical)
             }
-            .navigationBarTitleDisplayMode(.inline) // 可选，inline 更适合自定义字体
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                //时间
                 ToolbarItem(placement: .principal) {
-                    Text(formatDate_onlyDate(Date()))
+                    Text(formatDate_onlyDate(date))
                         .font(.custom("HelveticaNeue-Regular", size: W_SCALE(32)))
                         .tracking(-1)
                 }
@@ -141,22 +72,33 @@ struct AddDiaryView: View {
                         }
                     }
                 }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        if !diaryContent.isEmpty {
-                            let newEntry = DiaryEntry(id: UUID(),
-                                                      content: diaryContent,
-                                                      date: Date(),
-                                                      location: locationManager.address,
-                                                      selectedMood: selectedMood
-                                                    )
+                        if diaryContent.isEmpty { return }
+
+                        if let entry = existingEntry {
+                            entry.content = diaryContent
+                            entry.date = date
+                            entry.location = address
+                            entry.selectedMood = selectedMood
+                        } else {
+                            let newEntry = DiaryEntry(
+                                id: UUID(),
+                                content: diaryContent,
+                                date: date,
+                                location: address,
+                                selectedMood: selectedMood
+                            )
                             modelContext.insert(newEntry)
-                            
-                            withAnimation(.spring) {
-                                isPresented = false
-                            }
-                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                         }
+
+                        try? modelContext.save()
+
+                        withAnimation(.spring) {
+                            isPresented = false
+                        }
+                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     } label: {
                         ZStack {
                             Circle()
@@ -170,10 +112,92 @@ struct AddDiaryView: View {
                     .disabled(diaryContent.isEmpty)
                 }
             }
+            .onAppear {
+                if let entry = existingEntry {
+                    diaryContent = entry.content ?? ""
+                    date = entry.date
+                    address = entry.location ?? ""
+                    selectedMood = entry.selectedMood
+                } else {
+//                    locationManager.requestLocation()
+                    address = locationManager.address
+                }
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isFocused = true
+                }
+            }
         }
     }
-}
 
+    // MARK: - 子视图组件
+    private var moodPicker: some View {
+        HStack(spacing: infoRowSpacing) {
+            Image(systemName: "face.smiling")
+            Text("\(selectedMood)(可选)")
+                .font(.body)
+            Spacer()
+        }
+        .padding(.top)
+        .padding(.horizontal)
+        .onTapGesture { showMoodPicker = true }
+        .confirmationDialog("选择你的心情", isPresented: $showMoodPicker, titleVisibility: .visible) {
+            ForEach(["😄 开心", "😊 满足", "🤔 思考", "😐 平静", "😢 难过", "😭 崩溃", "😡 生气", "😤 烦躁", "😴 疲惫", "🤒 不舒服", "🥳 兴奋", "🤯 累炸了"], id: \.self) { mood in
+                Button(mood) { selectedMood = String(mood.prefix(1)) }
+            }
+            Button("取消", role: .cancel) {}
+        }
+    }
+
+    private var wordCount: some View {
+        HStack(spacing: infoRowSpacing) {
+            Image(systemName: "character")
+                .foregroundColor(.gray)
+            Text("字数 \(diaryContent.count)")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            Spacer()
+        }
+        .padding(.horizontal)
+    }
+
+    private var locationInfo: some View {
+        HStack(spacing: infoRowSpacing) {
+            Image(systemName: "mappin.and.ellipse")
+                .foregroundColor(.gray)
+            Text(address)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.bottom)
+    }
+
+    private var diaryEditor: some View {
+        ZStack(alignment: .topLeading) {
+            Rectangle()
+                .fill(Color(.secondarySystemBackground))
+                .cornerRadius(25)
+                .shadow(color: Color.white.opacity(1.0), radius: 0, x: -2, y: -2)
+
+            if diaryContent.isEmpty {
+                Text("写点什么…")
+                    .foregroundColor(.gray)
+                    .font(.system(.body, design: .rounded))
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+            }
+
+            TextEditor(text: $diaryContent)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .padding()
+                .focused($isFocused)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
 

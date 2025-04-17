@@ -15,7 +15,7 @@ struct DiaryView: View {
                     // 创建日记页面的 HostingController 数组
                     let diaryPages: [UIHostingController<AnyView>] = {
                         var pages = diaryEntries.map {
-                            let dp = DiaryPage(id: $0.id, date: $0.date, content: $0.content ?? "")
+                            let dp = DiaryPage(id: $0.id)
                             return UIHostingController(rootView: AnyView(dp))
                         }
 
@@ -194,21 +194,17 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
 struct DiaryPage: View {
     let infoRowSpacing: CGFloat = W_SCALE(10)
-    
     let id:UUID
-    let date: Date
-    @State private var content: String
-    let isNew:Bool
-    @FocusState private var isContentFocused: Bool
+    
     @Environment(\.modelContext) private var modelContext
     @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
     @EnvironmentObject var globalData: GlobalData
+    @State private var showEditDiaryView = false
+    @State private var entry: DiaryEntry?
+    @State private var showDeleteConfirmation = false
     
-    init(id: UUID,date: Date, content: String = "", isNew:Bool = false) {
+    init(id: UUID) {
         self.id = id
-        self.date = date
-        self._content = State(initialValue: content)
-        self.isNew = isNew
     }
     
     var body: some View {
@@ -216,9 +212,8 @@ struct DiaryPage: View {
             Color(.secondarySystemBackground)
                     .ignoresSafeArea() // 使背景颜色扩展到安全区域之外
             
-            VStack(alignment: .leading, spacing: H_SCALE(10)) {
-                
-                // 顶部导航
+            VStack() {
+                // 顶部摁钮
                 HStack {
                     Button(action: {
                         globalData.backToList = true
@@ -233,51 +228,48 @@ struct DiaryPage: View {
                         }
                     }
                     
-                    //                Text(formatDate_onlyDate(Date()))
-                    //                    .font(.custom("HelveticaNeue-Regular", size: W_SCALE(32)))
-                    //                    .tracking(-1)
-                    
                     Spacer()
                     
-                    //                if isContentFocused {
-                    //                    Button("完成") {
-                    //                        if isNew {
-                    //                            if !content.isEmpty {
-                    //                                let newEntry = DiaryEntry(id: UUID(), content: content, date: Date())
-                    //                                modelContext.insert(newEntry)
-                    //                            }
-                    //                        } else {
-                    //                            if let entry = fetchDiaryEntry(byID: id) {
-                    //                                entry.content = content
-                    //                            }
-                    //                        }
-                    //                        isContentFocused = false
-                    //                    }
-                    //                    .padding()
-                    //                    .background(Color.blue)
-                    //                    .foregroundColor(.white)
-                    //                    .cornerRadius(8)
-                    //                    .padding(.trailing)
-                    //                }
-                }
+                    Button(action: {
+                        showDeleteConfirmation = true
+
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: W_SCALE(40), height: W_SCALE(40))
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .alert("确定删除这篇日记吗？", isPresented: $showDeleteConfirmation) {
+                        Button("删除", role: .destructive) {
+                            if let entry = entry {
+                                DataManager.delete(entry, from: modelContext)
+                                try? modelContext.save()
+                            }
+                        }
+                        Button("取消", role: .cancel) {}
+                    }
+                    
+                    Button(action: {
+                        showEditDiaryView = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: W_SCALE(40), height: W_SCALE(40))
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                            Image(systemName: "highlighter")
+                                .foregroundColor(.black)
+                        }
+                    }                }
                 .padding(.horizontal)
-                .onTapGesture {
-                    isContentFocused = false
-                }
                 
                 // 信息区
-                if let entry = fetchDiaryEntry(byID: id) {
-                    
-                    //                ScrollView {
-                    //                    Text(entry.content ?? "")
-                    //                        .font(.body)
-                    //                        .foregroundColor(.primary)
-                    //                        .frame(maxWidth: .infinity, alignment: .leading)
-                    //                        .padding()
-                    //                }
-                    //                .background(Color(UIColor.secondarySystemBackground))
-                    //                .cornerRadius(8)
-                    //                .padding()
+                if let entry = entry {
                     ScrollView {
                         Text(entry.content ?? "")
                             .font(.body)
@@ -286,7 +278,7 @@ struct DiaryPage: View {
                             .padding()
                     }
                     .background(Color(UIColor.white))
-                    .cornerRadius(8)
+                    .cornerRadius(W_SCALE(20))
                     .shadow(color: Color.black.opacity(0.1), radius: 4, x: 2, y: 2) // 添加阴影
                     .padding()
                     
@@ -325,32 +317,16 @@ struct DiaryPage: View {
                     .padding(.horizontal)
                     .padding(.bottom)
                 }
-                
-                // 编辑器
-                //            TextEditor(text: $content)
-                //                .focused($isContentFocused)
-                //                .padding()
-                //                .background(Color(UIColor.secondarySystemBackground))
-                //                .cornerRadius(8)
-                //                .onAppear {
-                //                    if content.isEmpty {
-                //                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                //                            isContentFocused = true
-                //                        }
-                //                    }
-                //                }
-                
                 Spacer()
             }
         }
+        .onAppear {
+                    entry = DataManager.fetchByID(id, in: modelContext)
+                }
+        .fullScreenCover(isPresented: $showEditDiaryView) {
+            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
+        }
     }
-    
-    func fetchDiaryEntry(byID id: UUID) -> DiaryEntry? {
-               let descriptor = FetchDescriptor<DiaryEntry>(
-                   predicate: #Predicate { $0.id == id }
-               )
-               return try? modelContext.fetch(descriptor).first  // 返回唯一结果[1](@ref)
-           }
 }
 
 #Preview {
