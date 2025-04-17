@@ -25,7 +25,6 @@ struct AddDiaryView: View {
 
     @State private var date: Date = Date()
     @State private var diaryContent: String = ""
-    @State private var address: String = ""
     @State private var selectedMood: String = "🙂"
     @State private var showMoodPicker = false
 
@@ -80,14 +79,14 @@ struct AddDiaryView: View {
                         if let entry = existingEntry {
                             entry.content = diaryContent
                             entry.date = date
-                            entry.location = address
+                            entry.location = locationManager.address
                             entry.selectedMood = selectedMood
                         } else {
                             let newEntry = DiaryEntry(
                                 id: UUID(),
                                 content: diaryContent,
                                 date: date,
-                                location: address,
+                                location: locationManager.address,
                                 selectedMood: selectedMood
                             )
                             modelContext.insert(newEntry)
@@ -116,11 +115,7 @@ struct AddDiaryView: View {
                 if let entry = existingEntry {
                     diaryContent = entry.content ?? ""
                     date = entry.date
-                    address = entry.location ?? ""
                     selectedMood = entry.selectedMood
-                } else {
-//                    locationManager.requestLocation()
-                    address = locationManager.address
                 }
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -165,7 +160,7 @@ struct AddDiaryView: View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "mappin.and.ellipse")
                 .foregroundColor(.gray)
-            Text(address)
+            Text(locationManager.address)
                 .font(.subheadline)
                 .foregroundColor(.gray)
             Spacer()
@@ -202,6 +197,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
 
     @Published var address: String = "正在获取位置..."
+    private var hasUpdatedLocation = false // ✅ 新增标志位
     
     override init() {
         super.init()
@@ -212,11 +208,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.first else { return }
+        guard !hasUpdatedLocation, let location = locations.first else { return }
+        
+        hasUpdatedLocation = true // ✅ 防止多次触发
         reverseGeocode(location: location)
-        locationManager.stopUpdatingLocation() // 一次就够，节省电量
+        locationManager.stopUpdatingLocation()
     }
-
+    
     private func reverseGeocode(location: CLLocation) {
         let geocoder = CLGeocoder()
         geocoder.reverseGeocodeLocation(location) { placemarks, error in
@@ -225,8 +223,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 if let locality = placemark.locality {
                     addressString += locality
                 }
-                if let subLocality = placemark.subLocality {
-                    addressString += " · \(subLocality)"
+                if let name = placemark.name {
+                    addressString += " · \(name)"
                 }
                 self.address = addressString
             } else {
