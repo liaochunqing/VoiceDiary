@@ -14,7 +14,8 @@ struct DiaryView: View {
 
                     // 创建日记页面的 HostingController 数组
                     let diaryPages: [UIHostingController<AnyView>] = {
-                        var pages = diaryEntries.map {
+                        let maxDiaryPages = 5
+                        var pages = diaryEntries.prefix(maxDiaryPages).map {
                             let dp = DiaryPage(id: $0.id)
                             return UIHostingController(rootView: AnyView(dp))
                         }
@@ -25,7 +26,7 @@ struct DiaryView: View {
 
                         return pages
                     }()
-
+            
                     // 将 diaryPages 传递给 DiaryPageViewController
                     DiaryPageViewController(pages: diaryPages)
                         .ignoresSafeArea() // 全屏显示
@@ -35,7 +36,7 @@ struct DiaryView: View {
 
 
 struct DiaryPageViewController: UIViewControllerRepresentable {
-//    var pages: [DiaryPage]
+
     var pages: [UIHostingController<AnyView>]
 
     @EnvironmentObject var globalData: GlobalData
@@ -101,7 +102,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: globalData.targetPageIndex)
             DispatchQueue.main.async {
                 globalData.targetPageIndex = -1 // 重置状态避免重复触发
-                print("-1")
+//                print("-1")
             }
         }
     }

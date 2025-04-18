@@ -62,8 +62,9 @@ struct AddButton: View {
             Circle()
                 .fill(Color.blue.opacity(0.6)) // 设置背景颜色
                 .frame(width: 60, height: 60) // 设置按钮大小
-                .shadow(color: Color.white.opacity(0.7), radius: 10, x: -5, y: -5) // 亮影
-                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 5, y: 5) // 暗影
+//                .shadow(color: Color.white.opacity(0.7), radius: 10, x: -5, y: -5) // 亮影
+//                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 5, y: 5) // 暗影
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
 
             Image(systemName: iconName)
                 .foregroundColor(.black) // 设置图标颜色

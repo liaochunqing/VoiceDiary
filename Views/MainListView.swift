@@ -13,17 +13,25 @@ import SwiftData
 
 struct MainListView: View {
     @State private var selectedTab: Int = 0
-//    @Binding var offset: CGFloat  // 初始偏移量为负值，隐藏设置界面
-//    @Binding var startLocation:CGFloat // 手势起点
     @Environment(\.modelContext) private var modelContext
     @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
 
-    
-//    let defaultTitle = "欢迎使用日记 App"
     let defaultContent = "这是一条默认的日记，你可以添加更多日记。"
 
     var body: some View {
         VStack {
+            EmojiBubbleView(width: Screen.width - 2*W_SCALE(16),
+                            height: H_SCALE(130),
+                            emojis: ["🥳", "😊", "😢", "😡", "😭", "🤯",
+                                     "😴", "🤔", "😤", "😄", "😊", "😢",
+                                     "😡", "😭", "🤯", "😴", "🤔", "😤",
+                                     "😄", "😊", "😢", "😡", "😭", "🤯",
+                                     "😴", "🤔", "😤", "😄","😭", "🤯",
+                                    ],
+                            emojiSize: W_SCALE(20),
+                            gravityScale: 20.0)
+            
+            
             TabView(selection: $selectedTab) {
                 VStack
                 {
@@ -31,6 +39,8 @@ struct MainListView: View {
                                   modelContext: modelContext)
                 }
             }
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+            .padding(.horizontal)
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .onChange(of: selectedTab) {oldValue,  newValue in
                 // 当TabView切换时，上面的ScrollView也会滚动标题到中间
