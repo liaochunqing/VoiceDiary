@@ -2,42 +2,29 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 
+
 struct DiaryView: View {
-    @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
+    @EnvironmentObject var globalData: GlobalData
+    @Query(sort: \DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
 
     var body: some View {
         VStack {
-                    // 创建封面、设置和主列表的 HostingController
-                    let coverHostingController = UIHostingController(rootView: AnyView(CoverView()))
-                    let settingHostingController = UIHostingController(rootView: AnyView(SettingsView()))
-                    let mainListHostingController = UIHostingController(rootView: AnyView(MainListView()))
-
-                    // 创建日记页面的 HostingController 数组
-                    let diaryPages: [UIHostingController<AnyView>] = {
-                        let maxDiaryPages = 5
-                        var pages = diaryEntries.prefix(maxDiaryPages).map {
-                            let dp = DiaryPage(id: $0.id)
-                            return UIHostingController(rootView: AnyView(dp))
-                        }
-
-                        pages.insert(mainListHostingController, at: 0)
-                        pages.insert(settingHostingController, at: 0)
-                        pages.insert(coverHostingController, at: 0)
-
-                        return pages
-                    }()
-            
-                    // 将 diaryPages 传递给 DiaryPageViewController
-                    DiaryPageViewController(pages: diaryPages)
-                        .ignoresSafeArea() // 全屏显示
-                }
+            if !globalData.diaryPages.isEmpty {
+                DiaryPageViewController()
+                    .ignoresSafeArea()
+            }
+        }
+        .onAppear {
+            if globalData.diaryPages.isEmpty {
+                globalData.initializePages(with: entries)
+            }
+        }
     }
 }
 
-
 struct DiaryPageViewController: UIViewControllerRepresentable {
 
-    var pages: [UIHostingController<AnyView>]
+//    var pages: [IdentifiedHostingController<AnyView>]
 
     @EnvironmentObject var globalData: GlobalData
 
@@ -65,17 +52,19 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         // 设置初始页为主列表页
         let firstVC = context.coordinator.controllers[2]
         pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
-        context.coordinator.currentIndex = 2;
-        
+        context.coordinator.currentIndex = 2
         return pageViewController
     }
 
 
     func updateUIViewController(_ pageViewController: UIPageViewController, context: Context) {
         // 检查页面数量是否发生变化
-        if context.coordinator.controllers.count != pages.count {
-            context.coordinator.controllers = pages.map { $0 }
+        if globalData.pageUpdate {
+//            context.coordinator.lastPageUpdateTrigger = globalData.pageUpdateTrigger
 
+            // 重新加载页面内容
+            context.coordinator.controllers = globalData.diaryPages.map { $0 }
+            
             // 获取当前显示的视图控制器
             if let currentVC = pageViewController.viewControllers?.first,
                let currentIndex = context.coordinator.controllers.firstIndex(of: currentVC) {
@@ -86,6 +75,10 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                 let mainListVC = context.coordinator.controllers[2]
                 pageViewController.setViewControllers([mainListVC], direction: .forward, animated: false)
                 context.coordinator.currentIndex = 2
+            }
+            
+            DispatchQueue.main.async {
+                globalData.pageUpdate = false
             }
         }
         
@@ -98,11 +91,10 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         }
         
         //打开详情页
-        if globalData.targetPageIndex >= 0 {
-            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: globalData.targetPageIndex)
+        if globalData.moveToPage {
+            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: globalData.currentIndex)
             DispatchQueue.main.async {
-                globalData.targetPageIndex = -1 // 重置状态避免重复触发
-//                print("-1")
+                globalData.moveToPage = false // 重置状态避免重复触发
             }
         }
     }
@@ -112,17 +104,19 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         var parent: DiaryPageViewController
         var currentIndex: Int = 0
         var globalData: GlobalData //
+//        var lastPageUpdateTrigger: Int
 
         private var pageSoundPlayer: AVAudioPlayer?
 
-         var controllers: [UIViewController]// = {return parent.pages}()
+         var controllers: [UIViewController]
         
             
             // 正确初始化器
         init(parent: DiaryPageViewController, globalData: GlobalData) {
             self.parent = parent
             self.globalData = globalData
-            self.controllers = parent.pages.map { $0 }
+//            self.lastPageUpdateTrigger = globalData.pageUpdateTrigger
+            self.controllers = globalData.diaryPages.map { $0 }
 
             // 初始化音频播放器
             if let soundURL = Bundle.main.url(forResource: "page_flip", withExtension: "mp3") {
@@ -187,6 +181,9 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                let visibleViewController = pageViewController.viewControllers?.first,
                let index = controllers.firstIndex(of: visibleViewController){
                 currentIndex = index
+                DispatchQueue.main.async {
+                    self.globalData.currentIndex = index
+                }
             }
         }
 
@@ -198,7 +195,7 @@ struct DiaryPage: View {
     let id:UUID
     
     @Environment(\.modelContext) private var modelContext
-    @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
+    @Query(sort:\DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
     @EnvironmentObject var globalData: GlobalData
     @State private var showEditDiaryView = false
     @State private var entry: DiaryEntry?
@@ -235,21 +232,46 @@ struct DiaryPage: View {
                         showDeleteConfirmation = true
 
                     }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white)
-                                .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
+                        if entry?.content != defaultContent {
+                            
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: W_SCALE(40), height: W_SCALE(40))
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
                         }
                     }
                     .padding(.horizontal)
                     .alert("确定删除这篇日记吗？", isPresented: $showDeleteConfirmation) {
                         Button("删除", role: .destructive) {
                             if let entry = entry {
+                                let deleteEntryIndex = entries.firstIndex(where: { $0.id == entry.id })
+
                                 DataManager.delete(entry, from: modelContext)
                                 try? modelContext.save()
+                        
+                                var newCenterIndex: Int? = nil
+                                if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex < entries.count {
+                                        // 如果存在下一个条目，选择它
+                                        newCenterIndex = deleteEntryIndex
+                                    } else if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex - 1 >= 0 {
+                                        // 否则选择上一个条目
+                                        newCenterIndex = deleteEntryIndex - 1
+                                    }
+                                            
+                                    if let newCenterIndex = newCenterIndex, newCenterIndex < entries.count {
+                                        let currentEntry = entries[newCenterIndex]
+                                        let index = globalData.updatePageBy(entry: currentEntry, entries: entries)
+                                        globalData.pageUpdate = true
+                                        globalData.currentIndex = index
+                                        globalData.moveToPage = true
+
+                                    } else {
+                                        globalData.backToList = true
+                                    }
                             }
                         }
                         Button("取消", role: .cancel) {}
@@ -258,13 +280,16 @@ struct DiaryPage: View {
                     Button(action: {
                         showEditDiaryView = true
                     }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white)
-                                .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-                            Image(systemName: "highlighter")
-                                .foregroundColor(.black)
+                        if entry?.content != defaultContent {
+                            
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: W_SCALE(40), height: W_SCALE(40))
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                Image(systemName: "highlighter")
+                                    .foregroundColor(.black)
+                            }
                         }
                     }                }
                 .padding(.horizontal)
@@ -329,6 +354,7 @@ struct DiaryPage: View {
         }
     }
 }
+
 
 #Preview {
     ContentView()

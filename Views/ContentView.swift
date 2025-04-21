@@ -12,8 +12,8 @@ struct ContentView: View {
     @State private var buttonPosition: CGPoint = .zero
     @State private var isButtonInitialized = false
     @State private var showAddDiaryView = false
-//    @State private var showEditor = false
-    
+//    @StateObject private var viewModel = DiaryViewModel()
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {

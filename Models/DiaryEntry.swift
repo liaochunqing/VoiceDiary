@@ -37,3 +37,18 @@ class DiaryEntry {
         self.selectedMood = selectedMood
     }
 }
+
+
+
+class IdentifiedHostingController<Content: View>: UIHostingController<Content> {
+    let id: UUID
+
+    init(id: UUID, rootView: Content) {
+        self.id = id
+        super.init(rootView: rootView)
+    }
+
+    @objc required dynamic init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}

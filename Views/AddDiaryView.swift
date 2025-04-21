@@ -20,6 +20,9 @@ struct AddDiaryView: View {
 
     // MARK: - 状态
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var globalData: GlobalData
+    @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
+
     @StateObject private var locationManager = LocationManager()
     @FocusState private var isFocused: Bool
 
@@ -90,6 +93,14 @@ struct AddDiaryView: View {
                                 selectedMood: selectedMood
                             )
                             modelContext.insert(newEntry)
+                            let index = globalData.getIndexOfPageBy(entry: newEntry, entries: diaryEntries)
+                            globalData.pageUpdate = true
+
+                            //如果当前界面不是在列表界面，则跳转到新增页面
+                            if globalData.currentIndex > 2{
+                                globalData.currentIndex = index
+                                globalData.moveToPage = true
+                            }
                         }
 
                         try? modelContext.save()
@@ -98,6 +109,8 @@ struct AddDiaryView: View {
                             isPresented = false
                         }
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                        
+                        
                     } label: {
                         ZStack {
                             Circle()
@@ -118,9 +131,9 @@ struct AddDiaryView: View {
                     selectedMood = entry.selectedMood
                 }
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     isFocused = true
-                }
+//                }
             }
         }
     }

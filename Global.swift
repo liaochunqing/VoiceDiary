@@ -98,7 +98,7 @@ func openURL(_ urlString: String) {
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
     }
 }
-//格式化日期
+// 格式化日期
 func formatDate(_ date: Date) -> String {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy/MM/dd  HH:mm"
@@ -110,14 +110,15 @@ func formatDate_onlyDate(_ date: Date) -> String {
     formatter.dateFormat = "yyyy.MM.dd"
     return formatter.string(from: date)
 }
-//
-////数据库
-//struct DiaryEntryFetcher {
-//    static func fetch(byID id: UUID, modelContext: ModelContext) -> DiaryEntry? {
-//        let descriptor = FetchDescriptor<DiaryEntry>(
-//            predicate: #Predicate { $0.id == id }
-//        )
-//        return try? modelContext.fetch(descriptor).first
+
+
+//func diaryPages_deleteOne(entry: DiaryEntry) {
+//    // 尝试找到要删除的页面索引
+//    if let indexToDelete = diaryPages.firstIndex(where: { $0.id == entry.id }) {
+//        var updatedPages = diaryPages
+//        updatedPages.remove(at: indexToDelete)
+//        diaryPages = updatedPages
+////            pageUpdateTrigger += 1
 //    }
 //}
-
+let defaultContent = "这是一条默认的日记，你可以添加更多日记。"

@@ -14,9 +14,9 @@ import SwiftData
 struct MainListView: View {
     @State private var selectedTab: Int = 0
     @Environment(\.modelContext) private var modelContext
-    @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
+    @Query(sort:\DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
 
-    let defaultContent = "这是一条默认的日记，你可以添加更多日记。"
+//    let defaultContent = "这是一条默认的日记，你可以添加更多日记。"
 
     var body: some View {
         VStack {
@@ -35,7 +35,7 @@ struct MainListView: View {
             TabView(selection: $selectedTab) {
                 VStack
                 {
-                    DiaryListView(entries: diaryEntries,
+                    DiaryListView(entries: entries,
                                   modelContext: modelContext)
                 }
             }
@@ -72,14 +72,8 @@ struct MainListView: View {
     // **检查数据库中是否有默认日记，如果没有就插入**
     private func checkAndInsertDefaultEntry()
     {
-        let hasDefaultEntry = diaryEntries.contains
-                                {
-                                    $0.content == defaultContent
-                                }
-//        print(hasDefaultEntry)
-
-        if !hasDefaultEntry
-        {
+//        let ee = entries
+        if !entries.contains(where: { $0.content == defaultContent }) {
             let defaultEntry = DiaryEntry(id: UUID(), content: defaultContent, date: Date())
             modelContext.insert(defaultEntry)
         }
@@ -129,22 +123,16 @@ struct DiaryListView: View {
                 .listRowSeparator(.hidden)  // 隐藏底部的横线
                 .listRowBackground(Color.white)  // 每行的背景
                 .contentShape(Rectangle()) // 定义完整点击区域
-                .onTapGesture
-                {
+                .onTapGesture {
                     guard !isTapDisabled else { return }
-                    
+
                     isTapDisabled = true
-                    let currentIndex = entries.firstIndex(where: { $0.id == entry.id }) ?? 0
-                                    
-                    DispatchQueue.main.async
-                    {
-                        if globalData.targetPageIndex == -1{
-                            globalData.targetPageIndex = currentIndex + 3 // 触发跳转
-                        }
-//                        print("page:\(globalData.targetPageIndex)")
-                    }
+                
+                    let index = globalData.getIndexOfPageBy(entry: entry, entries: entries)
                     
-                    // 在0.5秒后重新启用点击手势
+                    globalData.pageUpdate = true
+                    globalData.currentIndex = index
+                    globalData.moveToPage = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         isTapDisabled = false
                     }
