@@ -12,74 +12,31 @@ import Combine
 import SwiftData
 
 struct MainListView: View {
-    @State private var selectedTab: Int = 0
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort:\DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
-
-//    let defaultContent = "这是一条默认的日记，你可以添加更多日记。"
+        @Environment(\.modelContext) private var modelContext
+    @Query(sort: \DiaryEntry.date, order: .reverse) private var allEntries: [DiaryEntry]
+    
+    
 
     var body: some View {
-        VStack {
-            EmojiBubbleView(width: Screen.width - 2*W_SCALE(16),
-                            height: H_SCALE(130),
-                            emojis: ["🥳", "😊", "😢", "😡", "😭", "🤯",
-                                     "😴", "🤔", "😤", "😄", "😊", "😢",
-                                     "😡", "😭", "🤯", "😴", "🤔", "😤",
-                                     "😄", "😊", "😢", "😡", "😭", "🤯",
-                                     "😴", "🤔", "😤", "😄","😭", "🤯",
-                                    ],
-                            emojiSize: W_SCALE(20),
-                            gravityScale: 20.0)
-            
-            
-            TabView(selection: $selectedTab) {
-                VStack
-                {
-                    DiaryListView(entries: entries,
-                                  modelContext: modelContext)
-                }
-            }
-            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-            .padding(.horizontal)
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .onChange(of: selectedTab) {oldValue,  newValue in
-                // 当TabView切换时，上面的ScrollView也会滚动标题到中间
-                withAnimation {
-                    selectedTab = newValue
-                }
-            }
-//            .gesture(DragGesture()
-//                            .onChanged { value in
-//                                let threshold: CGFloat = -22 // 自定义滑动阈值，判断为超出右边界
-//                                if value.translation.width < threshold
-//                                {
-//                                    withAnimation(.easeIn)
-//                                    {
-//                                        rotationAngle = -90 // 增加旋转角度
-//                                    }
-//                                }
-//                            }
-//                    )
+        VStack(spacing: 16) {
+            // 列表视图
+            DiaryListView(entries: allEntries, modelContext: modelContext)
+                .padding(.horizontal)
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
         }
-        .onAppear()
-        {
+        .onAppear {
             checkAndInsertDefaultEntry()
-//            print("checkAndInsertDefaultEntry")
         }
     }
-    
-    
-    // **检查数据库中是否有默认日记，如果没有就插入**
-    private func checkAndInsertDefaultEntry()
-    {
-//        let ee = entries
-        if !entries.contains(where: { $0.content == defaultContent }) {
+
+    // 插入默认日记
+    private func checkAndInsertDefaultEntry() {
+        if !allEntries.contains(where: { $0.content == defaultContent }) {
             let defaultEntry = DiaryEntry(id: UUID(), content: defaultContent, date: Date())
             modelContext.insert(defaultEntry)
         }
     }
 }
-
 struct DiaryListView: View {
     @State private var isTapDisabled = false
 

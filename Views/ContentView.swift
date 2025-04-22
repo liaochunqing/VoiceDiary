@@ -12,7 +12,7 @@ struct ContentView: View {
     @State private var buttonPosition: CGPoint = .zero
     @State private var isButtonInitialized = false
     @State private var showAddDiaryView = false
-//    @StateObject private var viewModel = DiaryViewModel()
+    @EnvironmentObject var globalData: GlobalData
 
     var body: some View {
         GeometryReader { geometry in
@@ -22,22 +22,25 @@ struct ContentView: View {
                     .background(Color(.secondarySystemBackground))  // 使用系统默认背景颜色
                 
                 // 可拖动的悬浮按钮
-                AddButton(iconName: "plus")
-                    .position(buttonPosition)
-                    .onTapGesture
-                    {
-                        showAddDiaryView = true
-                    }
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                let safeAreaInsets = geometry.safeAreaInsets
-                                let minY = safeAreaInsets.top + 30
-                                let maxY = Screen.height - safeAreaInsets.bottom - 30
-                                let newY = min(max(value.location.y, minY), maxY)
-                                buttonPosition = CGPoint(x: value.location.x, y: newY)
-                            }
-                    )
+                if globalData.hideAddButton == false {
+                    AddButton(iconName: "plus")
+                        .position(buttonPosition)
+                        .onTapGesture
+                        {
+                            showAddDiaryView = true
+                        }
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    let safeAreaInsets = geometry.safeAreaInsets
+                                    let minY = safeAreaInsets.top + 30
+                                    let maxY = Screen.height - safeAreaInsets.bottom - 30
+                                    let newY = min(max(value.location.y, minY), maxY)
+                                    buttonPosition = CGPoint(x: value.location.x, y: newY)
+                                }
+                        )
+                }
+                
             }
             .onAppear {
                 // 在视图出现时初始化按钮位置为屏幕右下角
@@ -64,7 +67,7 @@ struct AddButton: View {
                 .frame(width: 60, height: 60) // 设置按钮大小
 //                .shadow(color: Color.white.opacity(0.7), radius: 10, x: -5, y: -5) // 亮影
 //                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 5, y: 5) // 暗影
-                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                .shadow(color: Color.black.opacity(0.9), radius: 4, x: 2, y: 2)
 
             Image(systemName: iconName)
                 .foregroundColor(.black) // 设置图标颜色

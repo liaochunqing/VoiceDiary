@@ -31,7 +31,7 @@ struct EmojiBubbleView: View {
             .cornerRadius(13)
 //            .shadow(radius: 10)
             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-            .padding()
+//            .padding()
     }
 }
 

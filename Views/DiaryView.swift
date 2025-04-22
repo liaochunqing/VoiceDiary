@@ -183,6 +183,8 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                 currentIndex = index
                 DispatchQueue.main.async {
                     self.globalData.currentIndex = index
+                    self.globalData.hideAddButton = index < 2 ? true : false
+
                 }
             }
         }
