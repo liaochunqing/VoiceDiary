@@ -318,7 +318,7 @@ struct DiaryPage: View {
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         
-                        Text("\(entry.selectedMood)")
+                        Text("\(entry.emojiString)")
                             .font(.body)
                         Spacer()
                     }

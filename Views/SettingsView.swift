@@ -8,34 +8,29 @@
 import Foundation
 import SwiftUI
 import SwiftData
+enum TimeRangeTab: String, CaseIterable, Identifiable {
+    case month = "本月"
+    case year = "本年"
+    case all = "全部"
+    
+    var id: String { self.rawValue }
+}
+
+enum Tab: String, CaseIterable, Identifiable {
+    case small = "小"
+    case mid = "中"
+    case big = "大"
+    
+    var id: String { self.rawValue }
+}
 
 struct SettingsView: View {
-    enum Tab: String, CaseIterable, Identifiable {
-        case month = "本月"
-        case year = "本年"
-        case all = "全部"
-        
-        var id: String { self.rawValue }
-    }
+    @State private var selectedTimeRange: TimeRangeTab = .month
+    @State private var selectedTab: Tab = .mid
+    @State private var emojis: [String] = []
 
-    @State private var selectedTab: Tab = .month
-    @Query(sort: \DiaryEntry.date, order: .reverse) private var allEntries: [DiaryEntry]
+    @Environment(\.modelContext) private var modelContext
 
-    private var filteredEntries: [DiaryEntry] {
-        switch selectedTab {
-        case .month:
-            return allEntries.filter {
-                Calendar.current.isDate($0.date, equalTo: Date(), toGranularity: .month)
-            }
-        case .year:
-            return allEntries.filter {
-                Calendar.current.isDate($0.date, equalTo: Date(), toGranularity: .year)
-            }
-        case .all:
-            return allEntries
-        }
-    }
-    
     var body: some View {
         ZStack{
             Color(.secondarySystemBackground)
@@ -47,10 +42,8 @@ struct SettingsView: View {
                 Text("设置")
                     .font(.title)
                     .foregroundColor(.black)
-//                    .background(Color.red)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
-//                    .padding(.top)//
                 
                 Text("心情储蓄罐")
                     .font(.subheadline)
@@ -61,12 +54,8 @@ struct SettingsView: View {
                 
                 EmojiBubbleView(
                     width: Screen.width - 2 * W_SCALE(16),
-                    height: H_SCALE(200),
-                    emojis: ["🥳", "😊", "😢", "😡", "😭", "🤯",
-                             "😴", "🤔", "😤", "😄", "😊", "😢",
-                             "😡", "😭", "🤯", "😴", "🤔", "😤",
-                             "😄", "😊", "😢", "😡", "😭", "🤯",
-                             "😴", "🤔", "😤", "😄", "😭", "🤯"],
+                    height: H_SCALE(170),
+                    emojis: emojis,
                     emojiSize: W_SCALE(20),
                     gravityScale: 20.0
                 )
@@ -78,22 +67,31 @@ struct SettingsView: View {
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .multilineTextAlignment(.leading)
-//
                         
-//                        Spacer()
-                        // 顶部 Segment 控制
-                        Picker("筛选", selection: $selectedTab) {
-                            ForEach(Tab.allCases) { tab in
+                        Picker("筛选", selection: $selectedTimeRange) {
+                            ForEach(TimeRangeTab.allCases) { tab in
                                 Text(tab.rawValue).tag(tab)
                             }
                         }
                         .pickerStyle(SegmentedPickerStyle())
+                        .onChange(of: selectedTimeRange) {
+                            let timeRange: TimeRange
+                            switch selectedTimeRange {
+                            case .month:
+                                timeRange = .month
+                            case .year:
+                                timeRange = .year
+                            case .all:
+                                timeRange = .all
+                            }
+                            emojis = DataManager.fetchEmojis(for: timeRange, in: modelContext)
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.top)
                     
                     HStack {
-                        Text("emjo大小")
+                        Text("emoji大小")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -111,38 +109,33 @@ struct SettingsView: View {
                     .padding(.horizontal)
 
                     HStack {
-                        Text("emjio旋转")
+                        Text("emoji旋转")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .multilineTextAlignment(.leading)
                         
                         Spacer()
-                        // 顶部 Segment 控制
-                        Picker("筛选", selection: $selectedTab) {
-                            ForEach(Tab.allCases) { tab in
-                                Text(tab.rawValue).tag(tab)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
+                        
                     }
                     .padding(.horizontal)
                     .padding(.bottom)
 
                 }
                 .background(Color.white)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 4, y: 4)
-                .shadow(color: Color.white.opacity(0.7), radius: 4, x: -4, y: -4)
-//                .padding()
-                
+                .cornerRadius(W_SCALE(15))
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+
+
                 Spacer()
                
             }
             .padding(.horizontal)
 
         }
-        
+        .onAppear {
+            emojis = DataManager.fetchEmojis(for: .month, in: modelContext)
+        }
     }
 }
 

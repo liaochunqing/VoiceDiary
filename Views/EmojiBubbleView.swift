@@ -16,6 +16,7 @@ struct EmojiBubbleView: View {
     let emojis: [String]
     let emojiSize: CGFloat
     let gravityScale: CGFloat
+    @State private var sceneID = UUID()
 
     var scene: SKScene {
         EmojiBubbleScene(size: CGSize(width: width, height: height),
@@ -26,16 +27,21 @@ struct EmojiBubbleView: View {
 
     var body: some View {
         SpriteView(scene: scene)
+//            .id(scene.id)
             .frame(width: width, height: height)
             .background(Color(.white))
-            .cornerRadius(13)
-//            .shadow(radius: 10)
+            .cornerRadius(W_SCALE(15))
             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-//            .padding()
+            .id(sceneID) // 当 sceneID 变化时，重新创建 SpriteView
+            .onChange(of: emojis) {
+                sceneID = UUID() // 更新 sceneID，触发视图刷新
+            }
     }
 }
 
 class EmojiBubbleScene: SKScene, SKPhysicsContactDelegate {
+//    private let id = UUID()
+
     private let emojis: [String]
     private let emojiSize: CGFloat
     private let gravityScale: CGFloat

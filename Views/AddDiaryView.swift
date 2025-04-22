@@ -28,7 +28,7 @@ struct AddDiaryView: View {
 
     @State private var date: Date = Date()
     @State private var diaryContent: String = ""
-    @State private var selectedMood: String = "🙂"
+    @State private var emojiString: String = "🙂"
     @State private var showMoodPicker = false
 
     let infoRowSpacing: CGFloat = W_SCALE(10)
@@ -83,14 +83,14 @@ struct AddDiaryView: View {
                             entry.content = diaryContent
                             entry.date = date
                             entry.location = locationManager.address
-                            entry.selectedMood = selectedMood
+                            entry.emojiString = emojiString
                         } else {
                             let newEntry = DiaryEntry(
                                 id: UUID(),
                                 content: diaryContent,
                                 date: date,
                                 location: locationManager.address,
-                                selectedMood: selectedMood
+                                emojiString: emojiString
                             )
                             modelContext.insert(newEntry)
                             let index = globalData.getIndexOfPageBy(entry: newEntry, entries: diaryEntries)
@@ -128,7 +128,7 @@ struct AddDiaryView: View {
                 if let entry = existingEntry {
                     diaryContent = entry.content ?? ""
                     date = entry.date
-                    selectedMood = entry.selectedMood
+                    emojiString = entry.emojiString
                 }
 
 //                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -142,7 +142,7 @@ struct AddDiaryView: View {
     private var moodPicker: some View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "face.smiling")
-            Text("\(selectedMood)(可选)")
+            Text("\(emojiString)(可选)")
                 .font(.body)
             Spacer()
         }
@@ -151,7 +151,7 @@ struct AddDiaryView: View {
         .onTapGesture { showMoodPicker = true }
         .confirmationDialog("选择你的心情", isPresented: $showMoodPicker, titleVisibility: .visible) {
             ForEach(["😄 开心", "😊 满足", "🤔 思考", "😐 平静", "😢 难过", "😭 崩溃", "😡 生气", "😤 烦躁", "😴 疲惫", "🤒 不舒服", "🥳 兴奋", "🤯 累炸了"], id: \.self) { mood in
-                Button(mood) { selectedMood = String(mood.prefix(1)) }
+                Button(mood) { emojiString = String(mood.prefix(1)) }
             }
             Button("取消", role: .cancel) {}
         }

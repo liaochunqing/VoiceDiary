@@ -56,7 +56,7 @@ struct DiaryListView: View {
                             .frame(alignment: .leading) // 确保左对齐[5](@ref)
                             .multilineTextAlignment(.leading)
                         
-                        Text("\(entry.selectedMood)")
+                        Text("\(entry.emojiString)")
                             .font(.body)
                         Spacer()
                     }
