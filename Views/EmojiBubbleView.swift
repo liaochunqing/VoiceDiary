@@ -15,6 +15,7 @@ struct EmojiBubbleView: View {
     let height: CGFloat
     let emojis: [String]
     let emojiSize: CGFloat
+    let isRotationEnabled: Bool
     let gravityScale: CGFloat
     @State private var sceneID = UUID()
 
@@ -22,12 +23,13 @@ struct EmojiBubbleView: View {
         EmojiBubbleScene(size: CGSize(width: width, height: height),
                          emojis: emojis,
                          emojiSize: emojiSize,
+                         isRotationEnabled: isRotationEnabled,
                          gravityScale: gravityScale)
     }
 
     var body: some View {
         SpriteView(scene: scene)
-//            .id(scene.id)
+
             .frame(width: width, height: height)
             .background(Color(.white))
             .cornerRadius(W_SCALE(15))
@@ -36,14 +38,22 @@ struct EmojiBubbleView: View {
             .onChange(of: emojis) {
                 sceneID = UUID() // 更新 sceneID，触发视图刷新
             }
+            .onChange(of: emojiSize) {
+                sceneID = UUID() // 更新 sceneID，触发视图刷新
+            }
+            .onChange(of: isRotationEnabled) {
+                sceneID = UUID() // 更新 sceneID，触发视图刷新
+            }
+            .onChange(of: gravityScale) {
+                sceneID = UUID() // 更新 sceneID，触发视图刷新
+            }
     }
 }
 
 class EmojiBubbleScene: SKScene, SKPhysicsContactDelegate {
-//    private let id = UUID()
-
     private let emojis: [String]
     private let emojiSize: CGFloat
+    private let isRotationEnabled:Bool
     private let gravityScale: CGFloat
     private let motionManager = CMMotionManager()
     private var previousGravity: CGVector = .zero
@@ -55,9 +65,10 @@ class EmojiBubbleScene: SKScene, SKPhysicsContactDelegate {
         static let boundary: UInt32 = 0x1 << 1
     }
 
-    init(size: CGSize, emojis: [String], emojiSize: CGFloat, gravityScale: CGFloat) {
+    init(size: CGSize, emojis: [String], emojiSize: CGFloat,isRotationEnabled:Bool, gravityScale: CGFloat) {
         self.emojis = emojis
         self.emojiSize = emojiSize
+        self.isRotationEnabled = isRotationEnabled
         self.gravityScale = gravityScale
         super.init(size: size)
         self.scaleMode = .resizeFill
@@ -99,7 +110,7 @@ class EmojiBubbleScene: SKScene, SKPhysicsContactDelegate {
             label.physicsBody?.restitution = 0.6    // 弹性系数：0.0（无弹性）到 1.0（完全弹性）。值越高，碰撞后反弹越强。
             label.physicsBody?.friction = 0.2       // 摩擦系数：0.0（无摩擦）到 1.0（最大摩擦）。值越高，滑动时阻力越大。
             label.physicsBody?.linearDamping = 1.0  // 线性阻尼：0.0（无阻力）到 1.0（最大阻力）。值越高，物体移动时减速越快。
-            label.physicsBody?.allowsRotation = false
+            label.physicsBody?.allowsRotation = isRotationEnabled
             label.physicsBody?.categoryBitMask = PhysicsCategory.emoji
             label.physicsBody?.contactTestBitMask = PhysicsCategory.emoji | PhysicsCategory.boundary
             addChild(label)

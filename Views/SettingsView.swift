@@ -24,10 +24,23 @@ enum Tab: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
 }
 
+enum Speed: String, CaseIterable, Identifiable {
+    case small = "慢"
+    case mid = "中"
+    case big = "快"
+    
+    var id: String { self.rawValue }
+}
+
 struct SettingsView: View {
     @State private var selectedTimeRange: TimeRangeTab = .month
     @State private var selectedTab: Tab = .mid
+    @State private var selectedSpeed: Speed = .mid
+
     @State private var emojis: [String] = []
+    @State private var emojisSize: CGFloat = W_SCALE(20)
+    @State private var isRotationEnabled = false
+    @State private var gravityScale: CGFloat = W_SCALE(10)
 
     @Environment(\.modelContext) private var modelContext
 
@@ -45,7 +58,7 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
                 
-                Text("心情储蓄罐")
+                Text("emoji储蓄罐")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .frame(maxWidth: .infinity,alignment: .leading)
@@ -56,19 +69,20 @@ struct SettingsView: View {
                     width: Screen.width - 2 * W_SCALE(16),
                     height: H_SCALE(170),
                     emojis: emojis,
-                    emojiSize: W_SCALE(20),
-                    gravityScale: 20.0
+                    emojiSize: emojisSize,
+                    isRotationEnabled:isRotationEnabled,
+                    gravityScale: gravityScale
                 )
                 
                 VStack(spacing: H_SCALE(16)) {
                     HStack {
-                        Text("心情时间段")
+                        Text("emoji时间段")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .multilineTextAlignment(.leading)
                         
-                        Picker("筛选", selection: $selectedTimeRange) {
+                        Picker("", selection: $selectedTimeRange) {
                             ForEach(TimeRangeTab.allCases) { tab in
                                 Text(tab.rawValue).tag(tab)
                             }
@@ -99,12 +113,51 @@ struct SettingsView: View {
                         
                         Spacer()
                         // 顶部 Segment 控制
-                        Picker("筛选", selection: $selectedTab) {
+                        Picker("", selection: $selectedTab) {
                             ForEach(Tab.allCases) { tab in
                                 Text(tab.rawValue).tag(tab)
                             }
                         }
                         .pickerStyle(SegmentedPickerStyle())
+                        .onChange(of: selectedTab) {
+
+                            switch selectedTab {
+                            case .small:
+                                emojisSize = W_SCALE(10)
+                            case .mid:
+                                emojisSize = W_SCALE(20)
+                            case .big:
+                                emojisSize = W_SCALE(40)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    HStack {
+                        Text("重力加速度")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                        
+                        Spacer()
+                        // 顶部 Segment 控制
+                        Picker("", selection: $selectedSpeed) {
+                            ForEach(Speed.allCases) { tab in
+                                Text(tab.rawValue).tag(tab)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .onChange(of: selectedSpeed) {
+                            switch selectedSpeed {
+                            case .small:
+                                gravityScale = W_SCALE(1)
+                            case .mid:
+                                gravityScale = W_SCALE(10)
+                            case .big:
+                                gravityScale = W_SCALE(25)
+                            }
+                        }
                     }
                     .padding(.horizontal)
 
@@ -116,6 +169,8 @@ struct SettingsView: View {
                             .multilineTextAlignment(.leading)
                         
                         Spacer()
+                        
+                        Toggle("", isOn: $isRotationEnabled)
                         
                     }
                     .padding(.horizontal)
