@@ -234,7 +234,7 @@ struct DiaryPage: View {
                         showDeleteConfirmation = true
 
                     }) {
-                        if entry?.content != defaultContent {
+//                        if entry?.content != defaultContent {
                             
                             ZStack {
                                 Circle()
@@ -244,7 +244,7 @@ struct DiaryPage: View {
                                 Image(systemName: "trash")
                                     .foregroundColor(.red)
                             }
-                        }
+//                        }
                     }
                     .padding(.horizontal)
                     .alert("确定删除这篇日记吗？", isPresented: $showDeleteConfirmation) {

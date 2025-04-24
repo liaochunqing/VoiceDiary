@@ -21,9 +21,10 @@ struct AddDiaryView: View {
     // MARK: - 状态
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var globalData: GlobalData
+    @EnvironmentObject var locationManager: LocationManager
+
     @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
 
-    @StateObject private var locationManager = LocationManager()
     @FocusState private var isFocused: Bool
 
     @State private var date: Date = Date()
@@ -125,15 +126,15 @@ struct AddDiaryView: View {
                 }
             }
             .onAppear {
+                DispatchQueue.main.async {
+                        isFocused = true
+                }
+                
                 if let entry = existingEntry {
                     diaryContent = entry.content ?? ""
                     date = entry.date
                     emojiString = entry.emojiString
                 }
-
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    isFocused = true
-//                }
             }
         }
     }

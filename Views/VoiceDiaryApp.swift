@@ -7,34 +7,63 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 @main
 struct VoiceDiaryApp: App {
+    @State private var modelContainer: ModelContainer?
+
     @StateObject private var globalData = GlobalData()
-        
-//        var sharedModelContainer: ModelContainer = {
-//            let schema = Schema([DiaryEntry.self])
-//            
-//            let configuration = ModelConfiguration(
-//                "VoiceDioryModel",
-//                schema: schema,
-//                isStoredInMemoryOnly: false,
-//                cloudKitDatabase: .private("iCloud.com.chunqingliao.VoiceDiary") // 需替换为你的 Team ID 和 Bundle ID
-//            )
-//            
-//            do {
-//                return try ModelContainer(for: schema, configurations: [configuration])
-//            } catch {
-//                fatalError("Failed to create ModelContainer: \(error)")
-//            }
-//        }()
-    
+    @StateObject private var locationManager = LocationManager()
+
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .modelContainer(for:[DiaryEntry.self])
-                .environmentObject(globalData)
+            if let modelContainer {
+                ContentView()
+                    .modelContainer(modelContainer)
+                    .environmentObject(globalData)
+                    .environmentObject(locationManager)
+
+            } else {
+                ProgressView("Loading...")
+                    .task {
+                        await initializeModelContainer()
+                    }
+            }
+//            ContentView()
+//                .modelContainer(for:[DiaryEntry.self])
+//                .environmentObject(globalData)
 
         }
     }
+    
+    func initializeModelContainer() async {
+            let schema = Schema([DiaryEntry.self])
+
+//            if UserDefaults.standard.object(forKey: "iCloudEnabled") == nil {
+//                UserDefaults.standard.set(true, forKey: "iCloudEnabled")
+//            }
+            let iCloudEnabled = UserDefaults.standard.bool(forKey: "iCloudEnabled")
+        
+            let configuration: ModelConfiguration
+            if iCloudEnabled {
+                configuration = ModelConfiguration(
+                    schema: schema,
+                    cloudKitDatabase: .private("iCloud.com.chunqingliao.VoiceDiary")
+                )
+            } else {
+                configuration = ModelConfiguration(
+                    schema: schema,
+                    cloudKitDatabase: .none
+                )
+            }
+
+            do {
+                let container = try ModelContainer(for: schema, configurations: [configuration])
+                modelContainer = container
+            } catch {
+                print("Failed to create ModelContainer: \(error)")
+            }
+        }
 }

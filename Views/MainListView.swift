@@ -23,11 +23,14 @@ struct MainListView: View {
                 .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
         }
         .onChange(of: allEntries) {
-            if !allEntries.isEmpty {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
+//            if !allEntries.isEmpty {
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1){
                     checkAndInsertDefaultEntry()
-                }
-            }
+//                }
+//            }
+        }
+        .onAppear(){
+            checkAndInsertDefaultEntry()
         }
     }
 

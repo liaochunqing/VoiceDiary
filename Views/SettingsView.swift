@@ -41,6 +41,9 @@ struct SettingsView: View {
     @State private var emojisSize: CGFloat = W_SCALE(20)
     @State private var isRotationEnabled = true
     @State private var gravityScale: CGFloat = W_SCALE(10)
+    
+    @AppStorage("iCloudEnabled") private var iCloudEnabled = false
+
 
     @Environment(\.modelContext) private var modelContext
 
@@ -201,8 +204,10 @@ struct SettingsView: View {
                         
                         Spacer()
                         
-                        Toggle("", isOn: $isRotationEnabled)
-                        
+                        Toggle("", isOn: $iCloudEnabled)
+                        .onChange(of: iCloudEnabled) {
+                                                // 提示用户重启应用以应用更改
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.top)
