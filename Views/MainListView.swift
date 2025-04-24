@@ -12,11 +12,9 @@ import Combine
 import SwiftData
 
 struct MainListView: View {
-        @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \DiaryEntry.date, order: .reverse) private var allEntries: [DiaryEntry]
     
-    
-
     var body: some View {
         VStack(spacing: 16) {
             // 列表视图
@@ -24,8 +22,12 @@ struct MainListView: View {
                 .padding(.horizontal)
                 .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
         }
-        .onAppear {
-            checkAndInsertDefaultEntry()
+        .onChange(of: allEntries) {
+            if !allEntries.isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
+                    checkAndInsertDefaultEntry()
+                }
+            }
         }
     }
 

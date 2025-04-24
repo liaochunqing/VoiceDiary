@@ -13,7 +13,9 @@ import SwiftData
 
 
 class DiaryEntry {
-    @Attribute(.unique) var id: UUID = UUID()  // 唯一标识符，默认生成新的 UUID
+//    var timestamp: Date = Date() // 这里加个默认值 用于iCloud同步
+
+    var id: UUID = UUID()  // 唯一标识符，默认生成新的 UUID
     var content: String? = ""                 // 日记内容，默认为空字符串
     var date: Date = Date()                   // 创建日期，默认为当前日期
     var location: String? = ""                // 日记记录的位置信息，默认为空字符串

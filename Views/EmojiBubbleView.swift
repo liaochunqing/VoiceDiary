@@ -108,7 +108,7 @@ class EmojiBubbleScene: SKScene, SKPhysicsContactDelegate {
 
             label.physicsBody = SKPhysicsBody(circleOfRadius: emojiSize / 2)
             label.physicsBody?.restitution = 0.6    // 弹性系数：0.0（无弹性）到 1.0（完全弹性）。值越高，碰撞后反弹越强。
-            label.physicsBody?.friction = 0.2       // 摩擦系数：0.0（无摩擦）到 1.0（最大摩擦）。值越高，滑动时阻力越大。
+            label.physicsBody?.friction = 0.5       // 摩擦系数：0.0（无摩擦）到 1.0（最大摩擦）。值越高，滑动时阻力越大。
             label.physicsBody?.linearDamping = 1.0  // 线性阻尼：0.0（无阻力）到 1.0（最大阻力）。值越高，物体移动时减速越快。
             label.physicsBody?.allowsRotation = isRotationEnabled
             label.physicsBody?.categoryBitMask = PhysicsCategory.emoji

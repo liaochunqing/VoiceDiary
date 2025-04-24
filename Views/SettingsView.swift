@@ -39,7 +39,7 @@ struct SettingsView: View {
 
     @State private var emojis: [String] = []
     @State private var emojisSize: CGFloat = W_SCALE(20)
-    @State private var isRotationEnabled = false
+    @State private var isRotationEnabled = true
     @State private var gravityScale: CGFloat = W_SCALE(10)
 
     @Environment(\.modelContext) private var modelContext
@@ -60,10 +60,11 @@ struct SettingsView: View {
                 
                 Text("emoji储蓄罐")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(.systemGray))
                     .frame(maxWidth: .infinity,alignment: .leading)
                     .multilineTextAlignment(.leading)
                     .padding(.top)
+                    .padding(.leading)
                 
                 EmojiBubbleView(
                     width: Screen.width - 2 * W_SCALE(16),
@@ -155,7 +156,7 @@ struct SettingsView: View {
                             case .mid:
                                 gravityScale = W_SCALE(10)
                             case .big:
-                                gravityScale = W_SCALE(25)
+                                gravityScale = W_SCALE(35)
                             }
                         }
                     }
@@ -181,7 +182,35 @@ struct SettingsView: View {
                 .cornerRadius(W_SCALE(15))
                 .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
 
+                Text("通用")
+                    .font(.subheadline)
+                    .foregroundColor(Color(.systemGray))
+                    .frame(maxWidth: .infinity,alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                    .padding(.top)
+                    .padding(.top)
+                    .padding(.leading)
 
+                VStack(spacing: H_SCALE(16)) {
+                    HStack {
+                        Text("iCloud同步")
+                            .font(.subheadline)
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                        
+                        Spacer()
+                        
+                        Toggle("", isOn: $isRotationEnabled)
+                        
+                    }
+                    .padding(.horizontal)
+                    .padding(.top)
+
+                }
+                .background(Color.white)
+                .cornerRadius(W_SCALE(15))
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
                 Spacer()
                
             }
