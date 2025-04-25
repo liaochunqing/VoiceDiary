@@ -45,6 +45,8 @@ struct SettingsView: View {
     let rightButtonSize = W_SCALE(25)
     
     @AppStorage("iCloudEnabled") private var iCloudEnabled = false
+    @AppStorage("isFaceIDEnabled") private var isFaceIDEnabled = false
+
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -244,6 +246,22 @@ struct SettingsView: View {
             }
             .padding(.horizontal)
             .padding(.top)
+            
+            HStack {
+                Text("面容ID")
+                    .font(.subheadline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Toggle("", isOn: $isFaceIDEnabled)
+                .onChange(of: iCloudEnabled) {
+                                        // 提示用户重启应用以应用更改
+                }
+            }
+            .padding(.horizontal)
 
         }
         .background(Color.white)
@@ -348,10 +366,31 @@ struct SettingsView: View {
         .background(Color.white)
         .cornerRadius(W_SCALE(15))
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-        
     }
-    
+}
 
+import LocalAuthentication
+
+class BiometricAuthManager {
+    func authenticate(completion: @escaping (Bool) -> Void) {
+        let context = LAContext()
+        var error: NSError?
+
+        // 检查设备是否支持生物识别
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            let reason = "请使用面容ID解锁应用。"
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, _ in
+                DispatchQueue.main.async {
+                    completion(success)
+                }
+            }
+        } else {
+            // 设备不支持生物识别
+            DispatchQueue.main.async {
+                completion(false)
+            }
+        }
+    }
 }
 
 #Preview {
