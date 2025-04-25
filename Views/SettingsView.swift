@@ -42,190 +42,316 @@ struct SettingsView: View {
     @State private var isRotationEnabled = true
     @State private var gravityScale: CGFloat = W_SCALE(10)
     
+    let rightButtonSize = W_SCALE(25)
+    
     @AppStorage("iCloudEnabled") private var iCloudEnabled = false
-
-
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         ZStack{
             Color(.secondarySystemBackground)
                 .ignoresSafeArea()
-                
-            VStack
-            {
-                
-                Text("设置")
-                    .font(.title)
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .multilineTextAlignment(.leading)
-                
-                Text("emoji储蓄罐")
-                    .font(.subheadline)
-                    .foregroundColor(Color(.systemGray))
-                    .frame(maxWidth: .infinity,alignment: .leading)
-                    .multilineTextAlignment(.leading)
-                    .padding(.top)
-                    .padding(.leading)
-                
-                EmojiBubbleView(
-                    width: Screen.width - 2 * W_SCALE(16),
-                    height: H_SCALE(170),
-                    emojis: emojis,
-                    emojiSize: emojisSize,
-                    isRotationEnabled:isRotationEnabled,
-                    gravityScale: gravityScale
-                )
-                
-                VStack(spacing: H_SCALE(16)) {
-                    HStack {
-                        Text("emoji时间段")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                        
-                        Picker("", selection: $selectedTimeRange) {
-                            ForEach(TimeRangeTab.allCases) { tab in
-                                Text(tab.rawValue).tag(tab)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .onChange(of: selectedTimeRange) {
-                            let timeRange: TimeRange
-                            switch selectedTimeRange {
-                            case .month:
-                                timeRange = .month
-                            case .year:
-                                timeRange = .year
-                            case .all:
-                                timeRange = .all
-                            }
-                            emojis = DataManager.fetchEmojis(for: timeRange, in: modelContext)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
+            
+            // 包裹 VStack 的 ScrollView 以启用垂直滚动
+            ScrollView {
+                VStack
+                {
+                    Text("设置")
+                        .font(.title)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
                     
-                    HStack {
-                        Text("emoji大小")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                        
-                        Spacer()
-                        // 顶部 Segment 控制
-                        Picker("", selection: $selectedTab) {
-                            ForEach(Tab.allCases) { tab in
-                                Text(tab.rawValue).tag(tab)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .onChange(of: selectedTab) {
-
-                            switch selectedTab {
-                            case .small:
-                                emojisSize = W_SCALE(10)
-                            case .mid:
-                                emojisSize = W_SCALE(20)
-                            case .big:
-                                emojisSize = W_SCALE(40)
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
+                    Text("emoji储蓄罐")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.systemGray))
+                        .frame(maxWidth: .infinity,alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .padding(.top)
+                        .padding(.leading)
                     
-                    HStack {
-                        Text("重力加速度")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                        
-                        Spacer()
-                        // 顶部 Segment 控制
-                        Picker("", selection: $selectedSpeed) {
-                            ForEach(Speed.allCases) { tab in
-                                Text(tab.rawValue).tag(tab)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .onChange(of: selectedSpeed) {
-                            switch selectedSpeed {
-                            case .small:
-                                gravityScale = W_SCALE(1)
-                            case .mid:
-                                gravityScale = W_SCALE(10)
-                            case .big:
-                                gravityScale = W_SCALE(35)
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
+                    EmojiBubbleView(
+                        width: Screen.width - 2 * W_SCALE(16),
+                        height: H_SCALE(170),
+                        emojis: emojis,
+                        emojiSize: emojisSize,
+                        isRotationEnabled:isRotationEnabled,
+                        gravityScale: gravityScale
+                    )
+                                        
+                    emojiSetup
+                    
+                    Text("通用")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.systemGray))
+                        .frame(maxWidth: .infinity,alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .padding(.top)
+                        .padding(.top)
+                        .padding(.leading)
 
-                    HStack {
-                        Text("emoji旋转")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                        
-                        Spacer()
-                        
-                        Toggle("", isOn: $isRotationEnabled)
-                        
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom)
+                    generalSetup
+                    
+                    Text("支持")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.systemGray))
+                        .frame(maxWidth: .infinity,alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .padding(.top)
+                        .padding(.top)
+                        .padding(.leading)
 
+                    supportSetup
+                    
+                    Spacer()
+                   
                 }
-                .background(Color.white)
-                .cornerRadius(W_SCALE(15))
-                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-
-                Text("通用")
-                    .font(.subheadline)
-                    .foregroundColor(Color(.systemGray))
-                    .frame(maxWidth: .infinity,alignment: .leading)
-                    .multilineTextAlignment(.leading)
-                    .padding(.top)
-                    .padding(.top)
-                    .padding(.leading)
-
-                VStack(spacing: H_SCALE(16)) {
-                    HStack {
-                        Text("iCloud同步")
-                            .font(.subheadline)
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                        
-                        Spacer()
-                        
-                        Toggle("", isOn: $iCloudEnabled)
-                        .onChange(of: iCloudEnabled) {
-                                                // 提示用户重启应用以应用更改
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
-
-                }
-                .background(Color.white)
-                .cornerRadius(W_SCALE(15))
-                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-                Spacer()
-               
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
 
         }
         .onAppear {
             emojis = DataManager.fetchEmojis(for: .month, in: modelContext)
-        }
+            }
     }
+    
+    // MARK: - 子视图组件
+    private var emojiSetup: some View {
+        VStack(spacing: H_SCALE(16)) {
+            HStack {
+                Text("emoji时间段")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Picker("", selection: $selectedTimeRange) {
+                    ForEach(TimeRangeTab.allCases) { tab in
+                        Text(tab.rawValue).tag(tab)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .onChange(of: selectedTimeRange) {
+                    let timeRange: TimeRange
+                    switch selectedTimeRange {
+                    case .month:
+                        timeRange = .month
+                    case .year:
+                        timeRange = .year
+                    case .all:
+                        timeRange = .all
+                    }
+                    emojis = DataManager.fetchEmojis(for: timeRange, in: modelContext)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top)
+            
+            HStack {
+                Text("emoji大小")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                // 顶部 Segment 控制
+                Picker("", selection: $selectedTab) {
+                    ForEach(Tab.allCases) { tab in
+                        Text(tab.rawValue).tag(tab)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .onChange(of: selectedTab) {
+
+                    switch selectedTab {
+                    case .small:
+                        emojisSize = W_SCALE(10)
+                    case .mid:
+                        emojisSize = W_SCALE(20)
+                    case .big:
+                        emojisSize = W_SCALE(40)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            
+            HStack {
+                Text("重力加速度")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                // 顶部 Segment 控制
+                Picker("", selection: $selectedSpeed) {
+                    ForEach(Speed.allCases) { tab in
+                        Text(tab.rawValue).tag(tab)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .onChange(of: selectedSpeed) {
+                    switch selectedSpeed {
+                    case .small:
+                        gravityScale = W_SCALE(1)
+                    case .mid:
+                        gravityScale = W_SCALE(10)
+                    case .big:
+                        gravityScale = W_SCALE(35)
+                    }
+                }
+            }
+            .padding(.horizontal)
+
+            HStack {
+                Text("emoji旋转")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Toggle("", isOn: $isRotationEnabled)
+                
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+
+        }
+        .background(Color.white)
+        .cornerRadius(W_SCALE(15))
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+
+    }
+    
+    private var generalSetup: some View {
+        VStack(spacing: H_SCALE(16)) {
+            HStack {
+                Text("iCloud同步")
+                    .font(.subheadline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Toggle("", isOn: $iCloudEnabled)
+                .onChange(of: iCloudEnabled) {
+                                        // 提示用户重启应用以应用更改
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top)
+
+        }
+        .background(Color.white)
+        .cornerRadius(W_SCALE(15))
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+        
+    }
+    
+    private var supportSetup: some View {
+        VStack(spacing: H_SCALE(25)) {
+            HStack {
+                Text("意见反馈")
+                    .font(.subheadline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Button(action: { }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: rightButtonSize, height: rightButtonSize)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top)
+            
+            HStack {
+                Text("分享给朋友")
+                    .font(.subheadline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Button(action: { }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: rightButtonSize, height: rightButtonSize)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            
+            HStack {
+                Text("给好评")
+                    .font(.subheadline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Button(action: { }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: rightButtonSize, height: rightButtonSize)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            
+            HStack {
+                Text("其他作品")
+                    .font(.subheadline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Button(action: { }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: rightButtonSize, height: rightButtonSize)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.black)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+
+        }
+        .background(Color.white)
+        .cornerRadius(W_SCALE(15))
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+        
+    }
+    
+
 }
 
 #Preview {
