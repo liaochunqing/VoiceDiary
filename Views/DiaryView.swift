@@ -87,7 +87,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         
         //响应返回列表按钮
         if globalData.backToList {
-            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: 2) {}
+            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: 2)
             DispatchQueue.main.async {
                 globalData.backToList = false
             }
@@ -121,25 +121,25 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             
         }
         
-        func animateMoveToPage(pageViewController: UIPageViewController,targetIndex:Int,completion: (() -> Void)? = nil)
+        func animateMoveToPage(pageViewController: UIPageViewController,targetIndex:Int)
         {
             let currentIndex = self.currentIndex
             guard currentIndex != targetIndex else { return }
             
             let step = currentIndex > targetIndex ? -1 : 1
             let direction: UIPageViewController.NavigationDirection = (step > 0) ? .forward : .reverse
-            let fromIndex = currentIndex > targetIndex ? currentIndex-1 : currentIndex+1
+            let fromIndex = currentIndex + (step > 0 ? 1 : -1) // 设置起始索引
 
             for index in stride(from: fromIndex, through: targetIndex, by: step)
             {
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.05)
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.07)
                 {
-                    self.playOverlappingPageSound()
                     let vc = self.controllers[index]
                     pageViewController.setViewControllers([vc], direction:direction, animated: true) { Bool in
                         self.currentIndex = index
                     }
+                    
+                    self.playOverlappingPageSound()
                 }
             }
         }
@@ -263,7 +263,15 @@ struct DiaryPage: View {
                                 .foregroundColor(.black)
                         }
                     }
-                    
+                    Spacer()
+
+                    // ✨ 中间标题
+                    if let index = entries.firstIndex(where: { $0.id == self.id }) {
+                        let pageNumber = index + 1
+                        Text("第 \(pageNumber) 页")
+                            .font(.system(size: W_SCALE(18), weight: .medium))
+                            .foregroundColor(.black)
+                    }                    
                     Spacer()
                     
                     Button(action: {
@@ -271,7 +279,6 @@ struct DiaryPage: View {
 
                     }) {
 //                        if entry?.content != defaultContent {
-                            
                             ZStack {
                                 Circle()
                                     .fill(Color.white)
@@ -291,25 +298,25 @@ struct DiaryPage: View {
                                 DataManager.delete(entry, from: modelContext)
                                 try? modelContext.save()
                         
-                                var newCenterIndex: Int? = nil
-                                if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex < entries.count {
-                                        // 如果存在下一个条目，选择它
-                                        newCenterIndex = deleteEntryIndex
-                                    } else if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex - 1 >= 0 {
-                                        // 否则选择上一个条目
-                                        newCenterIndex = deleteEntryIndex - 1
-                                    }
-                                            
-                                    if let newCenterIndex = newCenterIndex, newCenterIndex < entries.count {
-                                        let currentEntry = entries[newCenterIndex]
-                                        let index = globalData.updatePageBy(entry: currentEntry, entries: entries)
-                                        globalData.pageUpdate = true
-                                        globalData.currentIndex = index
-                                        globalData.moveToPage = true
-
-                                    } else {
-                                        globalData.backToList = true
-                                    }
+//                                var newCenterIndex: Int? = nil
+//                                if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex < entries.count {
+//                                    // 如果存在下一个条目，选择它
+//                                    newCenterIndex = deleteEntryIndex
+//                                } else if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex - 1 >= 0 {
+//                                    // 否则选择上一个条目
+//                                    newCenterIndex = deleteEntryIndex - 1
+//                                }
+//                                        
+//                                if let newCenterIndex = newCenterIndex, newCenterIndex < entries.count {
+//                                    let currentEntry = entries[newCenterIndex]
+//                                    let index = globalData.updatePageBy(entry: currentEntry, entries: entries)
+//                                    globalData.pageUpdate = true
+//                                    globalData.currentIndex = index
+//                                    globalData.moveToPage = true
+//
+//                                } else {
+                                    globalData.backToList = true
+//                                }
                             }
                         }
                         Button("取消", role: .cancel) {}
@@ -341,9 +348,10 @@ struct DiaryPage: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
                     }
+                    .scrollBounceBehavior(.basedOnSize)
                     .background(Color(UIColor.white))
                     .cornerRadius(W_SCALE(20))
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 2, y: 2) // 添加阴影
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 2, y: 2)
                     .padding()
                     
                     HStack(spacing: infoRowSpacing) {

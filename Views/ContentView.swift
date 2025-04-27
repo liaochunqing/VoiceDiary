@@ -15,63 +15,24 @@ struct ContentView: View {
     private let authManager = BiometricAuthManager()
     
     var body: some View {
-                Group {
-                    if isUnlocked || !isFaceIDEnabled {
-                        // 显示主界面内容
-                        MainAppView()
-                    } else {
-                        // 显示锁定界面
-                        Text("应用已锁定，请进行面容 ID 验证。")
-                    }
+        Group {
+            if isUnlocked || !isFaceIDEnabled {
+                // 显示主界面内容
+                MainAppView()
+            } else {
+                // 显示锁定界面
+                Text("应用已锁定，请进行面容 ID 验证。")
+            }
+        }
+        .onAppear {
+            if isFaceIDEnabled {
+                authManager.authenticate { success in
+                    self.isUnlocked = success
                 }
-                .onAppear {
-                    if isFaceIDEnabled {
-                        authManager.authenticate { success in
-                            self.isUnlocked = success
-                        }
-                    } else {
-                        self.isUnlocked = true
-                    }
-                }
-//        GeometryReader { geometry in
-//            ZStack {
-//                // 主内容视图
-//                DiaryView()
-//                    .background(Color(.secondarySystemBackground))  // 使用系统默认背景颜色
-//                
-//                // 可拖动的悬浮按钮
-//                if globalData.hideAddButton == false {
-//                    AddButton(iconName: "plus")
-//                        .position(buttonPosition)
-//                        .onTapGesture
-//                        {
-//                            showAddDiaryView = true
-//                        }
-//                        .gesture(
-//                            DragGesture()
-//                                .onChanged { value in
-//                                    let safeAreaInsets = geometry.safeAreaInsets
-//                                    let minY = safeAreaInsets.top + 30
-//                                    let maxY = Screen.height - safeAreaInsets.bottom - 30
-//                                    let newY = min(max(value.location.y, minY), maxY)
-//                                    buttonPosition = CGPoint(x: value.location.x, y: newY)
-//                                }
-//                        )
-//                }
-//                
-//            }
-//            .onAppear {
-//                // 在视图出现时初始化按钮位置为屏幕右下角
-//                if !isButtonInitialized {
-//                    buttonPosition = CGPoint(x: geometry.size.width - 60, y: geometry.size.height - 60)
-//                    isButtonInitialized = true
-//                }
-//            }
-//            .ignoresSafeArea(.all)
-//        }
-//        .fullScreenCover(isPresented: $showAddDiaryView) {
-//            AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
-//        }
+            } else {
+                self.isUnlocked = true
+            }
+        }
     }
 }
 

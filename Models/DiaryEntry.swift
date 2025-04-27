@@ -21,6 +21,7 @@ class DiaryEntry {
     var location: String? = ""                // 日记记录的位置信息，默认为空字符串
     var isNew: Bool = false                   // 是否新建页，默认为否
     var emojiString: String = ""                // 日记心情
+    var pageNumber: Int = -1                // 日记心情
 
     
     // 初始化方法

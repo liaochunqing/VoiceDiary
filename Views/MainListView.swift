@@ -47,10 +47,10 @@ struct MainListView: View {
         }
         .onChange(of: allEntries) {
             checkAndInsertDefaultEntry()
-        }
+            }
         .onAppear {
             checkAndInsertDefaultEntry()
-        }
+            }
     }
 
     private func checkAndInsertDefaultEntry() {
@@ -73,7 +73,9 @@ struct DiaryListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                ForEach(entries, id: \.id) { entry in
+                ForEach(entries.indices, id: \.self) { i in
+                    let entry = entries[i]
+                    
                     VStack(alignment: .leading, spacing: H_SCALE(5)) {
                         HStack(spacing: W_SCALE(10)) {
                             Text(formatDate(entry.date))
@@ -85,6 +87,11 @@ struct DiaryListView: View {
                             Text("\(entry.emojiString)")
                                 .font(.body)
                             Spacer()
+                            
+                            // 在这里加编号，格式化成三位数
+                            Text(String(format: "%d", i + 1))
+                                .font(.system(size: W_SCALE(16)))
+                                .foregroundColor(Color(UIColor.secondaryLabel))
                         }
 
                         Text(entry.content ?? "")
