@@ -150,12 +150,16 @@ struct AddDiaryView: View {
         .padding(.top)
         .padding(.horizontal)
         .onTapGesture { showMoodPicker = true }
-        .confirmationDialog("选择你的心情", isPresented: $showMoodPicker, titleVisibility: .visible) {
-            ForEach(["😄 开心", "😊 满足", "🤔 思考", "😐 平静", "😢 难过", "😭 崩溃", "😡 生气", "😤 烦躁", "😴 疲惫", "🤒 不舒服", "🥳 兴奋", "🤯 累炸了"], id: \.self) { mood in
-                Button(mood) { emojiString = String(mood.prefix(1)) }
-            }
-            Button("取消", role: .cancel) {}
+        
+        .fullScreenCover(isPresented: $showMoodPicker) {
+            MoodPickerView(selectedEmoji: $emojiString, moodCategories: moodCategories)
         }
+//        .confirmationDialog("选择你的心情", isPresented: $showMoodPicker, titleVisibility: .visible) {
+//            ForEach(["😄 开心", "😊 满足", "🤔 思考", "😐 平静", "😢 难过", "😭 崩溃", "😡 生气", "😤 烦躁", "😴 疲惫", "🤒 不舒服", "🥳 兴奋", "🤯 累炸了"], id: \.self) { mood in
+//                Button(mood) { emojiString = String(mood.prefix(1)) }
+//            }
+//            Button("取消", role: .cancel) {}
+//        }
     }
 
     private var wordCount: some View {
@@ -207,6 +211,68 @@ struct AddDiaryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
+
+
+struct MoodCategory: Identifiable {
+    let id = UUID()
+    let name: String
+    let emojis: [String]
+}
+
+let moodCategories: [MoodCategory] = [
+    MoodCategory(name: "喜", emojis: ["😄", "😊", "😆", "😃"]),
+    MoodCategory(name: "怒", emojis: ["😠", "😡", "🤬", "😤"]),
+    MoodCategory(name: "哀", emojis: ["😢", "😭", "😞", "😔"]),
+    MoodCategory(name: "乐", emojis: ["😌", "😇", "😎", "🥳"])
+]
+struct MoodPickerView: View {
+    @Environment(\.dismiss) var dismiss
+    @Binding var selectedEmoji: String
+
+    let moodCategories: [MoodCategory]
+
+    // 定义每行显示的表情数量
+    let columns = [GridItem(.adaptive(minimum: 50))]
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                ForEach(moodCategories) { category in
+                    VStack(alignment: .leading) {
+                        Text(category.name)
+                            .font(.headline)
+                            .padding(.horizontal)
+                            .padding(.top)
+
+                        LazyVGrid(columns: columns, spacing: 20) {
+                            ForEach(category.emojis, id: \.self) { emoji in
+                                Button(action: {
+                                    selectedEmoji = emoji
+                                    dismiss()
+                                }) {
+                                    Text(emoji)
+                                        .font(.system(size: 40))
+                                        .frame(width: 50, height: 50)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+            }
+            .navigationTitle("选择你的心情")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
 
