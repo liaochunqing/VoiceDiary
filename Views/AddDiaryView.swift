@@ -220,11 +220,15 @@ struct MoodCategory: Identifiable {
 }
 
 let moodCategories: [MoodCategory] = [
-    MoodCategory(name: "喜", emojis: ["😄", "😊", "😆", "😃"]),
-    MoodCategory(name: "怒", emojis: ["😠", "😡", "🤬", "😤"]),
-    MoodCategory(name: "哀", emojis: ["😢", "😭", "😞", "😔"]),
-    MoodCategory(name: "乐", emojis: ["😌", "😇", "😎", "🥳"])
+    MoodCategory(name: "喜", emojis: ["😊", "😄", "😆", "😋"]),
+    MoodCategory(name: "怒", emojis: ["😠", "😡", "😤", "😒"]),
+    MoodCategory(name: "忧", emojis: ["😟", "😕", "🙁", "😣"]),
+    MoodCategory(name: "思", emojis: ["🤔", "🧐", "😐", "😶"]),
+    MoodCategory(name: "悲", emojis: ["😢", "😭", "😞", "😔"]),
+    MoodCategory(name: "恐", emojis: ["😨", "😰", "😱", "😖"]),
+    MoodCategory(name: "惊", emojis: ["😲", "😳", "😯", "😧"])
 ]
+
 struct MoodPickerView: View {
     @Environment(\.dismiss) var dismiss
     @Binding var selectedEmoji: String
@@ -238,26 +242,28 @@ struct MoodPickerView: View {
         NavigationView {
             ScrollView {
                 ForEach(moodCategories) { category in
-                    VStack(alignment: .leading) {
+                    HStack {
                         Text(category.name)
-                            .font(.headline)
-                            .padding(.horizontal)
-                            .padding(.top)
+                            .font(.title)
+                            .frame(width: W_SCALE(50), alignment: .leading)
+                            .padding(.leading)
 
-                        LazyVGrid(columns: columns, spacing: 20) {
+                        LazyVGrid(columns: columns, spacing: W_SCALE(20)) {
                             ForEach(category.emojis, id: \.self) { emoji in
                                 Button(action: {
                                     selectedEmoji = emoji
                                     dismiss()
                                 }) {
                                     Text(emoji)
-                                        .font(.system(size: 40))
-                                        .frame(width: 50, height: 50)
+                                        .font(.system(size: W_SCALE(35)))
+                                        .frame(width: W_SCALE(35), height: W_SCALE(35))
                                 }
                             }
                         }
                         .padding(.horizontal)
                     }
+                    .padding(.vertical)
+                    .padding(.top)
                 }
             }
             .navigationTitle("选择你的心情")
@@ -272,7 +278,6 @@ struct MoodPickerView: View {
         }
     }
 }
-
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
 
