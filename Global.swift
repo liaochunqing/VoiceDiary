@@ -26,13 +26,6 @@ func H_SCALE(_ value: CGFloat) -> CGFloat {
     return value * (Screen.height / 844)  // 以 iPhone 14 Pro 的高度 844 为基准
 }
 
-// MARK: - 常用颜色
-//extension Color {
-//    static let themePrimary = Color("PrimaryColor") // 主题色，可以在Assets里定义
-//    static let themeSecondary = Color("SecondaryColor")
-//    static let themeBackground = Color(UIColor.systemBackground)
-//}
-
 
 extension Color {
     init(hex: String) {

@@ -15,7 +15,7 @@ class GlobalData: ObservableObject {
     @Published var pageUpdate: Bool = false
     @Published var hideAddButton: Bool = false
 
-    private let maxDiaryPages = 5
+    private let maxDiaryPages = 50
     var currentIndex: Int = -1
     
     //初始化

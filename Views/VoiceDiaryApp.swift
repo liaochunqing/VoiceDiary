@@ -16,6 +16,9 @@ struct VoiceDiaryApp: App {
     @StateObject private var globalData = GlobalData()
     @StateObject private var locationManager = LocationManager()
 
+    init() {
+            UserDefaults.standard.register(defaults: ["isSoundEnabled": true])
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -41,9 +44,6 @@ struct VoiceDiaryApp: App {
     func initializeModelContainer() async {
             let schema = Schema([DiaryEntry.self])
 
-//            if UserDefaults.standard.object(forKey: "iCloudEnabled") == nil {
-//                UserDefaults.standard.set(true, forKey: "iCloudEnabled")
-//            }
             let iCloudEnabled = UserDefaults.standard.bool(forKey: "iCloudEnabled")
         
             let configuration: ModelConfiguration

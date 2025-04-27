@@ -46,6 +46,7 @@ struct SettingsView: View {
     
     @AppStorage("iCloudEnabled") private var iCloudEnabled = false
     @AppStorage("isFaceIDEnabled") private var isFaceIDEnabled = false
+    @AppStorage("isSoundEnabled") private var isSoundEnabled: Bool = true
 
     @Environment(\.modelContext) private var modelContext
 
@@ -248,6 +249,19 @@ struct SettingsView: View {
             .padding(.top)
             
             HStack {
+                Text("翻页声效")
+                    .font(.subheadline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Toggle("", isOn: $isSoundEnabled)
+            }
+            .padding(.horizontal)
+            
+            HStack {
                 Text("面容ID")
                     .font(.subheadline)
                     .foregroundColor(.black)
@@ -257,7 +271,7 @@ struct SettingsView: View {
                 Spacer()
                 
                 Toggle("", isOn: $isFaceIDEnabled)
-                .onChange(of: iCloudEnabled) {
+                .onChange(of: isFaceIDEnabled) {
                                         // 提示用户重启应用以应用更改
                 }
             }

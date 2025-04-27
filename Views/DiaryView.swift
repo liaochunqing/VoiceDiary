@@ -41,7 +41,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
         pageViewController.dataSource = context.coordinator
         pageViewController.delegate = context.coordinator
-        
+                
         // 移除用于翻页的单击手势，但保留其他点击手势
         for recognizer in pageViewController.gestureRecognizers {
             if let tapGesture = recognizer as? UITapGestureRecognizer, tapGesture.numberOfTapsRequired == 1 {
@@ -53,6 +53,9 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         let firstVC = context.coordinator.controllers[2]
         pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
         context.coordinator.currentIndex = 2
+        
+        //音效加载
+        context.coordinator.loadSound()
         return pageViewController
     }
 
@@ -102,27 +105,20 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
     class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: DiaryPageViewController
+        var controllers: [UIViewController]
+
         var currentIndex: Int = 0
         var globalData: GlobalData //
-//        var lastPageUpdateTrigger: Int
 
-        private var pageSoundPlayer: AVAudioPlayer?
-
-         var controllers: [UIViewController]
-        
+        var audioPlayer: AVAudioPlayer?
+        var activePlayers: [AVAudioPlayer] = []
             
             // 正确初始化器
         init(parent: DiaryPageViewController, globalData: GlobalData) {
             self.parent = parent
             self.globalData = globalData
-//            self.lastPageUpdateTrigger = globalData.pageUpdateTrigger
             self.controllers = globalData.diaryPages.map { $0 }
-
-            // 初始化音频播放器
-            if let soundURL = Bundle.main.url(forResource: "page_flip", withExtension: "mp3") {
-                pageSoundPlayer = try? AVAudioPlayer(contentsOf: soundURL)
-                pageSoundPlayer?.prepareToPlay()
-            }
+            
         }
         
         func animateMoveToPage(pageViewController: UIPageViewController,targetIndex:Int,completion: (() -> Void)? = nil)
@@ -139,7 +135,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.05)
                 {
-                    self.playPageSound()
+                    self.playOverlappingPageSound()
                     let vc = self.controllers[index]
                     pageViewController.setViewControllers([vc], direction:direction, animated: true) { Bool in
                         self.currentIndex = index
@@ -148,35 +144,76 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             }
         }
         
-        
-        // 音频播放方法
-        private func playPageSound() {
-//            guard let player = pageSoundPlayer else { return }
-//            if player.isPlaying {
-//                player.currentTime = 0  // 重置播放进度实现即时重播
-//            }
-//            player.play()
+        func loadSound() {
+            if let soundURL = Bundle.main.url(forResource: "page-flip", withExtension: "mp3") {
+                do {
+                    audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+                    audioPlayer?.prepareToPlay()
+                } catch {
+                    print("无法加载音效文件: \(error)")
+                }
+            }
         }
         
+        // 单独音频播放方法
+        private func playPageSound() {
+            
+            let isSoundEnabled = UserDefaults.standard.bool(forKey: "isSoundEnabled")
+            guard isSoundEnabled else { return }
+            
+            guard let player = audioPlayer else { return }
+            if player.isPlaying {
+                player.stop()
+                player.currentTime = 0  // 重置播放进度实现即时重播
+            }
+            player.play()
+        }
+        
+        // 重叠音频播放方法
+        private func playOverlappingPageSound() {
+            
+            let isSoundEnabled = UserDefaults.standard.bool(forKey: "isSoundEnabled")
+            guard isSoundEnabled else { return }
+            
+            guard let soundURL = Bundle.main.url(forResource: "page-flip", withExtension: "mp3") else { return }
+            do {
+                let player = try AVAudioPlayer(contentsOf: soundURL)
+                player.prepareToPlay()
+                player.play()
+                // 保持对播放器的引用，防止被释放
+                self.activePlayers.append(player)
+                // 设置一个定时器，在音效播放完成后移除引用
+                Timer.scheduledTimer(withTimeInterval: player.duration, repeats: false) { _ in
+                    if let index = self.activePlayers.firstIndex(of: player) {
+                        self.activePlayers.remove(at: index)
+                    }
+                }
+            } catch {
+                print("无法播放音效: \(error)")
+            }
+        }
+        
+        func pageViewController(_ pageViewController: UIPageViewController, willTransitionTo pendingViewControllers: [UIViewController]) {
+            playPageSound()
+        }
+
+        // 返回前一个视图控制器
         func pageViewController(_ pageViewController: UIPageViewController,viewControllerBefore viewController: UIViewController) -> UIViewController? {
             guard let index = controllers.firstIndex(of: viewController), index > 0 else { return nil }
-
-            playPageSound()
 
             return controllers[index - 1]
         }
 
+        // 返回下一个视图控制器
         func pageViewController(_ pageViewController: UIPageViewController,viewControllerAfter viewController: UIViewController) -> UIViewController? {
             guard let index = controllers.firstIndex(of: viewController), index < controllers.count - 1 else { return nil }
-            
-            playPageSound()
 
             return controllers[index + 1]
         }
 
         // 当翻页动画完成时，更新 currentPage
         func pageViewController(_ pageViewController: UIPageViewController,didFinishAnimating finished: Bool,previousViewControllers: [UIViewController],transitionCompleted completed: Bool) {
-            
+//
             if completed,
                let visibleViewController = pageViewController.viewControllers?.first,
                let index = controllers.firstIndex(of: visibleViewController){
@@ -188,7 +225,6 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                 }
             }
         }
-
     }
 }
 
@@ -362,8 +398,8 @@ struct DiaryPage: View {
     ContentView()
         .environmentObject(GlobalData())
         .modelContainer(
-                    // ✅ 创建专用于预览的内存存储容器
-                    try! ModelContainer(
+
+            try! ModelContainer(
                         for: DiaryEntry.self,
                         configurations: ModelConfiguration(
                             isStoredInMemoryOnly: true  // 内存存储不污染正式数据
