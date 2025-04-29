@@ -21,17 +21,39 @@ struct ContentView: View {
                 MainAppView()
             } else {
                 // 显示锁定界面
-                Text("应用已锁定，请进行面容 ID 验证。")
+                VStack(spacing: 20) {
+                    // 显示锁定界面
+                    VStack(spacing: 20) {
+                        Text("应用已锁定，请进行面容 ID 验证。")
+                            .font(.headline)
+                            .padding()
+                        
+                        Button(action: {
+                            triggerFaceID()
+                        }) {
+                            Label("使用面容 ID 解锁", systemImage: "faceid")
+                                .font(.title2)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                    }
+                }
             }
         }
         .onAppear {
             if isFaceIDEnabled {
-                authManager.authenticate { success in
-                    self.isUnlocked = success
-                }
+                triggerFaceID()
             } else {
                 self.isUnlocked = true
             }
+        }
+    }
+    
+    private func triggerFaceID() {
+        authManager.authenticate { success in
+            self.isUnlocked = success
         }
     }
 }

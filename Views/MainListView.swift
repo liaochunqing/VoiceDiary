@@ -13,7 +13,7 @@ import SwiftData
 struct MainListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \DiaryEntry.date, order: .reverse) private var allEntries: [DiaryEntry]
-    
+    @AppStorage("existHelpEntry") private var existHelpEntry = false
     @State private var searchText = ""
     @FocusState private var isSearchFieldFocused: Bool
 
@@ -45,18 +45,23 @@ struct MainListView: View {
             .padding(.horizontal)
             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
         }
-        .onChange(of: allEntries) {
-            checkAndInsertDefaultEntry()
-            }
+//        .onChange(of: allEntries) {
+//            checkAndInsertDefaultEntry()
+//            }
         .onAppear {
-            checkAndInsertDefaultEntry()
+            if !existHelpEntry
+            {
+                checkAndInsertDefaultEntry()
+                existHelpEntry = true
             }
+        }
     }
 
     private func checkAndInsertDefaultEntry() {
         if !allEntries.contains(where: { $0.content == defaultContent }) {
             let defaultEntry = DiaryEntry(id: UUID(), content: defaultContent, date: Date())
             modelContext.insert(defaultEntry)
+//            try? modelContext.save()
         }
     }
 }

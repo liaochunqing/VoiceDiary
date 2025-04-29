@@ -23,9 +23,6 @@ struct DiaryView: View {
 }
 
 struct DiaryPageViewController: UIViewControllerRepresentable {
-
-//    var pages: [IdentifiedHostingController<AnyView>]
-
     @EnvironmentObject var globalData: GlobalData
 
     func makeCoordinator() -> Coordinator {
@@ -63,22 +60,20 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
     func updateUIViewController(_ pageViewController: UIPageViewController, context: Context) {
         // 检查页面数量是否发生变化
         if globalData.pageUpdate {
-//            context.coordinator.lastPageUpdateTrigger = globalData.pageUpdateTrigger
-
             // 重新加载页面内容
             context.coordinator.controllers = globalData.diaryPages.map { $0 }
             
             // 获取当前显示的视图控制器
-            if let currentVC = pageViewController.viewControllers?.first,
-               let currentIndex = context.coordinator.controllers.firstIndex(of: currentVC) {
-                // 更新当前索引
-                context.coordinator.currentIndex = currentIndex
-            } else {
-                // 如果无法确定当前视图控制器，默认显示主列表页
-                let mainListVC = context.coordinator.controllers[2]
-                pageViewController.setViewControllers([mainListVC], direction: .forward, animated: false)
-                context.coordinator.currentIndex = 2
-            }
+//            if let currentVC = pageViewController.viewControllers?.first,
+//               let currentIndex = context.coordinator.controllers.firstIndex(of: currentVC) {
+//                // 更新当前索引
+//                context.coordinator.currentIndex = currentIndex
+//            } else {
+//                // 如果无法确定当前视图控制器，默认显示主列表页
+//                let mainListVC = context.coordinator.controllers[2]
+//                pageViewController.setViewControllers([mainListVC], direction: .forward, animated: false)
+//                context.coordinator.currentIndex = 2
+//            }
             
             DispatchQueue.main.async {
                 globalData.pageUpdate = false
@@ -87,15 +82,23 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         
         //响应返回列表按钮
         if globalData.backToList {
-            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: 2)
+            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: 2,animated: true)
             DispatchQueue.main.async {
                 globalData.backToList = false
             }
         }
         
-        //打开详情页
+        //无动画跳转到指定页
+        if globalData.moveToPageNoAnimate {
+            context.coordinator.moveToPage(pageViewController: pageViewController,targetIndex: globalData.currentIndex)
+            DispatchQueue.main.async {
+                globalData.moveToPageNoAnimate = false // 重置状态避免重复触发
+            }
+        }
+        
+        //动画跳转到指定页
         if globalData.moveToPage {
-            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: globalData.currentIndex)
+            context.coordinator.animateMoveToPage(pageViewController: pageViewController,targetIndex: globalData.currentIndex,animated: true)
             DispatchQueue.main.async {
                 globalData.moveToPage = false // 重置状态避免重复触发
             }
@@ -113,15 +116,13 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         var audioPlayer: AVAudioPlayer?
         var activePlayers: [AVAudioPlayer] = []
             
-            // 正确初始化器
         init(parent: DiaryPageViewController, globalData: GlobalData) {
             self.parent = parent
             self.globalData = globalData
             self.controllers = globalData.diaryPages.map { $0 }
-            
         }
         
-        func animateMoveToPage(pageViewController: UIPageViewController,targetIndex:Int)
+        func animateMoveToPage(pageViewController: UIPageViewController,targetIndex:Int,animated:Bool)
         {
             let currentIndex = self.currentIndex
             guard currentIndex != targetIndex else { return }
@@ -130,19 +131,34 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             let direction: UIPageViewController.NavigationDirection = (step > 0) ? .forward : .reverse
             let fromIndex = currentIndex + (step > 0 ? 1 : -1) // 设置起始索引
 
-            for index in stride(from: fromIndex, through: targetIndex, by: step)
-            {
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.07)
+            if animated == false{
+                let vc = self.controllers[targetIndex]
+                pageViewController.setViewControllers([vc], direction:direction, animated: false){ Bool in
+                    self.currentIndex = targetIndex
+               }
+            }else{
+                for index in stride(from: fromIndex, through: targetIndex, by: step)
                 {
-                    let vc = self.controllers[index]
-                    pageViewController.setViewControllers([vc], direction:direction, animated: true) { Bool in
-                        self.currentIndex = index
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.07)
+                    {
+                        let vc = self.controllers[index]
+                        pageViewController.setViewControllers([vc], direction:direction, animated: true) { Bool in
+                            self.currentIndex = index
+                        }
+                        
+                        self.playOverlappingPageSound()
                     }
-                    
-                    self.playOverlappingPageSound()
                 }
             }
         }
+        
+        func moveToPage(pageViewController: UIPageViewController,targetIndex:Int){
+            let vc = self.controllers[targetIndex]
+            pageViewController.setViewControllers([vc], direction:.forward, animated: false){ Bool in
+                self.currentIndex = targetIndex
+           }
+        }
+
         
         func loadSound() {
             if let soundURL = Bundle.main.url(forResource: "page-flip", withExtension: "mp3") {
@@ -298,26 +314,25 @@ struct DiaryPage: View {
                                 DataManager.delete(entry, from: modelContext)
                                 try? modelContext.save()
                         
-//                                var newCenterIndex: Int? = nil
-//                                if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex < entries.count {
-//                                    // 如果存在下一个条目，选择它
-//                                    newCenterIndex = deleteEntryIndex
-//                                } else if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex - 1 >= 0 {
-//                                    // 否则选择上一个条目
-//                                    newCenterIndex = deleteEntryIndex - 1
-//                                }
-//                                        
-//                                if let newCenterIndex = newCenterIndex, newCenterIndex < entries.count {
-//                                    let currentEntry = entries[newCenterIndex]
-//                                    let index = globalData.updatePageBy(entry: currentEntry, entries: entries)
-//                                    globalData.pageUpdate = true
-//                                    globalData.currentIndex = index
-//                                    globalData.moveToPage = true
-//
-//                                } else {
-                                    globalData.backToList = true
-//                                }
-                            }
+                                var newCenterIndex: Int? = nil
+                                if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex < entries.count {
+                                    // 如果存在下一个条目，选择它
+                                    newCenterIndex = deleteEntryIndex
+                                } else if let deleteEntryIndex = deleteEntryIndex, deleteEntryIndex - 1 >= 0 {
+                                    // 否则选择上一个条目
+                                    newCenterIndex = deleteEntryIndex - 1
+                                }
+                                        
+                                if let newCenterIndex = newCenterIndex, newCenterIndex < entries.count {
+                                    let currentEntry = entries[newCenterIndex]
+                                    let index = globalData.updatePageBy(entry: currentEntry, entries: entries)
+                                    globalData.pageUpdate = true
+                                    globalData.currentIndex = index
+                                    globalData.moveToPageNoAnimate = true
+                                } else {
+                                    globalData.currentIndex = 2//回到列表页
+                                    globalData.moveToPageNoAnimate = true                                }
+                                }
                         }
                         Button("取消", role: .cancel) {}
                     }

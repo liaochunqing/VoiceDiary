@@ -100,7 +100,7 @@ struct AddDiaryView: View {
                             //如果当前界面不是在列表界面，则跳转到新增页面
                             if globalData.currentIndex > 2{
                                 globalData.currentIndex = index
-                                globalData.moveToPage = true
+                                globalData.moveToPageNoAnimate = true
                             }
                         }
 

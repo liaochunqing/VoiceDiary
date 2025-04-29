@@ -12,6 +12,8 @@ class GlobalData: ObservableObject {
     @Published var diaryPages: [IdentifiedHostingController<AnyView>] = []
     @Published var backToList: Bool = false
     @Published var moveToPage: Bool = false
+    @Published var moveToPageNoAnimate: Bool = false
+
     @Published var pageUpdate: Bool = false
     @Published var hideAddButton: Bool = false
 
