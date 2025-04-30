@@ -8,41 +8,30 @@
 import Foundation
 import SwiftUI
 import SwiftData
-enum TimeRangeTab: String, CaseIterable, Identifiable {
-    case month = "本月"
-    case year = "本年"
-    case all = "全部"
-    
-    var id: String { self.rawValue }
-}
+import StoreKit
 
-enum Tab: String, CaseIterable, Identifiable {
-    case small = "小"
-    case mid = "中"
-    case big = "大"
-    
-    var id: String { self.rawValue }
-}
-
-enum Speed: String, CaseIterable, Identifiable {
-    case small = "慢"
-    case mid = "中"
-    case big = "快"
-    
-    var id: String { self.rawValue }
-}
 
 struct SettingsView: View {
     @State private var selectedTimeRange: TimeRangeTab = .month
     @State private var selectedTab: Tab = .mid
     @State private var selectedSpeed: Speed = .mid
+    @State private var showRestartAlert = false
 
     @State private var emojis: [String] = []
     @State private var emojisSize: CGFloat = W_SCALE(20)
     @State private var isRotationEnabled = true
     @State private var gravityScale: CGFloat = W_SCALE(10)
     
-    let rightButtonSize = W_SCALE(25)
+    @State private var currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "未知"
+    @State private var appStoreVersion: String = ""
+    @State private var updateAvailable: Bool = false
+    
+    @Environment(\.openURL) var openURL
+
+    let rightButtonSize = W_SCALE(36)
+    let appID = "6670278331" //
+    let appURL = URL(string: "https://apps.apple.com/app/6670278331")! //
+
     
     @AppStorage("iCloudEnabled") private var iCloudEnabled = false
     @AppStorage("isFaceIDEnabled") private var isFaceIDEnabled = false
@@ -105,6 +94,17 @@ struct SettingsView: View {
                         .padding(.leading)
 
                     supportSetup
+                    
+                    Text("其他作品")
+                        .font(.subheadline)
+                        .foregroundColor(Color(.systemGray))
+                        .frame(maxWidth: .infinity,alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .padding(.top)
+                        .padding(.top)
+                        .padding(.leading)
+
+                    otherProduct
                     
                     Spacer()
                    
@@ -230,6 +230,7 @@ struct SettingsView: View {
     }
     
     private var generalSetup: some View {
+
         VStack(spacing: H_SCALE(16)) {
             HStack {
                 Text("iCloud同步")
@@ -242,8 +243,13 @@ struct SettingsView: View {
                 
                 Toggle("", isOn: $iCloudEnabled)
                 .onChange(of: iCloudEnabled) {
-                                        // 提示用户重启应用以应用更改
-                }
+                    showRestartAlert = true
+                    }
+                .alert("需要重启应用", isPresented: $showRestartAlert) {
+                            Button("知道了", role: .cancel) { }
+                        } message: {
+                            Text("重启app才能生效")
+                        }
             }
             .padding(.horizontal)
             .padding(.top)
@@ -276,6 +282,7 @@ struct SettingsView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.bottom)
 
         }
         .background(Color.white)
@@ -318,16 +325,16 @@ struct SettingsView: View {
                 
                 Spacer()
                 
-                Button(action: { }) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: rightButtonSize, height: rightButtonSize)
-                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.black)
-                    }
-                }
+                ShareLink(item: appURL) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.white)
+                                        .frame(width: rightButtonSize, height: rightButtonSize)
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.black)
+                                }
+                            }
             }
             .padding(.horizontal)
             
@@ -340,7 +347,20 @@ struct SettingsView: View {
                 
                 Spacer()
                 
-                Button(action: { }) {
+                Button(action: {
+                    // 方法一：弹出评分提示
+                    if let scene = UIApplication.shared.connectedScenes
+                        .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                        SKStoreReviewController.requestReview(in: scene)
+                    }
+
+                    // 方法二：跳转到 App Store 的评价页面
+                    /*
+                    if let url = URL(string: "https://apps.apple.com/app/id\(appID)?action=write-review") {
+                        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                    }
+                    */
+                }) {
                     ZStack {
                         Circle()
                             .fill(Color.white)
@@ -350,15 +370,78 @@ struct SettingsView: View {
                             .foregroundColor(.black)
                     }
                 }
+                
             }
             .padding(.horizontal)
             
             HStack {
-                Text("其他作品")
+                Text("当前版本")
                     .font(.subheadline)
                     .foregroundColor(.black)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .multilineTextAlignment(.leading)
+
+                Spacer()
+
+                if updateAvailable {
+                    Button(action: {
+                        // 跳转到 App Store 更新页面
+                        if let url = URL(string: "https://apps.apple.com/\(appID))") {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        Text("去更新")
+                            .foregroundColor(.blue)
+                    }
+                } else {
+                    Text("\(currentVersion)(已是最新)")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+            .onAppear {
+                fetchAppStoreVersion { version in
+                    DispatchQueue.main.async {
+                        if let version = version {
+                            self.appStoreVersion = version
+                            self.updateAvailable = version.compare(self.currentVersion, options: .numeric) == .orderedDescending
+                        }
+                    }
+                }
+            }
+
+        }
+        .background(Color.white)
+        .cornerRadius(W_SCALE(15))
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+    }
+    
+    private var otherProduct: some View {
+
+        VStack(spacing: H_SCALE(16)) {
+            HStack {
+                Image("sleep") // 替换为你的图片名称
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: W_SCALE(40), maxHeight: W_SCALE(40))
+                    .cornerRadius(8)
+                
+                VStack{
+                    Text("睡眠伙伴")
+                        .font(.subheadline)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                    
+                    Spacer()
+                    
+                    Text("专注睡眠的音乐和白噪音")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                }
                 
                 Spacer()
                 
@@ -372,16 +455,41 @@ struct SettingsView: View {
                             .foregroundColor(.black)
                     }
                 }
+                
             }
-            .padding(.horizontal)
-            .padding(.bottom)
-
+            .padding()
         }
         .background(Color.white)
         .cornerRadius(W_SCALE(15))
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+        .onTapGesture {
+            if let url = URL(string: "https://apps.apple.com/app/6504686224") {
+                                openURL(url)
+                            }
+        }
+    }
+
+    func fetchAppStoreVersion(completion: @escaping (String?) -> Void) {
+        guard let bundleId = Bundle.main.bundleIdentifier,
+              let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleId)") else {
+            completion(nil)
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let results = json["results"] as? [[String: Any]],
+                  let appStoreVersion = results.first?["version"] as? String else {
+                completion(nil)
+                return
+            }
+            completion(appStoreVersion)
+        }.resume()
     }
 }
+
+
 
 import LocalAuthentication
 
@@ -405,6 +513,31 @@ class BiometricAuthManager {
             }
         }
     }
+}
+
+
+enum TimeRangeTab: String, CaseIterable, Identifiable {
+    case month = "本月"
+    case year = "本年"
+    case all = "全部"
+    
+    var id: String { self.rawValue }
+}
+
+enum Tab: String, CaseIterable, Identifiable {
+    case small = "小"
+    case mid = "中"
+    case big = "大"
+    
+    var id: String { self.rawValue }
+}
+
+enum Speed: String, CaseIterable, Identifiable {
+    case small = "慢"
+    case mid = "中"
+    case big = "快"
+    
+    var id: String { self.rawValue }
 }
 
 #Preview {

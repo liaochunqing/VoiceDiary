@@ -34,10 +34,6 @@ struct VoiceDiaryApp: App {
                         await initializeModelContainer()
                     }
             }
-//            ContentView()
-//                .modelContainer(for:[DiaryEntry.self])
-//                .environmentObject(globalData)
-
         }
     }
     
