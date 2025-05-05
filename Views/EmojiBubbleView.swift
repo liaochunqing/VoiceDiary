@@ -17,6 +17,7 @@ struct EmojiBubbleView: View {
     let emojiSize: CGFloat
     let isRotationEnabled: Bool
     let gravityScale: CGFloat
+    let isThemeChanged:Bool
     @State private var sceneID = UUID()
 
     var scene: SKScene {
@@ -24,7 +25,9 @@ struct EmojiBubbleView: View {
                          emojis: emojis,
                          emojiSize: emojiSize,
                          isRotationEnabled: isRotationEnabled,
-                         gravityScale: gravityScale)
+                         gravityScale: gravityScale,
+                         isThemeChanged: isThemeChanged
+            )
     }
 
     var body: some View {
@@ -47,6 +50,9 @@ struct EmojiBubbleView: View {
             .onChange(of: gravityScale) {
                 sceneID = UUID() // 更新 sceneID，触发视图刷新
             }
+            .onChange(of: isThemeChanged) {
+                sceneID = UUID() // 更新 sceneID，触发视图刷新
+            }
     }
 }
 
@@ -55,6 +61,7 @@ class EmojiBubbleScene: SKScene, SKPhysicsContactDelegate {
     private let emojiSize: CGFloat
     private let isRotationEnabled:Bool
     private let gravityScale: CGFloat
+    private let isThemeChanged:Bool
     private let motionManager = CMMotionManager()
     private var previousGravity: CGVector = .zero
     private let gravityThreshold: CGFloat = 0.02 // 重力变化阈值
@@ -65,18 +72,20 @@ class EmojiBubbleScene: SKScene, SKPhysicsContactDelegate {
         static let boundary: UInt32 = 0x1 << 1
     }
 
-    init(size: CGSize, emojis: [String], emojiSize: CGFloat,isRotationEnabled:Bool, gravityScale: CGFloat) {
+    init(size: CGSize, emojis: [String], emojiSize: CGFloat,isRotationEnabled:Bool, gravityScale: CGFloat,isThemeChanged:Bool) {
         self.emojis = emojis
         self.emojiSize = emojiSize
         self.isRotationEnabled = isRotationEnabled
         self.gravityScale = gravityScale
+        self.isThemeChanged = isThemeChanged
         super.init(size: size)
         self.scaleMode = .resizeFill
         self.physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(origin: .zero, size: size))
         self.physicsBody?.categoryBitMask = PhysicsCategory.boundary
         self.physicsWorld.contactDelegate = self
         self.physicsWorld.gravity = .zero
-        self.backgroundColor = .white // 设置背景颜色为白色
+        self.backgroundColor = .secondarySystemBackground // 设置背景颜色为白色
+//            .background(Color(.secondarySystemBackground))
 
         setupEmojis()
         startDeviceMotionUpdates()

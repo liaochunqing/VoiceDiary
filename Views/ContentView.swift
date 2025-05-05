@@ -13,12 +13,15 @@ struct ContentView: View {
     @AppStorage("isFaceIDEnabled") private var isFaceIDEnabled = false
     @State private var isUnlocked = false
     private let authManager = BiometricAuthManager()
-    
+    @AppStorage("selectedTheme") private var selectedTheme: AppTheme = .system
+
     var body: some View {
         Group {
             if isUnlocked || !isFaceIDEnabled {
                 // 显示主界面内容
                 MainAppView()
+                    .preferredColorScheme(selectedTheme.colorScheme)
+
             } else {
                 // 显示锁定界面
                 VStack(spacing: 20) {
@@ -70,7 +73,7 @@ struct MainAppView: View {
             ZStack {
                 // 主内容视图
                 DiaryView()
-                    .background(Color(.secondarySystemBackground))  // 使用系统默认背景颜色
+                    .background(Color(.systemBackground))  // 使用系统默认背景颜色
                 
                 // 可拖动的悬浮按钮
                 if globalData.hideAddButton == false {
@@ -91,7 +94,6 @@ struct MainAppView: View {
                                 }
                         )
                 }
-                
             }
             .onAppear {
                 // 在视图出现时初始化按钮位置为屏幕右下角

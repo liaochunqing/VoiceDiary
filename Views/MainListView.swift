@@ -43,11 +43,8 @@ struct MainListView: View {
                 isSearchFieldFocused: $isSearchFieldFocused
             )
             .padding(.horizontal)
-            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+            .shadow(color: Color.primary.opacity(0.2), radius: 4, x: 2, y: 2)
         }
-//        .onChange(of: allEntries) {
-//            checkAndInsertDefaultEntry()
-//            }
         .onAppear {
             if !existHelpEntry
             {
@@ -74,6 +71,7 @@ struct DiaryListView: View {
     @EnvironmentObject var globalData: GlobalData
     @Binding var searchText: String
     var isSearchFieldFocused: FocusState<Bool>.Binding
+    let subFontSize = W_SCALE(12)
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -81,11 +79,11 @@ struct DiaryListView: View {
                 ForEach(entries.indices, id: \.self) { i in
                     let entry = entries[i]
                     
-                    VStack(alignment: .leading, spacing: H_SCALE(5)) {
+                    VStack(alignment: .leading, spacing: H_SCALE(3)) {
                         HStack(spacing: W_SCALE(10)) {
                             Text(formatDate(entry.date))
-                                .font(.system(size: W_SCALE(16)))
-                                .foregroundColor(Color(UIColor.secondaryLabel))
+                                .font(.system(size: subFontSize))
+                                .foregroundStyle(.secondary)
                                 .frame(alignment: .leading)
                                 .multilineTextAlignment(.leading)
                             
@@ -95,28 +93,29 @@ struct DiaryListView: View {
                             
                             // 在这里加编号，格式化成三位数
                             Text(String(format: "%d", i + 1))
-                                .font(.system(size: W_SCALE(16)))
-                                .foregroundColor(Color(UIColor.secondaryLabel))
+                                .font(.system(size: subFontSize))
+                                .foregroundStyle(.secondary)
                         }
 
                         Text(entry.content ?? "")
                             .multilineTextAlignment(.leading)
-                            .foregroundColor(Color(UIColor.label))
-                            .font(.system(size: W_SCALE(23)))
+                            .foregroundStyle(.primary)
+                            .font(.system(size: W_SCALE(17)))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         
                         Text(entry.location ?? "")
-                            .font(.system(size: W_SCALE(16)))
-                            .foregroundColor(Color(UIColor.secondaryLabel))
+                            .font(.system(size: subFontSize))
+                            .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .multilineTextAlignment(.leading)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .frame(height: Screen.height * 0.1)
                     .listRowSeparator(.hidden)
-                    .listRowBackground(Color.white)
+                    .listRowBackground(Color(.systemBackground))
                     .contentShape(Rectangle())
                     .id(entry.id) // 为滚动定位设置 ID
+                    .cornerRadius(W_SCALE(8))
                     .onTapGesture {
                         guard !isTapDisabled else { return }
                         isTapDisabled = true
@@ -146,8 +145,12 @@ struct DiaryListView: View {
                     }
                 }
             }
-            .listRowSpacing(H_SCALE(20))
+//            .cornerRadius(W_SCALE(8))
+            .scrollIndicators(.hidden)
+            .listRowSpacing(H_SCALE(15))
             .listStyle(PlainListStyle())
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
         }
     }
 }
@@ -174,7 +177,7 @@ struct SearchBar: View {
                         self.text = ""
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

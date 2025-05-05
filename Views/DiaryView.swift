@@ -286,8 +286,8 @@ struct DiaryPage: View {
                         let pageNumber = index + 1
                         Text("第 \(pageNumber) 页")
                             .font(.system(size: W_SCALE(18), weight: .medium))
-                            .foregroundColor(.black)
-                    }                    
+                            .foregroundColor(.primary)
+                    }
                     Spacer()
                     
                     Button(action: {
@@ -364,18 +364,20 @@ struct DiaryPage: View {
                             .padding()
                     }
                     .scrollBounceBehavior(.basedOnSize)
-                    .background(Color(UIColor.white))
+                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(W_SCALE(20))
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 2, y: 2)
+//                    .shadow(color: Color.black.opacity(0.5), radius: 4, x: 2, y: 2)
+                    .shadow(color: Color.white.opacity(0.9), radius: 0, x: -2, y: -2)
+
                     .padding()
                     
                     HStack(spacing: infoRowSpacing) {
                         Image(systemName: "clock")
-                            .foregroundColor(.gray)
+//                            .foregroundColor(.gray)
                         
                         Text(formatDate(entry.date))
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                         
                         Text("\(entry.emojiString)")
                             .font(.body)
@@ -384,21 +386,21 @@ struct DiaryPage: View {
                     .padding([.leading])
                     
                     HStack(spacing: infoRowSpacing) {
-                        Image(systemName: "character")
-                            .foregroundColor(.gray)
+                        Image(systemName: "character.cursor.ibeam")
+//                            .foregroundColor(.gray)
                         Text("字数 \(entry.content?.count ?? 0)")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                         Spacer()
                     }
                     .padding(.horizontal)
                     
                     HStack(spacing: infoRowSpacing) {
                         Image(systemName: "mappin.and.ellipse")
-                            .foregroundColor(.gray)
+//                            .foregroundColor(.gray)
                         Text(entry.location ?? "")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                         Spacer()
                     }
                     .padding(.horizontal)

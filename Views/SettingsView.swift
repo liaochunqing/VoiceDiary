@@ -21,13 +21,15 @@ struct SettingsView: View {
     @State private var emojisSize: CGFloat = W_SCALE(20)
     @State private var isRotationEnabled = true
     @State private var gravityScale: CGFloat = W_SCALE(10)
+    @State private var isThemeChanged = false
     
     @State private var currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "未知"
     @State private var appStoreVersion: String = ""
     @State private var updateAvailable: Bool = false
     
     @Environment(\.openURL) var openURL
-
+    @AppStorage("selectedTheme") private var selectedTheme: AppTheme = .light
+    
     let rightButtonSize = W_SCALE(36)
     let appID = "6670278331" //
     let appURL = URL(string: "https://apps.apple.com/app/6670278331")! //
@@ -41,7 +43,7 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack{
-            Color(.secondarySystemBackground)
+            Color(.systemBackground)
                 .ignoresSafeArea()
             
             // 包裹 VStack 的 ScrollView 以启用垂直滚动
@@ -50,13 +52,14 @@ struct SettingsView: View {
                 {
                     Text("设置")
                         .font(.title)
-                        .foregroundColor(.black)
+                        .foregroundColor(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .multilineTextAlignment(.leading)
                     
+                    
                     Text("emoji储蓄罐")
                         .font(.subheadline)
-                        .foregroundColor(Color(.systemGray))
+                        .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity,alignment: .leading)
                         .multilineTextAlignment(.leading)
                         .padding(.top)
@@ -68,14 +71,15 @@ struct SettingsView: View {
                         emojis: emojis,
                         emojiSize: emojisSize,
                         isRotationEnabled:isRotationEnabled,
-                        gravityScale: gravityScale
+                        gravityScale: gravityScale,
+                        isThemeChanged: isThemeChanged
                     )
                                         
                     emojiSetup
                     
                     Text("通用")
                         .font(.subheadline)
-                        .foregroundColor(Color(.systemGray))
+                        .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity,alignment: .leading)
                         .multilineTextAlignment(.leading)
                         .padding(.top)
@@ -86,7 +90,7 @@ struct SettingsView: View {
                     
                     Text("支持")
                         .font(.subheadline)
-                        .foregroundColor(Color(.systemGray))
+                        .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity,alignment: .leading)
                         .multilineTextAlignment(.leading)
                         .padding(.top)
@@ -97,7 +101,7 @@ struct SettingsView: View {
                     
                     Text("其他作品")
                         .font(.subheadline)
-                        .foregroundColor(Color(.systemGray))
+                        .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity,alignment: .leading)
                         .multilineTextAlignment(.leading)
                         .padding(.top)
@@ -124,9 +128,10 @@ struct SettingsView: View {
             HStack {
                 Text("emoji时间段")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
+
                 
                 Picker("", selection: $selectedTimeRange) {
                     ForEach(TimeRangeTab.allCases) { tab in
@@ -153,10 +158,10 @@ struct SettingsView: View {
             HStack {
                 Text("emoji大小")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
-                
+
                 Spacer()
                 // 顶部 Segment 控制
                 Picker("", selection: $selectedTab) {
@@ -182,10 +187,10 @@ struct SettingsView: View {
             HStack {
                 Text("重力加速度")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
-                
+
                 Spacer()
                 // 顶部 Segment 控制
                 Picker("", selection: $selectedSpeed) {
@@ -210,10 +215,10 @@ struct SettingsView: View {
             HStack {
                 Text("emoji旋转")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
-                
+
                 Spacer()
                 
                 Toggle("", isOn: $isRotationEnabled)
@@ -223,7 +228,7 @@ struct SettingsView: View {
             .padding(.bottom)
 
         }
-        .background(Color.white)
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
 
@@ -233,9 +238,31 @@ struct SettingsView: View {
 
         VStack(spacing: H_SCALE(16)) {
             HStack {
+                Text("主题外观")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Picker("", selection: $selectedTheme) {
+                        ForEach(AppTheme.allCases) { theme in
+                            Text(theme.displayName).tag(theme)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .onChange(of: selectedTheme) {
+                        isThemeChanged = !isThemeChanged
+                        }
+            }
+            .padding(.horizontal)
+            .padding(.top)
+            
+            HStack {
                 Text("iCloud同步")
                     .font(.subheadline)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
                 
@@ -252,12 +279,12 @@ struct SettingsView: View {
                         }
             }
             .padding(.horizontal)
-            .padding(.top)
+//            .padding(.top)
             
             HStack {
                 Text("翻页声效")
                     .font(.subheadline)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
                 
@@ -270,7 +297,7 @@ struct SettingsView: View {
             HStack {
                 Text("面容ID")
                     .font(.subheadline)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
                 
@@ -285,7 +312,7 @@ struct SettingsView: View {
             .padding(.bottom)
 
         }
-        .background(Color.white)
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
         
@@ -296,7 +323,7 @@ struct SettingsView: View {
             HStack {
                 Text("意见反馈")
                     .font(.subheadline)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
                 
@@ -309,7 +336,7 @@ struct SettingsView: View {
                             .frame(width: rightButtonSize, height: rightButtonSize)
                             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
                         Image(systemName: "chevron.right")
-                            .foregroundColor(.black)
+                            .foregroundStyle(.black)
                     }
                 }
             }
@@ -319,7 +346,7 @@ struct SettingsView: View {
             HStack {
                 Text("分享给朋友")
                     .font(.subheadline)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
                 
@@ -332,7 +359,7 @@ struct SettingsView: View {
                                         .frame(width: rightButtonSize, height: rightButtonSize)
                                         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
                                     Image(systemName: "chevron.right")
-                                        .foregroundColor(.black)
+                                        .foregroundStyle(.black)
                                 }
                             }
             }
@@ -341,7 +368,7 @@ struct SettingsView: View {
             HStack {
                 Text("给好评")
                     .font(.subheadline)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
                 
@@ -367,7 +394,7 @@ struct SettingsView: View {
                             .frame(width: rightButtonSize, height: rightButtonSize)
                             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
                         Image(systemName: "chevron.right")
-                            .foregroundColor(.black)
+                            .foregroundStyle(.black)
                     }
                 }
                 
@@ -377,7 +404,7 @@ struct SettingsView: View {
             HStack {
                 Text("当前版本")
                     .font(.subheadline)
-                    .foregroundColor(.black)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Spacer()
@@ -393,7 +420,7 @@ struct SettingsView: View {
                             .foregroundColor(.blue)
                     }
                 } else {
-                    Text("\(currentVersion)(已是最新)")
+                    Text("\(currentVersion) (已是最新)")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -412,7 +439,7 @@ struct SettingsView: View {
             }
 
         }
-        .background(Color.white)
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
     }
@@ -430,7 +457,7 @@ struct SettingsView: View {
                 VStack{
                     Text("睡眠伙伴")
                         .font(.subheadline)
-                        .foregroundColor(.black)
+                        .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .multilineTextAlignment(.leading)
                     
@@ -452,14 +479,14 @@ struct SettingsView: View {
                             .frame(width: rightButtonSize, height: rightButtonSize)
                             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
                         Image(systemName: "chevron.right")
-                            .foregroundColor(.black)
+                            .foregroundStyle(.black)
                     }
                 }
                 
             }
             .padding()
         }
-        .background(Color.white)
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
         .onTapGesture {
@@ -539,6 +566,31 @@ enum Speed: String, CaseIterable, Identifiable {
     
     var id: String { self.rawValue }
 }
+
+enum AppTheme: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { self.rawValue }
+
+    var displayName: String {
+        switch self {
+        case .system: return "自动"
+        case .light: return "浅色"
+        case .dark: return "深色"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+}
+
 
 #Preview {
     ContentView()

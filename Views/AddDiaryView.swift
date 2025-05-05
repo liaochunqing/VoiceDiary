@@ -5,7 +5,6 @@
 //  Created by chunqing liao on 2025/3/20.
 //
 
-// AddDiaryView.swift
 import SwiftUI
 import SwiftData
 
@@ -59,6 +58,7 @@ struct AddDiaryView: View {
                 ToolbarItem(placement: .principal) {
                     Text(formatDate_onlyDate(date))
                         .font(.custom("HelveticaNeue-Regular", size: W_SCALE(32)))
+                        .foregroundStyle(.primary)
                         .tracking(-1)
                 }
             }
@@ -114,21 +114,22 @@ struct AddDiaryView: View {
                         
                     } label: {
                         ZStack {
+                                                    
                             Circle()
-                                .fill(diaryContent.isEmpty ? Color.gray.opacity(0.3) : Color.white)
+                                .fill(diaryContent.isEmpty ? Color.gray.opacity(0.1) : Color.white)
                                 .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                .shadow(color: diaryContent.isEmpty ? Color.clear : Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
                             Image(systemName: "checkmark")
-                                .foregroundColor(diaryContent.isEmpty ? .gray : .black)
+                                .foregroundColor(.black.opacity(0.8))
                         }
                     }
                     .disabled(diaryContent.isEmpty)
                 }
             }
             .onAppear {
-                DispatchQueue.main.async {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         isFocused = true
-                }
+                    }
                 
                 if let entry = existingEntry {
                     diaryContent = entry.content ?? ""
@@ -144,7 +145,8 @@ struct AddDiaryView: View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "face.smiling")
             Text("\(emojiString)(可选)")
-                .font(.body)
+                .font(.subheadline)
+                .foregroundColor(.primary)
             Spacer()
         }
         .padding(.top)
@@ -154,21 +156,15 @@ struct AddDiaryView: View {
         .fullScreenCover(isPresented: $showMoodPicker) {
             MoodPickerView(selectedEmoji: $emojiString, moodCategories: moodCategories)
         }
-//        .confirmationDialog("选择你的心情", isPresented: $showMoodPicker, titleVisibility: .visible) {
-//            ForEach(["😄 开心", "😊 满足", "🤔 思考", "😐 平静", "😢 难过", "😭 崩溃", "😡 生气", "😤 烦躁", "😴 疲惫", "🤒 不舒服", "🥳 兴奋", "🤯 累炸了"], id: \.self) { mood in
-//                Button(mood) { emojiString = String(mood.prefix(1)) }
-//            }
-//            Button("取消", role: .cancel) {}
-//        }
     }
 
     private var wordCount: some View {
         HStack(spacing: infoRowSpacing) {
-            Image(systemName: "character")
-                .foregroundColor(.gray)
+            Image(systemName: "character.cursor.ibeam")
+//                .foregroundColor(.gray)
             Text("字数 \(diaryContent.count)")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
             Spacer()
         }
         .padding(.horizontal)
@@ -177,10 +173,10 @@ struct AddDiaryView: View {
     private var locationInfo: some View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "mappin.and.ellipse")
-                .foregroundColor(.gray)
+//                .foregroundColor(.gray)
             Text(locationManager.address)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
             Spacer()
         }
         .padding(.horizontal)
@@ -189,6 +185,9 @@ struct AddDiaryView: View {
 
     private var diaryEditor: some View {
         ZStack(alignment: .topLeading) {
+            Color(.secondarySystemBackground)
+                .ignoresSafeArea()
+            
             Rectangle()
                 .fill(Color(.secondarySystemBackground))
                 .cornerRadius(25)
@@ -244,7 +243,7 @@ struct MoodPickerView: View {
                 ForEach(moodCategories) { category in
                     HStack {
                         Text(category.name)
-                            .font(.title)
+                            .font(.title2)
                             .frame(width: W_SCALE(50), alignment: .leading)
                             .padding(.leading)
 
