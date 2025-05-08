@@ -30,6 +30,7 @@ struct AddDiaryView: View {
     @State private var diaryContent: String = ""
     @State private var emojiString: String = "🙂"
     @State private var showMoodPicker = false
+    @State private var showLocation = false
 
     let infoRowSpacing: CGFloat = W_SCALE(10)
 
@@ -87,15 +88,17 @@ struct AddDiaryView: View {
                         if let entry = existingEntry {
                             entry.content = diaryContent
                             entry.date = date
-                            entry.location = locationManager.address
+                            entry.location = showLocation ? locationManager.address : ""
                             entry.emojiString = emojiString
+                            entry.showLocation = showLocation
                         } else {
                             let newEntry = DiaryEntry(
                                 id: UUID(),
                                 content: diaryContent,
                                 date: date,
-                                location: locationManager.address,
-                                emojiString: emojiString
+                                location:  showLocation ? locationManager.address : "",
+                                emojiString: emojiString,
+                                showLocation: showLocation
                             )
                             modelContext.insert(newEntry)
                             let index = globalData.getIndexOfPageBy(entry: newEntry, entries: diaryEntries)
@@ -133,14 +136,15 @@ struct AddDiaryView: View {
                 }
             }
             .onAppear {
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        isFocused = true
-//                    }
-                
                 if let entry = existingEntry {
                     diaryContent = entry.content ?? ""
                     date = entry.date
                     emojiString = entry.emojiString
+                    showLocation = entry.showLocation
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isFocused = true
                 }
             }
         }
@@ -179,11 +183,19 @@ struct AddDiaryView: View {
     private var locationInfo: some View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "mappin.and.ellipse")
-//                .foregroundColor(.gray)
-            Text(locationManager.address)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+
+            if showLocation{
+                Text(locationManager.address)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+            }
+            
             Spacer()
+            Toggle("", isOn: $showLocation)
+//            .padding(.horizontal)
+
         }
         .padding(.horizontal)
         .padding(.bottom)
@@ -283,6 +295,7 @@ struct MoodPickerView: View {
         }
     }
 }
+
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
 

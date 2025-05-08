@@ -14,6 +14,7 @@ struct MainListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \DiaryEntry.date, order: .reverse) private var allEntries: [DiaryEntry]
     @AppStorage("existHelpEntry") private var existHelpEntry = false
+
     @State private var searchText = ""
     @FocusState private var isSearchFieldFocused: Bool
     
@@ -64,7 +65,8 @@ struct MainListView: View {
                 content: defaultContent,
                 date: Date(),
                 location: locationManager.address,
-                emojiString: emojiString
+                emojiString: emojiString,
+                fontStyle: ""
             )
             
             modelContext.insert(defaultEntry)
@@ -74,6 +76,7 @@ struct MainListView: View {
 
 struct DiaryListView: View {
     @State private var isTapDisabled = false
+    @AppStorage("showLocation") private var showLocation: Bool = true
 
     let entries: [DiaryEntry]
     let modelContext: ModelContext
@@ -112,16 +115,20 @@ struct DiaryListView: View {
                             .font(.system(size: W_SCALE(18)))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         
-                        Text(entry.location ?? "")
-                            .font(.system(size: subFontSize))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
+                        if entry.showLocation {
+                            Text(entry.location ?? "")
+                                .font(.system(size: subFontSize))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .multilineTextAlignment(.leading)
+                        }
+                        
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .frame(height: Screen.height * 0.105)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color(.tertiarySystemBackground))
+                    .contentShape(Rectangle())
                     .id(entry.id) // 为滚动定位设置 ID
                     .onTapGesture {
                         guard !isTapDisabled else { return }

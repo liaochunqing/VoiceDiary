@@ -21,8 +21,12 @@ class DiaryEntry {
     var location: String? = ""                // 日记记录的位置信息，默认为空字符串
     var isNew: Bool = false                   // 是否新建页，默认为否
     var emojiString: String = ""                // 日记心情
-    var pageNumber: Int = -1                // 日记心情
+    var pageNumber: Int = -1                // 页码
+    var showLocation: Bool = false                   // 是否显示地址
+//    var fontColor: Color = .primary                   // 字体颜色
+    var fontStyle: String = ""                   // 字体类型
 
+    
     
     // 初始化方法
     init(id: UUID = UUID(),
@@ -30,7 +34,10 @@ class DiaryEntry {
          date: Date = Date(),
          location: String? = "",
          isNew: Bool = false,
-         emojiString:String = ""
+         emojiString:String = "",
+         showLocation: Bool = false,
+//         fontColor: Color ,
+         fontStyle:String = ""
     )
     {
         self.id = id
@@ -39,6 +46,9 @@ class DiaryEntry {
         self.location = location
         self.isNew = isNew
         self.emojiString = emojiString
+        self.showLocation = showLocation
+//        self.fontColor = fontColor
+        self.fontStyle = fontStyle
     }
 }
 

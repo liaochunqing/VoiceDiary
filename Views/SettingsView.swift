@@ -293,7 +293,7 @@ struct SettingsView: View {
                 Toggle("", isOn: $isSoundEnabled)
             }
             .padding(.horizontal)
-            
+                        
             HStack {
                 Text("面容ID")
                     .font(.subheadline)

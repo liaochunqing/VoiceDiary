@@ -411,10 +411,16 @@ struct DiaryPage: View {
         }
         .onAppear {
                     entry = DataManager.fetchByID(id, in: modelContext)
-                }
-        .fullScreenCover(isPresented: $showEditDiaryView) {
-            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
         }
+        
+        .sheet(isPresented: $showEditDiaryView) {
+            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
+                .presentationDetents([.fraction(0.9)])
+                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
+        }
+//        .fullScreenCover(isPresented: $showEditDiaryView) {
+//            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
+//        }
     }
 }
 
