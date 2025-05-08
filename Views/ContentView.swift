@@ -104,9 +104,14 @@ struct MainAppView: View {
             }
             .ignoresSafeArea(.all)
         }
-        .fullScreenCover(isPresented: $showAddDiaryView) {
+        .sheet(isPresented: $showAddDiaryView) {
             AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
+                .presentationDetents([.fraction(0.9)])
+                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
         }
+//        .fullScreenCover(isPresented: $showAddDiaryView) {
+//            AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
+//        }
     }
 }
 

@@ -60,6 +60,8 @@ struct AddDiaryView: View {
                         .font(.custom("HelveticaNeue-Regular", size: W_SCALE(32)))
                         .foregroundStyle(.primary)
                         .tracking(-1)
+                        .padding(.top)
+
                 }
             }
             .toolbar {
@@ -74,6 +76,8 @@ struct AddDiaryView: View {
                                 .foregroundColor(.black)
                         }
                     }
+                    .padding(.top)
+
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -123,13 +127,15 @@ struct AddDiaryView: View {
                                 .foregroundColor(.black.opacity(0.8))
                         }
                     }
+                    .padding(.top)
+
                     .disabled(diaryContent.isEmpty)
                 }
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         isFocused = true
-                    }
+//                    }
                 
                 if let entry = existingEntry {
                     diaryContent = entry.content ?? ""
@@ -280,7 +286,7 @@ struct MoodPickerView: View {
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
 
-    @Published var address: String = "正在获取位置..."
+    @Published var address: String = ""
     private var hasUpdatedLocation = false // ✅ 新增标志位
     
     override init() {
@@ -312,7 +318,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 }
                 self.address = addressString
             } else {
-                self.address = "无法获取地址"
+                self.address = ""
             }
         }
     }

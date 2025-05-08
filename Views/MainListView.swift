@@ -16,6 +16,9 @@ struct MainListView: View {
     @AppStorage("existHelpEntry") private var existHelpEntry = false
     @State private var searchText = ""
     @FocusState private var isSearchFieldFocused: Bool
+    
+    @EnvironmentObject var locationManager: LocationManager
+    @State private var emojiString: String = "🙂"
 
     var filteredEntries: [DiaryEntry] {
         if searchText.isEmpty {
@@ -42,23 +45,29 @@ struct MainListView: View {
                 searchText: $searchText,
                 isSearchFieldFocused: $isSearchFieldFocused
             )
-            .padding(.horizontal)
-            .shadow(color: Color.primary.opacity(0.2), radius: 4, x: 2, y: 2)
         }
         .onAppear {
             if !existHelpEntry
             {
-                checkAndInsertDefaultEntry()
-                existHelpEntry = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                    checkAndInsertDefaultEntry()
+                    existHelpEntry = true
+                }
             }
         }
     }
 
     private func checkAndInsertDefaultEntry() {
         if !allEntries.contains(where: { $0.content == defaultContent }) {
-            let defaultEntry = DiaryEntry(id: UUID(), content: defaultContent, date: Date())
+            let defaultEntry = DiaryEntry(
+                id: UUID(),
+                content: defaultContent,
+                date: Date(),
+                location: locationManager.address,
+                emojiString: emojiString
+            )
+            
             modelContext.insert(defaultEntry)
-//            try? modelContext.save()
         }
     }
 }
@@ -71,7 +80,7 @@ struct DiaryListView: View {
     @EnvironmentObject var globalData: GlobalData
     @Binding var searchText: String
     var isSearchFieldFocused: FocusState<Bool>.Binding
-    let subFontSize = W_SCALE(12)
+    let subFontSize = W_SCALE(13)
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -100,7 +109,7 @@ struct DiaryListView: View {
                         Text(entry.content ?? "")
                             .multilineTextAlignment(.leading)
                             .foregroundStyle(.primary)
-                            .font(.system(size: W_SCALE(17)))
+                            .font(.system(size: W_SCALE(18)))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         
                         Text(entry.location ?? "")
@@ -110,12 +119,10 @@ struct DiaryListView: View {
                             .multilineTextAlignment(.leading)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .frame(height: Screen.height * 0.1)
+                    .frame(height: Screen.height * 0.105)
                     .listRowSeparator(.hidden)
-                    .listRowBackground(Color(.systemBackground))
-                    .contentShape(Rectangle())
+                    .listRowBackground(Color(.tertiarySystemBackground))
                     .id(entry.id) // 为滚动定位设置 ID
-                    .cornerRadius(W_SCALE(8))
                     .onTapGesture {
                         guard !isTapDisabled else { return }
                         isTapDisabled = true
@@ -145,11 +152,11 @@ struct DiaryListView: View {
                     }
                 }
             }
-//            .cornerRadius(W_SCALE(8))
             .scrollIndicators(.hidden)
             .listRowSpacing(H_SCALE(15))
             .listStyle(PlainListStyle())
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal)
+            .shadow(color: Color.primary.opacity(0.3), radius: 4, x: 1, y: 1)
 
         }
     }
