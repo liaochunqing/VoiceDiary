@@ -264,7 +264,7 @@ struct DiaryPage: View {
             Color(.secondarySystemBackground)
                     .ignoresSafeArea() // 使背景颜色扩展到安全区域之外
             
-            VStack() {
+            VStack(spacing: infoRowSpacing) {
                 // 顶部摁钮
                 HStack {
                     Button(action: {
@@ -274,7 +274,7 @@ struct DiaryPage: View {
                             Circle()
                                 .fill(Color.white)
                                 .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                             Image(systemName: "arrow.uturn.backward")
                                 .foregroundColor(.black)
                         }
@@ -299,7 +299,7 @@ struct DiaryPage: View {
                                 Circle()
                                     .fill(Color.white)
                                     .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 1, y: 1)
                                 Image(systemName: "trash")
                                     .foregroundColor(.red)
                             }
@@ -346,7 +346,7 @@ struct DiaryPage: View {
                                 Circle()
                                     .fill(Color.white)
                                     .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                                 Image(systemName: "highlighter")
                                     .foregroundColor(.black)
                             }
@@ -354,26 +354,22 @@ struct DiaryPage: View {
                     }                }
                 .padding(.horizontal)
                 
+                
                 // 信息区
                 if let entry = entry {
-                    ScrollView {
-                        Text(entry.content ?? "")
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                    }
-                    .scrollBounceBehavior(.basedOnSize)
+                    
+                    ReadOnlyTextView(
+                        text: entry.content ?? "",
+                        font: UIFont(name: entry.fontStyle, size: entry.fontSize) ?? UIFont.systemFont(ofSize: entry.fontSize)
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color(.secondarySystemBackground))
                     .cornerRadius(W_SCALE(20))
-//                    .shadow(color: Color.black.opacity(0.5), radius: 4, x: 2, y: 2)
-                    .shadow(color: Color.white.opacity(0.9), radius: 0, x: -2, y: -2)
-
+                    .shadow(color: Color.white.opacity(0.9), radius: 0, x: -1, y: -1)
                     .padding()
-                    
+                
                     HStack(spacing: infoRowSpacing) {
                         Image(systemName: "clock")
-//                            .foregroundColor(.gray)
                         
                         Text(formatDate(entry.date))
                             .font(.subheadline)
@@ -381,9 +377,11 @@ struct DiaryPage: View {
                         
                         Text("\(entry.emojiString)")
                             .font(.body)
+                        
                         Spacer()
                     }
-                    .padding([.leading])
+                    .padding(.horizontal)
+
                     
                     HStack(spacing: infoRowSpacing) {
                         Image(systemName: "character.cursor.ibeam")
@@ -397,7 +395,6 @@ struct DiaryPage: View {
                     
                     HStack(spacing: infoRowSpacing) {
                         Image(systemName: "mappin.and.ellipse")
-//                            .foregroundColor(.gray)
                         Text(entry.location ?? "")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
@@ -405,25 +402,47 @@ struct DiaryPage: View {
                     }
                     .padding(.horizontal)
                     .padding(.bottom)
+
                 }
-                Spacer()
             }
         }
         .onAppear {
                     entry = DataManager.fetchByID(id, in: modelContext)
         }
         
-        .sheet(isPresented: $showEditDiaryView) {
-            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
-                .presentationDetents([.fraction(0.9)])
-                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
-        }
-//        .fullScreenCover(isPresented: $showEditDiaryView) {
+//        .sheet(isPresented: $showEditDiaryView) {
 //            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
+//                .presentationDetents([.fraction(0.9)])
+//                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
 //        }
+        .fullScreenCover(isPresented: $showEditDiaryView) {
+            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
+        }
     }
 }
 
+
+struct ReadOnlyTextView: UIViewRepresentable {
+    let text: String
+    let font: UIFont
+
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.isScrollEnabled = true
+        textView.backgroundColor = .clear
+        textView.font = font
+        textView.text = text
+        textView.textContainerInset = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
+        return textView
+    }
+
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        uiView.text = text
+        uiView.font = font
+    }
+}
 
 #Preview {
     ContentView()

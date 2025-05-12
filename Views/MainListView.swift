@@ -112,7 +112,7 @@ struct DiaryListView: View {
                         Text(entry.content ?? "")
                             .multilineTextAlignment(.leading)
                             .foregroundStyle(.primary)
-                            .font(.system(size: W_SCALE(18)))
+                            .font(.custom(entry.fontStyle, size: entry.fontSize))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         
                         if entry.showLocation {

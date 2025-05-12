@@ -19,12 +19,12 @@ class DiaryEntry {
     var content: String? = ""                 // 日记内容，默认为空字符串
     var date: Date = Date()                   // 创建日期，默认为当前日期
     var location: String? = ""                // 日记记录的位置信息，默认为空字符串
-    var isNew: Bool = false                   // 是否新建页，默认为否
     var emojiString: String = ""                // 日记心情
     var pageNumber: Int = -1                // 页码
     var showLocation: Bool = false                   // 是否显示地址
 //    var fontColor: Color = .primary                   // 字体颜色
     var fontStyle: String = ""                   // 字体类型
+    var fontSize: CGFloat = W_SCALE(17)
 
     
     
@@ -33,22 +33,23 @@ class DiaryEntry {
          content: String? = "",
          date: Date = Date(),
          location: String? = "",
-         isNew: Bool = false,
          emojiString:String = "",
          showLocation: Bool = false,
-//         fontColor: Color ,
-         fontStyle:String = ""
+//         fontColor: Color = .primary,
+         fontStyle:String = "",
+         fontSize: CGFloat = W_SCALE(17)
     )
     {
         self.id = id
         self.content = content
         self.date = date
         self.location = location
-        self.isNew = isNew
         self.emojiString = emojiString
         self.showLocation = showLocation
 //        self.fontColor = fontColor
         self.fontStyle = fontStyle
+        self.fontSize = fontSize
+
     }
 }
 

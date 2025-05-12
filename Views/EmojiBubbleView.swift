@@ -36,7 +36,7 @@ struct EmojiBubbleView: View {
             .frame(width: width, height: height)
             .background(Color(.white))
             .cornerRadius(W_SCALE(15))
-            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
             .id(sceneID) // 当 sceneID 变化时，重新创建 SpriteView
             .onChange(of: emojis) {
                 sceneID = UUID() // 更新 sceneID，触发视图刷新

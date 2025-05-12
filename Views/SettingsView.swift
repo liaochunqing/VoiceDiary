@@ -230,7 +230,7 @@ struct SettingsView: View {
         }
         .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
-        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
 
     }
     
@@ -314,7 +314,7 @@ struct SettingsView: View {
         }
         .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
-        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
         
     }
     
@@ -334,7 +334,7 @@ struct SettingsView: View {
                         Circle()
                             .fill(Color.white)
                             .frame(width: rightButtonSize, height: rightButtonSize)
-                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                         Image(systemName: "chevron.right")
                             .foregroundStyle(.black)
                     }
@@ -357,7 +357,7 @@ struct SettingsView: View {
                                     Circle()
                                         .fill(Color.white)
                                         .frame(width: rightButtonSize, height: rightButtonSize)
-                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                                     Image(systemName: "chevron.right")
                                         .foregroundStyle(.black)
                                 }
@@ -392,7 +392,7 @@ struct SettingsView: View {
                         Circle()
                             .fill(Color.white)
                             .frame(width: rightButtonSize, height: rightButtonSize)
-                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                         Image(systemName: "chevron.right")
                             .foregroundStyle(.black)
                     }
@@ -441,7 +441,7 @@ struct SettingsView: View {
         }
         .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
-        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
     }
     
     private var otherProduct: some View {
@@ -477,7 +477,7 @@ struct SettingsView: View {
                         Circle()
                             .fill(Color.white)
                             .frame(width: rightButtonSize, height: rightButtonSize)
-                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                         Image(systemName: "chevron.right")
                             .foregroundStyle(.black)
                     }
@@ -488,7 +488,7 @@ struct SettingsView: View {
         }
         .background(Color(.secondarySystemBackground))
         .cornerRadius(W_SCALE(15))
-        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
         .onTapGesture {
             if let url = URL(string: "https://apps.apple.com/app/6504686224") {
                                 openURL(url)

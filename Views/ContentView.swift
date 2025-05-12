@@ -104,14 +104,14 @@ struct MainAppView: View {
             }
             .ignoresSafeArea(.all)
         }
-        .sheet(isPresented: $showAddDiaryView) {
-            AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
-                .presentationDetents([.fraction(0.9)])
-                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
-        }
-//        .fullScreenCover(isPresented: $showAddDiaryView) {
+//        .sheet(isPresented: $showAddDiaryView) {
 //            AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
+//                .presentationDetents([.fraction(0.9)])
+//                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
 //        }
+        .fullScreenCover(isPresented: $showAddDiaryView) {
+            AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
+        }
     }
 }
 
@@ -125,7 +125,7 @@ struct AddButton: View {
                 .frame(width: 60, height: 60) // 设置按钮大小
 //                .shadow(color: Color.white.opacity(0.7), radius: 10, x: -5, y: -5) // 亮影
 //                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 5, y: 5) // 暗影
-                .shadow(color: Color.black.opacity(0.9), radius: 4, x: 2, y: 2)
+                .shadow(color: Color.black.opacity(0.9), radius: 4, x: 1, y: 1)
 
             Image(systemName: iconName)
                 .foregroundColor(.black) // 设置图标颜色

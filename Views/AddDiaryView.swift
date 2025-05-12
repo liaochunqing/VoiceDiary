@@ -29,8 +29,12 @@ struct AddDiaryView: View {
     @State private var date: Date = Date()
     @State private var diaryContent: String = ""
     @State private var emojiString: String = "🙂"
+    @State private var selectedFontSize: CGFloat = W_SCALE(18)
+    @State private var selectedFontStyle: String = "System"
+    
     @State private var showMoodPicker = false
     @State private var showLocation = false
+    @State private var showFontPicker = false
 
     let infoRowSpacing: CGFloat = W_SCALE(10)
 
@@ -48,8 +52,9 @@ struct AddDiaryView: View {
 
                 VStack(spacing: H_SCALE(10)) {
                     moodPicker
-                    wordCount
+//                    wordCount
                     locationInfo
+                    fontPicker
                     diaryEditor
                 }
                 .padding(.vertical)
@@ -72,7 +77,7 @@ struct AddDiaryView: View {
                             Circle()
                                 .fill(Color.white)
                                 .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                             Image(systemName: "xmark")
                                 .foregroundColor(.black)
                         }
@@ -91,6 +96,8 @@ struct AddDiaryView: View {
                             entry.location = showLocation ? locationManager.address : ""
                             entry.emojiString = emojiString
                             entry.showLocation = showLocation
+                            entry.fontSize = selectedFontSize
+                            entry.fontStyle = selectedFontStyle
                         } else {
                             let newEntry = DiaryEntry(
                                 id: UUID(),
@@ -98,7 +105,9 @@ struct AddDiaryView: View {
                                 date: date,
                                 location:  showLocation ? locationManager.address : "",
                                 emojiString: emojiString,
-                                showLocation: showLocation
+                                showLocation: showLocation,
+                                fontStyle: selectedFontStyle,
+                                fontSize: selectedFontSize
                             )
                             modelContext.insert(newEntry)
                             let index = globalData.getIndexOfPageBy(entry: newEntry, entries: diaryEntries)
@@ -125,13 +134,12 @@ struct AddDiaryView: View {
                             Circle()
                                 .fill(diaryContent.isEmpty ? Color.gray.opacity(0.1) : Color.white)
                                 .frame(width: W_SCALE(40), height: W_SCALE(40))
-                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 2, y: 2)
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
                             Image(systemName: "checkmark")
                                 .foregroundColor(.black.opacity(0.8))
                         }
                     }
                     .padding(.top)
-
                     .disabled(diaryContent.isEmpty)
                 }
             }
@@ -141,6 +149,8 @@ struct AddDiaryView: View {
                     date = entry.date
                     emojiString = entry.emojiString
                     showLocation = entry.showLocation
+                    selectedFontStyle = entry.fontStyle
+                    selectedFontSize = entry.fontSize
                 }
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -154,32 +164,49 @@ struct AddDiaryView: View {
     private var moodPicker: some View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "face.smiling")
-            Text("\(emojiString)(可选)")
+            Text("\(emojiString)")
                 .font(.subheadline)
                 .foregroundColor(.primary)
             Spacer()
+            ZStack {
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: W_SCALE(30), height: W_SCALE(30))
+                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.black)
+            }
+
         }
         .padding(.top)
         .padding(.horizontal)
+        .contentShape(Rectangle()) // 扩展点击区域
         .onTapGesture { showMoodPicker = true }
-        
-        .fullScreenCover(isPresented: $showMoodPicker) {
+//        .fullScreenCover(isPresented: $showMoodPicker) {
+//            ZStack {
+//                // 半透明背景，点击可关闭
+//                Color.black.opacity(0.7)
+//                    .ignoresSafeArea()
+//                    .onTapGesture {
+//                        showMoodPicker = false
+//                    }
+//
+//                // 居中的 MoodPickerView
+//                MoodPickerView(selectedEmoji: $emojiString, moodCategories: moodCategories)
+//                    .frame(width: Screen.width-W_SCALE(32), height: Screen.height*0.8)
+//                    .background(.white)
+//                    .cornerRadius(8)            }
+//            .presentationBackground(.clear) // 设置背景为透明
+//        }
+        .sheet(isPresented: $showMoodPicker) {
             MoodPickerView(selectedEmoji: $emojiString, moodCategories: moodCategories)
+                            .presentationDetents([.fraction(0.9)])
+                            .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
         }
     }
-
-    private var wordCount: some View {
-        HStack(spacing: infoRowSpacing) {
-            Image(systemName: "character.cursor.ibeam")
-//                .foregroundColor(.gray)
-            Text("字数 \(diaryContent.count)")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            Spacer()
-        }
-        .padding(.horizontal)
-    }
-
+    
+    
+    // MARK: - 子视图组件
     private var locationInfo: some View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "mappin.and.ellipse")
@@ -194,12 +221,59 @@ struct AddDiaryView: View {
             
             Spacer()
             Toggle("", isOn: $showLocation)
-//            .padding(.horizontal)
-
         }
         .padding(.horizontal)
-        .padding(.bottom)
+//        .padding(.bottom)
     }
+    
+    // MARK: - 子视图组件
+    private var fontPicker: some View {
+        HStack(spacing: infoRowSpacing) {
+            Image(systemName: "character.cursor.ibeam")
+            Text("字数 \(diaryContent.count)")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: W_SCALE(30), height: W_SCALE(30))
+                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.black)
+            }
+        }
+//        .padding(.top)
+        .padding(.horizontal)
+        .onTapGesture { showFontPicker = true }
+//        .fullScreenCover(isPresented: $showFontPicker) {
+//            ZStack {
+//                // 半透明背景，点击可关闭
+//                Color.black.opacity(0.7)
+//                    .ignoresSafeArea()
+//                    .onTapGesture {
+//                        showFontPicker = false
+//                    }
+//                
+//                // 居中的 MoodPickerView
+//                FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle)
+//                    .frame(width: Screen.width-W_SCALE(32), height: Screen.height*0.8)
+//                    .background(.white)
+//                    .cornerRadius(8)
+//            }
+//            .presentationBackground(.clear) // 设置背景为透明
+//        }
+        
+//        .fullScreenCover(isPresented: $showFontPicker) {
+//            FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle)
+//        }
+        .sheet(isPresented: $showFontPicker) {
+            FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle)
+                            .presentationDetents([.fraction(0.9)])
+                            .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
+        }
+    }
+
 
     private var diaryEditor: some View {
         ZStack(alignment: .topLeading) {
@@ -209,7 +283,7 @@ struct AddDiaryView: View {
             Rectangle()
                 .fill(Color(.secondarySystemBackground))
                 .cornerRadius(25)
-                .shadow(color: Color.white.opacity(1.0), radius: 0, x: -2, y: -2)
+                .shadow(color: Color.white.opacity(1.0), radius: 0, x: -1, y: -1)
 
             if diaryContent.isEmpty {
                 Text("写点什么…")
@@ -220,6 +294,7 @@ struct AddDiaryView: View {
             }
 
             TextEditor(text: $diaryContent)
+                .font(.custom(selectedFontStyle, size: selectedFontSize))
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
                 .padding()
@@ -292,6 +367,141 @@ struct MoodPickerView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+
+struct FontSelectorView: View {
+    @Binding var selectedFontSize: CGFloat
+    @Binding var selectedFontStyle: String
+    
+    @State private var fontSizeOption: FontSizeOption = .medium
+
+    let fontEnNames = [
+        "System",
+        "ChalkboardSE-Regular",
+        "Papyrus",
+        "BradleyHandITCTT-Bold",
+        "SnellRoundhand",
+        "Zapfino",
+        "Noteworthy-Light",
+        "HelveticaNeue-Thin",
+        "AvenirNext-Regular",
+        "YOUSHEhaoshenti",
+    ]
+
+    let fontChNames = [
+        "System",
+        "LongCang-Regular",
+        "YOUSHEhaoshenti",
+        "Slidexiaxing-Regular",
+        "BodoniSvtyTwoSCITCTT-Book",
+        "PingFangSC-Ultralight",
+        "ZQKNLT-Regular"
+    ]
+
+    var body: some View {
+        let languageCode = Locale.preferredLanguages.first ?? "en"
+
+        let fontNames: [String] = languageCode.contains("zh") ? fontChNames : fontEnNames
+        let sampleText = languageCode.contains("zh") ? "我是字体样式" : "I am a font style"
+
+        VStack(spacing: 20) {
+            Text("\(languageCode.contains("zh") ? "我是示例文本" : "I am an example text")")
+                .font(selectedFontStyle == "System" ? .body : .custom(selectedFontStyle, size: selectedFontSize))
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: Screen.height * 0.08)
+                .padding()
+
+            HStack {
+                Text("字体大小:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+
+                Spacer()
+
+                Picker("", selection: $fontSizeOption) {
+                    ForEach(FontSizeOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                            .font(.body)
+
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: fontSizeOption) {
+                    selectedFontSize = fontSizeOption.size
+                    }
+            }
+            .padding()
+//            .padding(.top)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(W_SCALE(15))
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
+
+            
+            VStack {
+                Text("选择字体:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+//                    .padding()
+
+    //            ScrollView {
+                LazyVStack(alignment: .center, spacing: 10) {
+                        ForEach(fontNames, id: \.self) { font in
+                            Button(action: {
+                                selectedFontStyle = font
+                            }) {
+                                Text(sampleText)
+                                    .font(font == "System" ? .system(size: W_SCALE(18)) : .custom(font, size: W_SCALE(17)))
+                                    .foregroundColor(selectedFontStyle == font ? .blue : .primary)
+                                    .padding(.vertical, 5)
+                                    .padding(.horizontal)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(selectedFontStyle == font ? Color.blue.opacity(0.1) : Color.clear)
+                                    )
+                            }
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+    //            }
+
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(W_SCALE(15))
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
+            
+            Spacer()
+        }
+        .padding(.horizontal)
+
+    }
+}
+
+enum FontSizeOption: String, CaseIterable, Identifiable {
+    case extraSmall = "特小"
+    case small = "小"
+    case medium = "中"
+    case large = "大"
+    case extraLarge = "特大"
+
+    var id: String { self.rawValue }
+
+    var size: CGFloat {
+        switch self {
+        case .extraSmall: return W_SCALE(14)
+        case .small: return W_SCALE(18)
+        case .medium: return W_SCALE(22)
+        case .large: return W_SCALE(28)
+        case .extraLarge: return W_SCALE(34)
         }
     }
 }
