@@ -52,11 +52,6 @@ struct SettingsView: View {
     @AppStorage("isSoundEnabled") private var isSoundEnabled: Bool = true
 
     @Environment(\.modelContext) private var modelContext
-
-//    init() {
-//            let initialSpeed = Speed.from(gravityScale: EmojiSettings().gravityScale)
-//            _selectedSpeed = State(initialValue: initialSpeed)
-//        }
     
     var body: some View {
         ZStack{
@@ -82,18 +77,22 @@ struct SettingsView: View {
                         .padding(.top)
                         .padding(.leading)
                     
-                    if emojiSettings.emojiPlacement == "settings" {
-                        EmojiBubbleView(
-                            width: Screen.width - 2 * W_SCALE(16),
-                            height: H_SCALE(170),
-                            emojis: emojis,
-                            emojiSize: emojiSettings.emojisSize,
-                            isRotationEnabled:emojiSettings.isRotationEnabled,
-                            gravityScale: emojiSettings.gravityScale,
-                            isThemeChanged: emojiSettings.isThemeChanged
-                        )
+                    ZStack {
+                        if emojiSettings.emojiPlacement == "settings" {
+                            EmojiBubbleView(
+                                width: Screen.width - 2 * W_SCALE(16),
+                                height: H_SCALE(170),
+                                emojis: emojis,
+                                emojiSize: emojiSettings.emojisSize,
+                                isRotationEnabled: emojiSettings.isRotationEnabled,
+                                gravityScale: emojiSettings.gravityScale,
+                                isThemeChanged: emojiSettings.isThemeChanged
+                            )
+                            .transition(.opacity) // 设置过渡动画
+                        }
                     }
-                                        
+                    .animation(.easeInOut(duration: 1.5), value: emojiSettings.emojiPlacement)
+                    
                     emojiSetup
                         .padding(.top)
                     
@@ -228,7 +227,7 @@ struct SettingsView: View {
                     case .mid:
                         emojiSettings.gravityScale = W_SCALE(10)
                     case .big:
-                        emojiSettings.gravityScale = W_SCALE(35)
+                        emojiSettings.gravityScale = W_SCALE(25)
                     }
                 }
             }
@@ -603,7 +602,7 @@ enum Tab: String, CaseIterable, Identifiable {
             switch size {
             case ..<W_SCALE(20):
                 return .small
-            case W_SCALE(21)..<W_SCALE(40):
+            case W_SCALE(20)..<W_SCALE(40):
                 return .mid
             default:
                 return .big
@@ -622,7 +621,7 @@ enum Speed: String, CaseIterable, Identifiable {
             switch gravityScale {
             case ..<W_SCALE(10):
                 return .small
-            case W_SCALE(11)..<W_SCALE(35):
+            case W_SCALE(10)..<W_SCALE(25):
                 return .mid
             default:
                 return .big

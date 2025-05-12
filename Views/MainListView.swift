@@ -80,7 +80,6 @@ struct DiaryListView: View {
 
     @State private var isTapDisabled = false
     @AppStorage("showLocation") private var showLocation: Bool = true
-    @AppStorage("emojiPlacement") private var emojiPlacement: String = "settings"
 
     let entries: [DiaryEntry]
     let modelContext: ModelContext
@@ -90,7 +89,7 @@ struct DiaryListView: View {
     let subFontSize = W_SCALE(13)
 
     var body: some View {
-        if emojiPlacement == "list" {
+        if emojiSettings.emojiPlacement == "list" {
             EmojiBubbleView(
                 width: Screen.width - 2 * W_SCALE(16),
                 height: H_SCALE(170),
