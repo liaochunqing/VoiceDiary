@@ -25,15 +25,17 @@ struct AddDiaryView: View {
     @Query(sort:\DiaryEntry.date, order: .reverse) private var diaryEntries: [DiaryEntry]
 
     @FocusState private var isFocused: Bool
+    @State private var showExitAlert = false
 
     @State private var date: Date = Date()
     @State private var diaryContent: String = ""
     @State private var emojiString: String = "🙂"
     @State private var selectedFontSize: CGFloat = W_SCALE(18)
     @State private var selectedFontStyle: String = "System"
+    @State private var selectedFontColor: Color = .primary
     
     @State private var showMoodPicker = false
-    @State private var showLocation = false
+    @State private var showLocation = true
     @State private var showFontPicker = false
 
     let infoRowSpacing: CGFloat = W_SCALE(10)
@@ -52,7 +54,6 @@ struct AddDiaryView: View {
 
                 VStack(spacing: H_SCALE(10)) {
                     moodPicker
-//                    wordCount
                     locationInfo
                     fontPicker
                     diaryEditor
@@ -72,7 +73,7 @@ struct AddDiaryView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(action: { isPresented = false }) {
+                    Button(action: { showExitAlert = true }) {
                         ZStack {
                             Circle()
                                 .fill(Color.white)
@@ -83,7 +84,12 @@ struct AddDiaryView: View {
                         }
                     }
                     .padding(.top)
-
+                    .alert("确定不保存就离开吗？", isPresented: $showExitAlert) {
+                            Button("离开", role: .destructive) {
+                                isPresented = false
+                            }
+                            Button("留下", role: .cancel) {}
+                        }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -96,6 +102,7 @@ struct AddDiaryView: View {
                             entry.location = showLocation ? locationManager.address : ""
                             entry.emojiString = emojiString
                             entry.showLocation = showLocation
+                            entry.fontColor = selectedFontColor
                             entry.fontSize = selectedFontSize
                             entry.fontStyle = selectedFontStyle
                         } else {
@@ -106,6 +113,7 @@ struct AddDiaryView: View {
                                 location:  showLocation ? locationManager.address : "",
                                 emojiString: emojiString,
                                 showLocation: showLocation,
+                                fontColorHex: selectedFontColor.toHex(),
                                 fontStyle: selectedFontStyle,
                                 fontSize: selectedFontSize
                             )
@@ -149,6 +157,7 @@ struct AddDiaryView: View {
                     date = entry.date
                     emojiString = entry.emojiString
                     showLocation = entry.showLocation
+                    selectedFontColor = entry.fontColor
                     selectedFontStyle = entry.fontStyle
                     selectedFontSize = entry.fontSize
                 }
@@ -243,38 +252,16 @@ struct AddDiaryView: View {
                     .foregroundStyle(.black)
             }
         }
-//        .padding(.top)
         .padding(.horizontal)
         .onTapGesture { showFontPicker = true }
-//        .fullScreenCover(isPresented: $showFontPicker) {
-//            ZStack {
-//                // 半透明背景，点击可关闭
-//                Color.black.opacity(0.7)
-//                    .ignoresSafeArea()
-//                    .onTapGesture {
-//                        showFontPicker = false
-//                    }
-//                
-//                // 居中的 MoodPickerView
-//                FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle)
-//                    .frame(width: Screen.width-W_SCALE(32), height: Screen.height*0.8)
-//                    .background(.white)
-//                    .cornerRadius(8)
-//            }
-//            .presentationBackground(.clear) // 设置背景为透明
-//        }
-        
-//        .fullScreenCover(isPresented: $showFontPicker) {
-//            FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle)
-//        }
         .sheet(isPresented: $showFontPicker) {
-            FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle)
-                            .presentationDetents([.fraction(0.9)])
+            FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle,selectedFontColor: $selectedFontColor)
+                            .presentationDetents([.fraction(0.8)])
                             .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
         }
     }
 
-
+    // MARK: - 子视图组件
     private var diaryEditor: some View {
         ZStack(alignment: .topLeading) {
             Color(.secondarySystemBackground)
@@ -295,6 +282,7 @@ struct AddDiaryView: View {
 
             TextEditor(text: $diaryContent)
                 .font(.custom(selectedFontStyle, size: selectedFontSize))
+                .foregroundStyle(selectedFontColor)
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
                 .padding()
@@ -358,7 +346,7 @@ struct MoodPickerView: View {
                     .padding(.top)
                 }
             }
-            .navigationTitle("选择你的心情")
+            .navigationTitle("现在我的心情")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -375,7 +363,8 @@ struct MoodPickerView: View {
 struct FontSelectorView: View {
     @Binding var selectedFontSize: CGFloat
     @Binding var selectedFontStyle: String
-    
+    @Binding var selectedFontColor: Color
+
     @State private var fontSizeOption: FontSizeOption = .medium
 
     let fontEnNames = [
@@ -410,10 +399,12 @@ struct FontSelectorView: View {
         VStack(spacing: 20) {
             Text("\(languageCode.contains("zh") ? "我是示例文本" : "I am an example text")")
                 .font(selectedFontStyle == "System" ? .body : .custom(selectedFontStyle, size: selectedFontSize))
-                .foregroundColor(.primary)
+                .foregroundColor(selectedFontColor)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .frame(height: Screen.height * 0.08)
-                .padding()
+                .frame(height: Screen.height * 0.06)
+                .padding(.horizontal)
+                .padding(.top)
+
 
             HStack {
                 Text("字体大小:")
@@ -437,11 +428,26 @@ struct FontSelectorView: View {
                     }
             }
             .padding()
-//            .padding(.top)
             .background(Color(.secondarySystemBackground))
             .cornerRadius(W_SCALE(15))
             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
 
+            
+            HStack {
+                Text("字体颜色:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+
+                Spacer()
+
+                ColorPicker("", selection: $selectedFontColor)
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(W_SCALE(15))
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
             
             VStack {
                 Text("选择字体:")
@@ -450,7 +456,7 @@ struct FontSelectorView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 //                    .padding()
 
-    //            ScrollView {
+                ScrollView {
                 LazyVStack(alignment: .center, spacing: 10) {
                         ForEach(fontNames, id: \.self) { font in
                             Button(action: {
@@ -470,9 +476,7 @@ struct FontSelectorView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .center)
-
-    //            }
-
+                }
             }
             .padding()
             .background(Color(.secondarySystemBackground))

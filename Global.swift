@@ -27,21 +27,21 @@ func H_SCALE(_ value: CGFloat) -> CGFloat {
 }
 
 
-extension Color {
-    init(hex: String) {
-        let scanner = Scanner(string: hex)
-        _ = scanner.scanString("#") // 跳过'#'字符
-        
-        var rgbValue: UInt64 = 0
-        scanner.scanHexInt64(&rgbValue)
-        
-        let r = Double((rgbValue & 0xFF0000) >> 16) / 255.0
-        let g = Double((rgbValue & 0xFF00) >> 8) / 255.0
-        let b = Double(rgbValue & 0xFF) / 255.0
-        
-        self.init(red: r, green: g, blue: b)
-    }
-}
+//extension Color {
+//    init(hex: String) {
+//        let scanner = Scanner(string: hex)
+//        _ = scanner.scanString("#") // 跳过'#'字符
+//        
+//        var rgbValue: UInt64 = 0
+//        scanner.scanHexInt64(&rgbValue)
+//        
+//        let r = Double((rgbValue & 0xFF0000) >> 16) / 255.0
+//        let g = Double((rgbValue & 0xFF00) >> 8) / 255.0
+//        let b = Double(rgbValue & 0xFF) / 255.0
+//        
+//        self.init(red: r, green: g, blue: b)
+//    }
+//}
 
 // MARK: - 常用间距
 struct Spacing {

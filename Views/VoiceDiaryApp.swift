@@ -15,6 +15,7 @@ struct VoiceDiaryApp: App {
 
     @StateObject private var globalData = GlobalData()
     @StateObject private var locationManager = LocationManager()
+    @StateObject private var emojiSettings = EmojiSettings()
 
     init() {
             UserDefaults.standard.register(defaults: ["isSoundEnabled": true])
@@ -28,6 +29,7 @@ struct VoiceDiaryApp: App {
                     .modelContainer(modelContainer)
                     .environmentObject(globalData)
                     .environmentObject(locationManager)
+                    .environmentObject(emojiSettings)
 
             } else {
                 ProgressView("Loading...")

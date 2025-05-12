@@ -75,8 +75,12 @@ struct MainListView: View {
 }
 
 struct DiaryListView: View {
+    @EnvironmentObject var emojiSettings: EmojiSettings
+    @State private var emojis: [String] = []
+
     @State private var isTapDisabled = false
     @AppStorage("showLocation") private var showLocation: Bool = true
+    @AppStorage("emojiPlacement") private var emojiPlacement: String = "settings"
 
     let entries: [DiaryEntry]
     let modelContext: ModelContext
@@ -86,6 +90,21 @@ struct DiaryListView: View {
     let subFontSize = W_SCALE(13)
 
     var body: some View {
+        if emojiPlacement == "list" {
+            EmojiBubbleView(
+                width: Screen.width - 2 * W_SCALE(16),
+                height: H_SCALE(170),
+                emojis: emojis,
+                emojiSize: emojiSettings.emojisSize,
+                isRotationEnabled:emojiSettings.isRotationEnabled,
+                gravityScale: emojiSettings.gravityScale,
+                isThemeChanged: emojiSettings.isThemeChanged
+            )
+            .onAppear {
+                emojis = DataManager.fetchEmojis(for: .month, in: modelContext)
+                }
+        }
+        
         ScrollViewReader { proxy in
             List {
                 ForEach(entries.indices, id: \.self) { i in
@@ -111,7 +130,7 @@ struct DiaryListView: View {
 
                         Text(entry.content ?? "")
                             .multilineTextAlignment(.leading)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(entry.fontColor)
                             .font(.custom(entry.fontStyle, size: entry.fontSize))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         
@@ -167,6 +186,8 @@ struct DiaryListView: View {
 
         }
     }
+        
+
 }
 
 

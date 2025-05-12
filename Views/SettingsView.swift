@@ -11,17 +11,28 @@ import SwiftData
 import StoreKit
 
 
+class EmojiSettings: ObservableObject {
+    @AppStorage("emojisSize") var emojisSize: Double = 20
+    @AppStorage("isRotationEnabled") var isRotationEnabled: Bool = true
+    @AppStorage("gravityScale") var gravityScale: Double = 10
+    @AppStorage("emojiPlacement") var emojiPlacement: String = "settings"
+    @AppStorage("isRotationEnabled") var isThemeChanged: Bool = false
+}
+
+
 struct SettingsView: View {
+    @EnvironmentObject var emojiSettings: EmojiSettings
+
     @State private var selectedTimeRange: TimeRangeTab = .month
     @State private var selectedTab: Tab = .mid
     @State private var selectedSpeed: Speed = .mid
     @State private var showRestartAlert = false
 
     @State private var emojis: [String] = []
-    @State private var emojisSize: CGFloat = W_SCALE(20)
-    @State private var isRotationEnabled = true
-    @State private var gravityScale: CGFloat = W_SCALE(10)
-    @State private var isThemeChanged = false
+//    @State private var emojisSize: CGFloat = W_SCALE(20)
+//    @State private var isRotationEnabled = true
+//    @State private var gravityScale: CGFloat = W_SCALE(10)
+//    @State private var isThemeChanged = false
     
     @State private var currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "未知"
     @State private var appStoreVersion: String = ""
@@ -29,7 +40,8 @@ struct SettingsView: View {
     
     @Environment(\.openURL) var openURL
     @AppStorage("selectedTheme") private var selectedTheme: AppTheme = .light
-    
+//    @AppStorage("emojiPlacement") private var emojiPlacement: String = "settings"
+
     let rightButtonSize = W_SCALE(36)
     let appID = "6670278331" //
     let appURL = URL(string: "https://apps.apple.com/app/6670278331")! //
@@ -41,6 +53,11 @@ struct SettingsView: View {
 
     @Environment(\.modelContext) private var modelContext
 
+//    init() {
+//            let initialSpeed = Speed.from(gravityScale: EmojiSettings().gravityScale)
+//            _selectedSpeed = State(initialValue: initialSpeed)
+//        }
+    
     var body: some View {
         ZStack{
             Color(.systemBackground)
@@ -65,17 +82,20 @@ struct SettingsView: View {
                         .padding(.top)
                         .padding(.leading)
                     
-                    EmojiBubbleView(
-                        width: Screen.width - 2 * W_SCALE(16),
-                        height: H_SCALE(170),
-                        emojis: emojis,
-                        emojiSize: emojisSize,
-                        isRotationEnabled:isRotationEnabled,
-                        gravityScale: gravityScale,
-                        isThemeChanged: isThemeChanged
-                    )
+                    if emojiSettings.emojiPlacement == "settings" {
+                        EmojiBubbleView(
+                            width: Screen.width - 2 * W_SCALE(16),
+                            height: H_SCALE(170),
+                            emojis: emojis,
+                            emojiSize: emojiSettings.emojisSize,
+                            isRotationEnabled:emojiSettings.isRotationEnabled,
+                            gravityScale: emojiSettings.gravityScale,
+                            isThemeChanged: emojiSettings.isThemeChanged
+                        )
+                    }
                                         
                     emojiSetup
+                        .padding(.top)
                     
                     Text("通用")
                         .font(.subheadline)
@@ -119,6 +139,8 @@ struct SettingsView: View {
         }
         .onAppear {
             emojis = DataManager.fetchEmojis(for: .month, in: modelContext)
+            selectedSpeed = Speed.from(gravityScale: emojiSettings.gravityScale)
+            selectedTab = Tab.from(size: emojiSettings.emojisSize)
             }
     }
     
@@ -174,11 +196,11 @@ struct SettingsView: View {
 
                     switch selectedTab {
                     case .small:
-                        emojisSize = W_SCALE(10)
+                        emojiSettings.emojisSize = W_SCALE(10)
                     case .mid:
-                        emojisSize = W_SCALE(20)
+                        emojiSettings.emojisSize = W_SCALE(20)
                     case .big:
-                        emojisSize = W_SCALE(40)
+                        emojiSettings.emojisSize = W_SCALE(40)
                     }
                 }
             }
@@ -202,15 +224,34 @@ struct SettingsView: View {
                 .onChange(of: selectedSpeed) {
                     switch selectedSpeed {
                     case .small:
-                        gravityScale = W_SCALE(1)
+                        emojiSettings.gravityScale = W_SCALE(1)
                     case .mid:
-                        gravityScale = W_SCALE(10)
+                        emojiSettings.gravityScale = W_SCALE(10)
                     case .big:
-                        gravityScale = W_SCALE(35)
+                        emojiSettings.gravityScale = W_SCALE(35)
                     }
                 }
             }
             .padding(.horizontal)
+            
+            HStack {
+                Text("储蓄罐显示位置")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+
+                Spacer()
+
+                Picker("", selection: $emojiSettings.emojiPlacement) {
+                    Text("设置页").tag("settings")
+                    Text("列表页").tag("list")
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                
+            }
+            .padding(.horizontal)
+            
 
             HStack {
                 Text("emoji旋转")
@@ -221,7 +262,7 @@ struct SettingsView: View {
 
                 Spacer()
                 
-                Toggle("", isOn: $isRotationEnabled)
+                Toggle("", isOn: $emojiSettings.isRotationEnabled)
                 
             }
             .padding(.horizontal)
@@ -253,7 +294,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(SegmentedPickerStyle())
                     .onChange(of: selectedTheme) {
-                        isThemeChanged = !isThemeChanged
+                        emojiSettings.isThemeChanged = !emojiSettings.isThemeChanged
                         }
             }
             .padding(.horizontal)
@@ -557,6 +598,17 @@ enum Tab: String, CaseIterable, Identifiable {
     case big = "大"
     
     var id: String { self.rawValue }
+    
+    static func from(size: Double) -> Tab {
+            switch size {
+            case ..<W_SCALE(20):
+                return .small
+            case W_SCALE(21)..<W_SCALE(40):
+                return .mid
+            default:
+                return .big
+            }
+        }
 }
 
 enum Speed: String, CaseIterable, Identifiable {
@@ -565,6 +617,17 @@ enum Speed: String, CaseIterable, Identifiable {
     case big = "快"
     
     var id: String { self.rawValue }
+    
+    static func from(gravityScale: Double) -> Speed {
+            switch gravityScale {
+            case ..<W_SCALE(10):
+                return .small
+            case W_SCALE(11)..<W_SCALE(35):
+                return .mid
+            default:
+                return .big
+            }
+        }
 }
 
 enum AppTheme: String, CaseIterable, Identifiable {

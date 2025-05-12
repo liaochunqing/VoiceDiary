@@ -290,10 +290,7 @@ struct DiaryPage: View {
                     }
                     Spacer()
                     
-                    Button(action: {
-                        showDeleteConfirmation = true
-
-                    }) {
+                    Button(action: {showDeleteConfirmation = true}) {
 //                        if entry?.content != defaultContent {
                             ZStack {
                                 Circle()
@@ -360,7 +357,8 @@ struct DiaryPage: View {
                     
                     ReadOnlyTextView(
                         text: entry.content ?? "",
-                        font: UIFont(name: entry.fontStyle, size: entry.fontSize) ?? UIFont.systemFont(ofSize: entry.fontSize)
+                        font: UIFont(name: entry.fontStyle, size: entry.fontSize) ?? UIFont.systemFont(ofSize: entry.fontSize),
+                        foregroundColor: UIColor(entry.fontColor)  // 将 SwiftUI 的 Color 转换为 UIColor
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color(.secondarySystemBackground))
@@ -409,12 +407,7 @@ struct DiaryPage: View {
         .onAppear {
                     entry = DataManager.fetchByID(id, in: modelContext)
         }
-        
-//        .sheet(isPresented: $showEditDiaryView) {
-//            AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
-//                .presentationDetents([.fraction(0.9)])
-//                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
-//        }
+    
         .fullScreenCover(isPresented: $showEditDiaryView) {
             AddDiaryView(existingEntry: entry, isPresented: $showEditDiaryView)
         }
@@ -425,6 +418,7 @@ struct DiaryPage: View {
 struct ReadOnlyTextView: UIViewRepresentable {
     let text: String
     let font: UIFont
+    let foregroundColor: UIColor  // 新增属性
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -434,6 +428,7 @@ struct ReadOnlyTextView: UIViewRepresentable {
         textView.backgroundColor = .clear
         textView.font = font
         textView.text = text
+        textView.textColor = foregroundColor  // 设置文本颜色
         textView.textContainerInset = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
         return textView
     }
@@ -441,6 +436,7 @@ struct ReadOnlyTextView: UIViewRepresentable {
     func updateUIView(_ uiView: UITextView, context: Context) {
         uiView.text = text
         uiView.font = font
+        uiView.textColor = foregroundColor  // 更新文本颜色
     }
 }
 
