@@ -407,9 +407,9 @@ struct FontSelectorView: View {
                 .padding(.top)
 
             HStack {
-                Text("恢复出厂字体:")
+                Text("重置:")
                     .font(.subheadline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
 
@@ -420,7 +420,7 @@ struct FontSelectorView: View {
                         selectedFontColor = .primary
                         selectedFontSize = W_SCALE(18)
                     }) {
-                        Text("重置")
+                        Text("点击恢复出厂字体")
                     }
                     .buttonStyle(.automatic) // 使用系统默认按钮样式
             }
@@ -433,7 +433,7 @@ struct FontSelectorView: View {
             HStack {
                 Text("字体大小:")
                     .font(.subheadline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
 

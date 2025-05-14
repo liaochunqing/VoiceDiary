@@ -30,7 +30,7 @@ class DiaryEntry {
          location: String? = "",
          emojiString: String = "",
          showLocation: Bool = false,
-         fontColorHex: String? = nil,
+         fontColorHex: String? = "",
          fontStyle: String = "",
          fontSize: CGFloat = W_SCALE(18)) {
         self.id = id
@@ -54,8 +54,15 @@ class DiaryEntry {
             }
         }
         set {
-            fontColorHex = newValue.toHex()
-        }
+                // 获取颜色的描述字符串
+                let colorDescription = String(describing: newValue)
+                // 如果是系统动态颜色（如 .primary），则不进行存储
+                if colorDescription == String(describing: Color.primary) {
+                    fontColorHex = ""
+                } else {
+                    fontColorHex = newValue.toHex()
+                }
+            }
     }
 }
 
@@ -94,6 +101,14 @@ extension Color {
     }
 
     func toHex() -> String? {
+        // 检查是否为系统动态颜色
+        let dynamicColors: [Color] = [.primary, .secondary]
+        for dynamicColor in dynamicColors {
+            if self == dynamicColor {
+                return ""
+            }
+        }
+        
         let uiColor = UIColor(self)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
