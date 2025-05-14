@@ -37,10 +37,10 @@ struct SettingsView: View {
     @State private var currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "未知"
     @State private var appStoreVersion: String = ""
     @State private var updateAvailable: Bool = false
-    
+    @State private var showEmojiBubble = false
+
     @Environment(\.openURL) var openURL
     @AppStorage("selectedTheme") private var selectedTheme: AppTheme = .light
-//    @AppStorage("emojiPlacement") private var emojiPlacement: String = "settings"
 
     let rightButtonSize = W_SCALE(36)
     let appID = "6670278331" //
@@ -77,21 +77,18 @@ struct SettingsView: View {
                         .padding(.top)
                         .padding(.leading)
                     
-                    ZStack {
-                        if emojiSettings.emojiPlacement == "settings" {
-                            EmojiBubbleView(
-                                width: Screen.width - 2 * W_SCALE(16),
-                                height: H_SCALE(170),
-                                emojis: emojis,
-                                emojiSize: emojiSettings.emojisSize,
-                                isRotationEnabled: emojiSettings.isRotationEnabled,
-                                gravityScale: emojiSettings.gravityScale,
-                                isThemeChanged: emojiSettings.isThemeChanged
-                            )
-                            .transition(.opacity) // 设置过渡动画
-                        }
+                    if showEmojiBubble && emojiSettings.emojiPlacement == "settings" {
+                        EmojiBubbleView(
+                            width: Screen.width - 2 * W_SCALE(16),
+                            height: H_SCALE(170),
+                            emojis: emojis,
+                            emojiSize: emojiSettings.emojisSize,
+                            isRotationEnabled: emojiSettings.isRotationEnabled,
+                            gravityScale: emojiSettings.gravityScale,
+                            isThemeChanged: emojiSettings.isThemeChanged
+                        )
+                        .transition(.opacity)
                     }
-                    .animation(.easeInOut(duration: 1.5), value: emojiSettings.emojiPlacement)
                     
                     emojiSetup
                         .padding(.top)
@@ -140,7 +137,13 @@ struct SettingsView: View {
             emojis = DataManager.fetchEmojis(for: .month, in: modelContext)
             selectedSpeed = Speed.from(gravityScale: emojiSettings.gravityScale)
             selectedTab = Tab.from(size: emojiSettings.emojisSize)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    showEmojiBubble = true
+                }
             }
+        }
     }
     
     // MARK: - 子视图组件
@@ -630,7 +633,7 @@ enum Speed: String, CaseIterable, Identifiable {
 }
 
 enum AppTheme: String, CaseIterable, Identifiable {
-    case system
+//    case system
     case light
     case dark
 
@@ -638,7 +641,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .system: return "自动"
+//        case .system: return "自动"
         case .light: return "浅色"
         case .dark: return "深色"
         }
@@ -646,7 +649,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var colorScheme: ColorScheme? {
         switch self {
-        case .system: return nil
+//        case .system: return nil
         case .light: return .light
         case .dark: return .dark
         }

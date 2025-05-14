@@ -256,7 +256,7 @@ struct AddDiaryView: View {
         .onTapGesture { showFontPicker = true }
         .sheet(isPresented: $showFontPicker) {
             FontSelectorView(selectedFontSize:$selectedFontSize, selectedFontStyle:$selectedFontStyle,selectedFontColor: $selectedFontColor)
-                            .presentationDetents([.fraction(0.8)])
+                            .presentationDetents([.fraction(0.95)])
                             .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
         }
     }
@@ -282,6 +282,7 @@ struct AddDiaryView: View {
 
             TextEditor(text: $diaryContent)
                 .font(.custom(selectedFontStyle, size: selectedFontSize))
+//                .font(entry.fontStyle == "System" ? .system(size: entry.fontSize) : .custom(entry.fontStyle, size: entry.fontSize))
                 .foregroundStyle(selectedFontColor)
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
@@ -398,18 +399,41 @@ struct FontSelectorView: View {
 
         VStack(spacing: 20) {
             Text("\(languageCode.contains("zh") ? "我是示例文本" : "I am an example text")")
-                .font(selectedFontStyle == "System" ? .body : .custom(selectedFontStyle, size: selectedFontSize))
+                .font(selectedFontStyle == "System" ? .system(size: selectedFontSize) : .custom(selectedFontStyle, size: selectedFontSize))
                 .foregroundColor(selectedFontColor)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .frame(height: Screen.height * 0.06)
                 .padding(.horizontal)
                 .padding(.top)
 
+            HStack {
+                Text("恢复出厂字体:")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+
+                Spacer()
+
+                Button(action: {
+                        selectedFontStyle = "System"
+                        selectedFontColor = .primary
+                        selectedFontSize = W_SCALE(18)
+                    }) {
+                        Text("重置")
+                    }
+                    .buttonStyle(.automatic) // 使用系统默认按钮样式
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(W_SCALE(15))
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
+
 
             HStack {
                 Text("字体大小:")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
 
@@ -418,11 +442,10 @@ struct FontSelectorView: View {
                 Picker("", selection: $fontSizeOption) {
                     ForEach(FontSizeOption.allCases) { option in
                         Text(option.rawValue).tag(option)
-                            .font(.body)
 
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(SegmentedPickerStyle())
                 .onChange(of: fontSizeOption) {
                     selectedFontSize = fontSizeOption.size
                     }
@@ -463,7 +486,7 @@ struct FontSelectorView: View {
                                 selectedFontStyle = font
                             }) {
                                 Text(sampleText)
-                                    .font(font == "System" ? .system(size: W_SCALE(18)) : .custom(font, size: W_SCALE(17)))
+                                    .font(font == "System" ? .system(size: W_SCALE(18)) : .custom(font, size: W_SCALE(18)))
                                     .foregroundColor(selectedFontStyle == font ? .blue : .primary)
                                     .padding(.vertical, 5)
                                     .padding(.horizontal)
@@ -501,11 +524,11 @@ enum FontSizeOption: String, CaseIterable, Identifiable {
 
     var size: CGFloat {
         switch self {
-        case .extraSmall: return W_SCALE(14)
+        case .extraSmall: return W_SCALE(12)
         case .small: return W_SCALE(18)
-        case .medium: return W_SCALE(22)
-        case .large: return W_SCALE(28)
-        case .extraLarge: return W_SCALE(34)
+        case .medium: return W_SCALE(24)
+        case .large: return W_SCALE(30)
+        case .extraLarge: return W_SCALE(36)
         }
     }
 }
@@ -514,7 +537,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
 
     @Published var address: String = ""
-    private var hasUpdatedLocation = false // ✅ 新增标志位
+    private var hasUpdatedLocation = false //
     
     override init() {
         super.init()
@@ -527,7 +550,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard !hasUpdatedLocation, let location = locations.first else { return }
         
-        hasUpdatedLocation = true // ✅ 防止多次触发
+        hasUpdatedLocation = true //
         reverseGeocode(location: location)
         locationManager.stopUpdatingLocation()
     }

@@ -115,3 +115,4 @@ func formatDate_onlyDate(_ date: Date) -> String {
 //    }
 //}
 let defaultContent = "这是一条默认的日记，你可以添加更多日记。"
+let audio_pageFlip = "fp3"//"page-flip"

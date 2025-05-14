@@ -21,7 +21,7 @@ class DiaryEntry {
     var showLocation: Bool = false  // 是否显示地址
     var fontColorHex: String?  // 可选的十六进制颜色字符串
     var fontStyle: String = ""  // 字体类型
-    var fontSize: CGFloat = 17  // 字体大小
+    var fontSize: CGFloat = W_SCALE(18)  // 字体大小
 
     // 初始化方法
     init(id: UUID = UUID(),
@@ -32,7 +32,7 @@ class DiaryEntry {
          showLocation: Bool = false,
          fontColorHex: String? = nil,
          fontStyle: String = "",
-         fontSize: CGFloat = 17) {
+         fontSize: CGFloat = W_SCALE(18)) {
         self.id = id
         self.content = content
         self.date = date

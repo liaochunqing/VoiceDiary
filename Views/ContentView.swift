@@ -13,7 +13,7 @@ struct ContentView: View {
     @AppStorage("isFaceIDEnabled") private var isFaceIDEnabled = false
     @State private var isUnlocked = false
     private let authManager = BiometricAuthManager()
-    @AppStorage("selectedTheme") private var selectedTheme: AppTheme = .system
+    @AppStorage("selectedTheme") private var selectedTheme: AppTheme = .light
 
     var body: some View {
         Group {

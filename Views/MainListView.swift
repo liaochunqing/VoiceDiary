@@ -21,6 +21,11 @@ struct MainListView: View {
     @EnvironmentObject var locationManager: LocationManager
     @State private var emojiString: String = "🙂"
 
+    
+    @EnvironmentObject var emojiSettings: EmojiSettings
+    @State private var emojis: [String] = []
+
+
     var filteredEntries: [DiaryEntry] {
         if searchText.isEmpty {
             return allEntries
@@ -35,6 +40,21 @@ struct MainListView: View {
 
     var body: some View {
         VStack(spacing: 16) {
+            if emojiSettings.emojiPlacement == "list" {
+                EmojiBubbleView(
+                    width: Screen.width - 2 * W_SCALE(16),
+                    height: H_SCALE(170),
+                    emojis: emojis,
+                    emojiSize: emojiSettings.emojisSize,
+                    isRotationEnabled:emojiSettings.isRotationEnabled,
+                    gravityScale: emojiSettings.gravityScale,
+                    isThemeChanged: emojiSettings.isThemeChanged
+                )
+                .onAppear {
+                    emojis = DataManager.fetchEmojis(for: .month, in: modelContext)
+                    }
+            }
+            
             // 搜索框
             SearchBar(text: $searchText, isFocused: $isSearchFieldFocused)
                 .padding(.top)
@@ -75,12 +95,6 @@ struct MainListView: View {
 }
 
 struct DiaryListView: View {
-    @EnvironmentObject var emojiSettings: EmojiSettings
-    @State private var emojis: [String] = []
-
-    @State private var isTapDisabled = false
-    @AppStorage("showLocation") private var showLocation: Bool = true
-
     let entries: [DiaryEntry]
     let modelContext: ModelContext
     @EnvironmentObject var globalData: GlobalData
@@ -88,21 +102,11 @@ struct DiaryListView: View {
     var isSearchFieldFocused: FocusState<Bool>.Binding
     let subFontSize = W_SCALE(13)
 
+    @State private var isTapDisabled = false
+    @AppStorage("showLocation") private var showLocation: Bool = true
+    
     var body: some View {
-        if emojiSettings.emojiPlacement == "list" {
-            EmojiBubbleView(
-                width: Screen.width - 2 * W_SCALE(16),
-                height: H_SCALE(170),
-                emojis: emojis,
-                emojiSize: emojiSettings.emojisSize,
-                isRotationEnabled:emojiSettings.isRotationEnabled,
-                gravityScale: emojiSettings.gravityScale,
-                isThemeChanged: emojiSettings.isThemeChanged
-            )
-            .onAppear {
-                emojis = DataManager.fetchEmojis(for: .month, in: modelContext)
-                }
-        }
+        
         
         ScrollViewReader { proxy in
             List {
@@ -130,7 +134,8 @@ struct DiaryListView: View {
                         Text(entry.content ?? "")
                             .multilineTextAlignment(.leading)
                             .foregroundStyle(entry.fontColor)
-                            .font(.custom(entry.fontStyle, size: entry.fontSize))
+//                            .font(.custom(entry.fontStyle, size: entry.fontSize))
+                            .font(entry.fontStyle == "System" ? .system(size: entry.fontSize) : .custom(entry.fontStyle, size: entry.fontSize))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         
                         if entry.showLocation {
@@ -145,10 +150,11 @@ struct DiaryListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .frame(height: Screen.height * 0.105)
                     .listRowSeparator(.hidden)
-                    .listRowBackground(Color(.tertiarySystemBackground))
+                    .listRowBackground(Color(.secondarySystemGroupedBackground))
                     .contentShape(Rectangle())
                     .id(entry.id) // 为滚动定位设置 ID
-                    .onTapGesture {
+
+                        .onTapGesture {
                         guard !isTapDisabled else { return }
                         isTapDisabled = true
                         var gaptime = 0.01
@@ -181,12 +187,9 @@ struct DiaryListView: View {
             .listRowSpacing(H_SCALE(15))
             .listStyle(PlainListStyle())
             .padding(.horizontal)
-            .shadow(color: Color.primary.opacity(0.3), radius: 4, x: 1, y: 1)
-
+            .shadow(color: Color(.separator), radius: 2, x: 1, y: 1)
         }
     }
-        
-
 }
 
 

@@ -63,18 +63,6 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             // 重新加载页面内容
             context.coordinator.controllers = globalData.diaryPages.map { $0 }
             
-            // 获取当前显示的视图控制器
-//            if let currentVC = pageViewController.viewControllers?.first,
-//               let currentIndex = context.coordinator.controllers.firstIndex(of: currentVC) {
-//                // 更新当前索引
-//                context.coordinator.currentIndex = currentIndex
-//            } else {
-//                // 如果无法确定当前视图控制器，默认显示主列表页
-//                let mainListVC = context.coordinator.controllers[2]
-//                pageViewController.setViewControllers([mainListVC], direction: .forward, animated: false)
-//                context.coordinator.currentIndex = 2
-//            }
-            
             DispatchQueue.main.async {
                 globalData.pageUpdate = false
             }
@@ -146,6 +134,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                             self.currentIndex = index
                         }
                         
+//                        print("===\(Double(abs(fromIndex - index)) * 0.07)")
                         self.playOverlappingPageSound()
                     }
                 }
@@ -161,7 +150,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
         
         func loadSound() {
-            if let soundURL = Bundle.main.url(forResource: "page-flip", withExtension: "mp3") {
+            if let soundURL = Bundle.main.url(forResource: audio_pageFlip, withExtension: "m4a") {
                 do {
                     audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
                     audioPlayer?.prepareToPlay()
@@ -191,7 +180,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             let isSoundEnabled = UserDefaults.standard.bool(forKey: "isSoundEnabled")
             guard isSoundEnabled else { return }
             
-            guard let soundURL = Bundle.main.url(forResource: "page-flip", withExtension: "mp3") else { return }
+            guard let soundURL = Bundle.main.url(forResource: audio_pageFlip, withExtension: "m4a") else { return }
             do {
                 let player = try AVAudioPlayer(contentsOf: soundURL)
                 player.prepareToPlay()
@@ -229,7 +218,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
         // 当翻页动画完成时，更新 currentPage
         func pageViewController(_ pageViewController: UIPageViewController,didFinishAnimating finished: Bool,previousViewControllers: [UIViewController],transitionCompleted completed: Bool) {
-//
+           
             if completed,
                let visibleViewController = pageViewController.viewControllers?.first,
                let index = controllers.firstIndex(of: visibleViewController){
@@ -361,10 +350,15 @@ struct DiaryPage: View {
                         foregroundColor: UIColor(entry.fontColor)  // 将 SwiftUI 的 Color 转换为 UIColor
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.secondarySystemBackground))
+//                    .background(Color(.secondarySystemFill))
+                    .background(
+                        Color(.secondarySystemFill)
+                            .blur(radius: 1, opaque: false)
+                    )
                     .cornerRadius(W_SCALE(20))
-                    .shadow(color: Color.white.opacity(0.9), radius: 0, x: -1, y: -1)
+//                    .shadow(color: Color(.white), radius: 1, x: -1, y: -1)
                     .padding()
+
                 
                     HStack(spacing: infoRowSpacing) {
                         Image(systemName: "clock")
