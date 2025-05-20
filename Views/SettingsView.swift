@@ -445,6 +445,34 @@ struct SettingsView: View {
             .padding(.horizontal)
             
             HStack {
+                Text("隐私政策")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+                
+                Button(action: {
+                    // 方法二：跳转到 App Store 的评价页面
+                    if let url = URL(string: "https://liaochunqing.github.io/privacy-policy/") {
+                        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                    }
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: rightButtonSize, height: rightButtonSize)
+                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 1, y: 1)
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.black)
+                    }
+                }
+                
+            }
+            .padding(.horizontal)
+            
+            HStack {
                 Text("当前版本")
                     .font(.subheadline)
                     .foregroundStyle(.primary)

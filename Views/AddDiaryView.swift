@@ -165,6 +165,10 @@ struct AddDiaryView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     isFocused = true
                 }
+                
+                if locationManager.address.isEmpty {
+                                locationManager.reset()
+                            }
             }
         }
     }
@@ -541,12 +545,21 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     override init() {
         super.init()
+        configureLocationManager()
+    }
+
+    func reset() {
+        hasUpdatedLocation = false
+        configureLocationManager()
+    }
+
+    private func configureLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
     }
-
+    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard !hasUpdatedLocation, let location = locations.first else { return }
         

@@ -75,6 +75,10 @@ struct MainListView: View {
                     existHelpEntry = true
                 }
             }
+            
+            if locationManager.address.isEmpty {
+                            locationManager.reset()
+                        }
         }
     }
 
