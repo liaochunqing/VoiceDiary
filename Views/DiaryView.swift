@@ -46,6 +46,13 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             }
         }
         
+        // 设置手势识别器的代理，限制仅响应水平方向滑动
+        for recognizer in pageViewController.gestureRecognizers {
+            if let panGesture = recognizer as? UIPanGestureRecognizer {
+                panGesture.delegate = context.coordinator
+            }
+        }
+        
         // 设置初始页为主列表页
         let firstVC = context.coordinator.controllers[2]
         pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
@@ -99,7 +106,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         var controllers: [UIViewController]
 
         var currentIndex: Int = 0
-        var globalData: GlobalData //
+        var globalData: GlobalData
 
         var audioPlayer: AVAudioPlayer?
         var activePlayers: [AVAudioPlayer] = []
@@ -134,7 +141,6 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                             self.currentIndex = index
                         }
                         
-//                        print("===\(Double(abs(fromIndex - index)) * 0.07)")
                         self.playOverlappingPageSound()
                     }
                 }
@@ -230,6 +236,18 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                 }
             }
         }
+    }
+}
+
+// 在 Coordinator 类中实现 UIGestureRecognizerDelegate 协议
+extension DiaryPageViewController.Coordinator: UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if let panGesture = gestureRecognizer as? UIPanGestureRecognizer {
+            let velocity = panGesture.velocity(in: panGesture.view)
+            // 仅当水平方向的速度大于垂直方向时，才允许手势开始
+            return abs(velocity.x) > abs(velocity.y)
+        }
+        return true
     }
 }
 
