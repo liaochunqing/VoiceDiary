@@ -32,31 +32,31 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIPageViewController {
         let pageViewController = UIPageViewController(
             transitionStyle: .pageCurl, // 翻书效果
-            navigationOrientation: .horizontal,
-            options: nil
+            navigationOrientation: .horizontal
         )
 
         pageViewController.dataSource = context.coordinator
         pageViewController.delegate = context.coordinator
                 
         // 移除用于翻页的单击手势，但保留其他点击手势
-        for recognizer in pageViewController.gestureRecognizers {
-            if let tapGesture = recognizer as? UITapGestureRecognizer, tapGesture.numberOfTapsRequired == 1 {
-                pageViewController.view.removeGestureRecognizer(tapGesture)
-            }
-        }
-        
-        // 设置手势识别器的代理，限制仅响应水平方向滑动
-        for recognizer in pageViewController.gestureRecognizers {
-            if let panGesture = recognizer as? UIPanGestureRecognizer {
-                panGesture.delegate = context.coordinator
-            }
-        }
+//        for recognizer in pageViewController.gestureRecognizers {
+//            if let tapGesture = recognizer as? UITapGestureRecognizer, tapGesture.numberOfTapsRequired == 1 {
+//                pageViewController.view.removeGestureRecognizer(tapGesture)
+//            }
+//        }
+//
         
         // 设置初始页为主列表页
-        let firstVC = context.coordinator.controllers[2]
-        pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
-        context.coordinator.currentIndex = 2
+        if context.coordinator.controllers.count > 2 {
+            let firstVC = context.coordinator.controllers[2]
+            pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
+            context.coordinator.currentIndex = 2
+        } else if let firstVC = context.coordinator.controllers.first {
+            pageViewController.setViewControllers([firstVC], direction: .forward, animated: true)
+            context.coordinator.currentIndex = 0
+        } else {
+            print("No view controllers available to set.")
+        }
         
         //音效加载
         context.coordinator.loadSound()
@@ -69,7 +69,8 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         if globalData.pageUpdate {
             // 重新加载页面内容
             context.coordinator.controllers = globalData.diaryPages.map { $0 }
-            
+            print("pageUpdate")
+
             DispatchQueue.main.async {
                 globalData.pageUpdate = false
             }
@@ -115,6 +116,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             self.parent = parent
             self.globalData = globalData
             self.controllers = globalData.diaryPages.map { $0 }
+            print("Coordinator init")
         }
         
         func animateMoveToPage(pageViewController: UIPageViewController,targetIndex:Int,animated:Bool)
@@ -132,22 +134,26 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                     self.currentIndex = targetIndex
                }
             }else{
-                for index in stride(from: fromIndex, through: targetIndex, by: step)
-                {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.07)
-                    {
-                        let vc = self.controllers[index]
-                        pageViewController.setViewControllers([vc], direction:direction, animated: true) { Bool in
-                            self.currentIndex = index
+                DispatchQueue.global(qos: .userInitiated).async {
+                    for index in stride(from: fromIndex, through: targetIndex, by: step) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(fromIndex - index)) * 0.07) {
+                            let vc = self.controllers[index]
+                            pageViewController.setViewControllers([vc], direction: direction, animated: true) { _ in
+                                self.currentIndex = index
+                            }
+                            self.playOverlappingPageSound()
                         }
-                        
-                        self.playOverlappingPageSound()
                     }
                 }
             }
         }
         
         func moveToPage(pageViewController: UIPageViewController,targetIndex:Int){
+            guard targetIndex >= 0 && targetIndex < self.controllers.count else {
+                    print("目标索引 \(targetIndex) 超出范围。")
+                    return
+                }
+            
             let vc = self.controllers[targetIndex]
             pageViewController.setViewControllers([vc], direction:.forward, animated: false){ Bool in
                 self.currentIndex = targetIndex
@@ -206,6 +212,8 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
         
         func pageViewController(_ pageViewController: UIPageViewController, willTransitionTo pendingViewControllers: [UIViewController]) {
             playPageSound()
+            pageViewController.view.isUserInteractionEnabled = false
+
         }
 
         // 返回前一个视图控制器
@@ -217,14 +225,18 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
         // 返回下一个视图控制器
         func pageViewController(_ pageViewController: UIPageViewController,viewControllerAfter viewController: UIViewController) -> UIViewController? {
-            guard let index = controllers.firstIndex(of: viewController), index < controllers.count - 1 else { return nil }
+//            print(controllers)
+            print(controllers.count)
+            guard let index = controllers.firstIndex(of: viewController), index + 1 < controllers.count else { return nil }
+            print("index = \(index)")
 
             return controllers[index + 1]
         }
 
         // 当翻页动画完成时，更新 currentPage
         func pageViewController(_ pageViewController: UIPageViewController,didFinishAnimating finished: Bool,previousViewControllers: [UIViewController],transitionCompleted completed: Bool) {
-           
+            pageViewController.view.isUserInteractionEnabled = true
+
             if completed,
                let visibleViewController = pageViewController.viewControllers?.first,
                let index = controllers.firstIndex(of: visibleViewController){

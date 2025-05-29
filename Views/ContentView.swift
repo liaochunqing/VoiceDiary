@@ -14,27 +14,26 @@ struct ContentView: View {
     @State private var isUnlocked = false
     private let authManager = BiometricAuthManager()
     @AppStorage("selectedTheme") private var selectedTheme: AppTheme = .light
-
     var body: some View {
         Group {
             if isUnlocked || !isFaceIDEnabled {
-                // 显示主界面内容
-                MainAppView()
-                    .preferredColorScheme(selectedTheme.colorScheme)
-
+                        // 显示主界面内容
+                        MainAppView()
+                            .preferredColorScheme(selectedTheme.colorScheme)
+                    
             } else {
                 // 显示锁定界面
                 VStack(spacing: 20) {
                     // 显示锁定界面
                     VStack(spacing: 20) {
-                        Text("应用已锁定，请进行面容 ID 验证。")
+                        Text("应用已锁定，请进行面容ID验证。")
                             .font(.headline)
                             .padding()
                         
                         Button(action: {
                             triggerFaceID()
                         }) {
-                            Label("使用面容 ID 解锁", systemImage: "faceid")
+                            Label("使用面容ID解锁", systemImage: "faceid")
                                 .font(.title2)
                                 .padding()
                                 .background(Color.blue)
@@ -51,6 +50,7 @@ struct ContentView: View {
             } else {
                 self.isUnlocked = true
             }
+
         }
     }
     
@@ -62,12 +62,16 @@ struct ContentView: View {
 }
 
 struct MainAppView: View {
-    
     @State private var buttonPosition: CGPoint = .zero
     @State private var isButtonInitialized = false
     @State private var showAddDiaryView = false
     @EnvironmentObject var globalData: GlobalData
     
+    @State private var isCoverAnimation: Bool = true
+    @State private var rotationAngle: Double = 0
+//    @AppStorage("isCoverAnimation") private var isCoverAnimation:Bool = true
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -94,6 +98,23 @@ struct MainAppView: View {
                                 }
                         )
                 }
+                
+                // 封面视图
+                if isCoverAnimation {
+                    Image("cover1") // 替换为你的图片名称
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: UIScreen.main.bounds.height)
+                        .rotation3DEffect(
+                            Angle(degrees: rotationAngle),
+                            axis: (x:0, y:1, z: 0),
+                            anchor: .leading,
+//                                        anchorZ: 0,
+                            perspective: 0.5
+                        )
+                        .ignoresSafeArea()
+                }
+
             }
             .onAppear {
                 // 在视图出现时初始化按钮位置为屏幕右下角
@@ -104,14 +125,31 @@ struct MainAppView: View {
             }
             .ignoresSafeArea(.all)
         }
-//        .sheet(isPresented: $showAddDiaryView) {
-//            AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
-//                .presentationDetents([.fraction(0.9)])
-//                .presentationDragIndicator(.visible) // 显示顶部的拖动指示器
-//        }
         .fullScreenCover(isPresented: $showAddDiaryView) {
             AddDiaryView(existingEntry: nil, isPresented: $showAddDiaryView)
         }
+        .onAppear(){
+            
+            //封面动画
+            let duration = 1.0
+            withAnimation(.easeIn(duration: duration)) {
+                            rotationAngle = -90
+                        } completion: {
+                            isCoverAnimation = false
+                        }
+        }
+//        .onChange(of: scenePhase) {
+//                // 应用从后台返回到前台，触发封面动画
+//                isCoverAnimation = true
+//                rotationAngle = 0
+//                //封面动画
+//                let duration = 1.0
+//                withAnimation(.easeIn(duration: duration)) {
+//                                rotationAngle = -90
+//                            } completion: {
+//                                isCoverAnimation = false
+//                            }
+//        }
     }
 }
 

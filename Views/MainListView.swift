@@ -70,7 +70,7 @@ struct MainListView: View {
         .onAppear {
             if !existHelpEntry
             {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     checkAndInsertDefaultEntry()
                     existHelpEntry = true
                 }
@@ -138,7 +138,6 @@ struct DiaryListView: View {
                         Text(entry.content ?? "")
                             .multilineTextAlignment(.leading)
                             .foregroundStyle(entry.fontColor)
-//                            .font(.custom(entry.fontStyle, size: entry.fontSize))
                             .font(entry.fontStyle == "System" ? .system(size: entry.fontSize) : .custom(entry.fontStyle, size: entry.fontSize))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         
@@ -158,7 +157,7 @@ struct DiaryListView: View {
                     .contentShape(Rectangle())
                     .id(entry.id) // 为滚动定位设置 ID
 
-                        .onTapGesture {
+                    .onTapGesture {
                         guard !isTapDisabled else { return }
                         isTapDisabled = true
                         var gaptime = 0.01

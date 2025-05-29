@@ -12,9 +12,9 @@ import StoreKit
 
 
 class EmojiSettings: ObservableObject {
-    @AppStorage("emojisSize") var emojisSize: Double = 20
+    @AppStorage("emojisSize") var emojisSize: Double = W_SCALE(20)
     @AppStorage("isRotationEnabled") var isRotationEnabled: Bool = true
-    @AppStorage("gravityScale") var gravityScale: Double = 10
+    @AppStorage("gravityScale") var gravityScale: Double = W_SCALE(10)
     @AppStorage("emojiPlacement") var emojiPlacement: String = "settings"
     @AppStorage("isRotationEnabled") var isThemeChanged: Bool = false
 }
@@ -27,13 +27,7 @@ struct SettingsView: View {
     @State private var selectedTab: Tab = .mid
     @State private var selectedSpeed: Speed = .mid
     @State private var showRestartAlert = false
-
     @State private var emojis: [String] = []
-//    @State private var emojisSize: CGFloat = W_SCALE(20)
-//    @State private var isRotationEnabled = true
-//    @State private var gravityScale: CGFloat = W_SCALE(10)
-//    @State private var isThemeChanged = false
-    
     @State private var currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "未知"
     @State private var appStoreVersion: String = ""
     @State private var updateAvailable: Bool = false
@@ -51,6 +45,7 @@ struct SettingsView: View {
     @AppStorage("isFaceIDEnabled") private var isFaceIDEnabled = false
     @AppStorage("isSoundEnabled") private var isSoundEnabled: Bool = true
 
+    
     @Environment(\.modelContext) private var modelContext
     
     var body: some View {
@@ -127,7 +122,6 @@ struct SettingsView: View {
                     otherProduct
                     
                     Spacer()
-                   
                 }
                 .padding(.horizontal)
             }
@@ -336,6 +330,19 @@ struct SettingsView: View {
                 Toggle("", isOn: $isSoundEnabled)
             }
             .padding(.horizontal)
+            
+//            HStack {
+//                Text("封面动画")
+//                    .font(.subheadline)
+//                    .foregroundStyle(.primary)
+//                    .frame(maxWidth: .infinity, alignment: .leading)
+//                    .multilineTextAlignment(.leading)
+//                
+//                Spacer()
+//                
+//                Toggle("", isOn: $isCoverAnimation)
+//            }
+//            .padding(.horizontal)
                         
             HStack {
                 Text("面容ID")
@@ -419,17 +426,17 @@ struct SettingsView: View {
                 
                 Button(action: {
                     // 方法一：弹出评分提示
-                    if let scene = UIApplication.shared.connectedScenes
-                        .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                        SKStoreReviewController.requestReview(in: scene)
-                    }
+//                    if let scene = UIApplication.shared.connectedScenes
+//                        .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+//                        SKStoreReviewController.requestReview(in: scene)
+//                    }
 
                     // 方法二：跳转到 App Store 的评价页面
-                    /*
+                    
                     if let url = URL(string: "https://apps.apple.com/app/id\(appID)?action=write-review") {
                         UIApplication.shared.open(url, options: [:], completionHandler: nil)
                     }
-                    */
+                    
                 }) {
                     ZStack {
                         Circle()
@@ -483,7 +490,7 @@ struct SettingsView: View {
                 if updateAvailable {
                     Button(action: {
                         // 跳转到 App Store 更新页面
-                        if let url = URL(string: "https://apps.apple.com/\(appID))") {
+                        if let url = URL(string: "https://apps.apple.com/app/\(appID)") {
                             UIApplication.shared.open(url)
                         }
                     }) {
@@ -568,8 +575,7 @@ struct SettingsView: View {
     }
 
     func fetchAppStoreVersion(completion: @escaping (String?) -> Void) {
-        guard let bundleId = Bundle.main.bundleIdentifier,
-              let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleId)") else {
+        guard let url = URL(string: "https://itunes.apple.com/lookup?id=\(appID)") else {
             completion(nil)
             return
         }

@@ -19,7 +19,6 @@ struct VoiceDiaryApp: App {
 
     init() {
             UserDefaults.standard.register(defaults: ["isSoundEnabled": true])
-//        UserDefaults.standard.register(defaults: ["showLocation": true])
     }
 
     var body: some Scene {

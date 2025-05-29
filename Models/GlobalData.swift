@@ -30,7 +30,7 @@ class GlobalData: ObservableObject {
         self.diaryPages.append(settingHostingController)
         self.diaryPages.append(mainListHostingController)
         
-        let pages = entries.prefix(maxDiaryPages-1).map { entry in
+        let pages = entries.prefix(maxDiaryPages).map { entry in
                 let diaryPage = DiaryPage(id: entry.id)
                 return IdentifiedHostingController(id: entry.id, rootView: AnyView(diaryPage))
             }
@@ -44,7 +44,7 @@ class GlobalData: ObservableObject {
             return []
         }
 
-        let half = (maxDiaryPages - 1) / 2
+        let half = (maxDiaryPages) / 2
         let start = max(0, index - half)
         let end = min(entries.count-1, index<half ? maxDiaryPages : (index + half))
 
