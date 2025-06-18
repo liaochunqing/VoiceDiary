@@ -153,7 +153,7 @@ struct SettingsView: View {
                 
                 Picker("", selection: $selectedTimeRange) {
                     ForEach(TimeRangeTab.allCases) { tab in
-                        Text(tab.rawValue).tag(tab)
+                        Text(tab.title).tag(tab)
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
@@ -184,7 +184,7 @@ struct SettingsView: View {
                 // 顶部 Segment 控制
                 Picker("", selection: $selectedTab) {
                     ForEach(Tab.allCases) { tab in
-                        Text(tab.rawValue).tag(tab)
+                        Text(tab.title).tag(tab)
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
@@ -213,7 +213,7 @@ struct SettingsView: View {
                 // 顶部 Segment 控制
                 Picker("", selection: $selectedSpeed) {
                     ForEach(Speed.allCases) { tab in
-                        Text(tab.rawValue).tag(tab)
+                        Text(tab.title).tag(tab)
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
@@ -231,7 +231,7 @@ struct SettingsView: View {
             .padding(.horizontal)
             
             HStack {
-                Text("储蓄罐显示位置")
+                Text("显示位置")
                     .font(.subheadline)
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -498,7 +498,7 @@ struct SettingsView: View {
                             .foregroundColor(.blue)
                     }
                 } else {
-                    Text("\(currentVersion) (已是最新)")
+                    Text("\(currentVersion) \(String(localized:"(已是最新)"))")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -626,6 +626,17 @@ enum TimeRangeTab: String, CaseIterable, Identifiable {
     case all = "全部"
     
     var id: String { self.rawValue }
+    
+    var title: String {
+        switch self {
+        case .month:
+            return String(localized: "本月")
+        case .year:
+            return String(localized: "本年")
+        case .all:
+            return String(localized: "全部")
+        }
+    }
 }
 
 enum Tab: String, CaseIterable, Identifiable {
@@ -634,6 +645,17 @@ enum Tab: String, CaseIterable, Identifiable {
     case big = "大"
     
     var id: String { self.rawValue }
+    
+    var title: String {
+        switch self {
+        case .small:
+            return String(localized: "小")
+        case .mid:
+            return String(localized: "中")
+        case .big:
+            return String(localized: "大")
+        }
+    }
     
     static func from(size: Double) -> Tab {
             switch size {
@@ -653,6 +675,17 @@ enum Speed: String, CaseIterable, Identifiable {
     case big = "快"
     
     var id: String { self.rawValue }
+    
+    var title: String {
+        switch self {
+        case .small:
+            return String(localized: "慢")
+        case .mid:
+            return String(localized: "中")
+        case .big:
+            return String(localized: "快")
+        }
+    }
     
     static func from(gravityScale: Double) -> Speed {
             switch gravityScale {
@@ -676,8 +709,8 @@ enum AppTheme: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
 //        case .system: return "自动"
-        case .light: return "浅色"
-        case .dark: return "深色"
+        case .light: return String(localized: "浅色")
+        case .dark: return String(localized: "深色")
         }
     }
 

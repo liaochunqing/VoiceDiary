@@ -116,6 +116,4 @@ func formatDate_onlyDate(_ date: Date) -> String {
 //}
 let audio_pageFlip = "fp3"//"page-flip"
 
-let defaultContent = """
-欢迎使用,请开始您的日记之旅
-"""
+let defaultContent = String(localized:"欢迎使用,请开始您的日记之旅")

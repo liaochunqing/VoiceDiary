@@ -84,7 +84,7 @@ struct AddDiaryView: View {
                         }
                     }
                     .padding(.top)
-                    .alert("确定不保存就离开吗？", isPresented: $showExitAlert) {
+                    .alert("确定不保存就离开吗?", isPresented: $showExitAlert) {
                             Button("离开", role: .destructive) {
                                 isPresented = false
                             }
@@ -243,7 +243,7 @@ struct AddDiaryView: View {
     private var fontPicker: some View {
         HStack(spacing: infoRowSpacing) {
             Image(systemName: "character.cursor.ibeam")
-            Text("字数 \(diaryContent.count)")
+            Text("\(String(localized: "字数")) \(diaryContent.count)")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             Spacer()
@@ -305,13 +305,13 @@ struct MoodCategory: Identifiable {
 }
 
 let moodCategories: [MoodCategory] = [
-    MoodCategory(name: "喜", emojis: ["😊", "😄", "😆", "😋"]),
-    MoodCategory(name: "怒", emojis: ["😠", "😡", "😤", "😒"]),
-    MoodCategory(name: "忧", emojis: ["😟", "😕", "🙁", "😣"]),
-    MoodCategory(name: "思", emojis: ["🤔", "🧐", "😐", "😶"]),
-    MoodCategory(name: "悲", emojis: ["😢", "😭", "😞", "😔"]),
-    MoodCategory(name: "恐", emojis: ["😨", "😰", "😱", "😖"]),
-    MoodCategory(name: "惊", emojis: ["😲", "😳", "😯", "😧"])
+    MoodCategory(name: String(localized: "喜"), emojis: ["😊", "😄", "😆", "😋"]),
+    MoodCategory(name: String(localized: "怒"), emojis: ["😠", "😡", "😤", "😒"]),
+    MoodCategory(name: String(localized: "忧"), emojis: ["😟", "😕", "🙁", "😣"]),
+    MoodCategory(name: String(localized: "思"), emojis: ["🤔", "🧐", "😐", "😶"]),
+    MoodCategory(name: String(localized: "悲"), emojis: ["😢", "😭", "😞", "😔"]),
+    MoodCategory(name: String(localized: "恐"), emojis: ["😨", "😰", "😱", "😖"]),
+    MoodCategory(name: String(localized: "惊"), emojis: ["😲", "😳", "😯", "😧"])
 ]
 
 struct MoodPickerView: View {
@@ -445,8 +445,7 @@ struct FontSelectorView: View {
 
                 Picker("", selection: $fontSizeOption) {
                     ForEach(FontSizeOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-
+                        Text(option.title).tag(option)
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
@@ -525,6 +524,21 @@ enum FontSizeOption: String, CaseIterable, Identifiable {
     case extraLarge = "特大"
 
     var id: String { self.rawValue }
+    
+    var title: String {
+        switch self {
+        case .extraSmall:
+            return String(localized: "特小")
+        case .small:
+            return String(localized: "小")
+        case .medium:
+            return String(localized: "中")
+        case .large:
+            return String(localized: "大")
+        case .extraLarge:
+            return String(localized: "特大")
+        }
+    }
 
     var size: CGFloat {
         switch self {

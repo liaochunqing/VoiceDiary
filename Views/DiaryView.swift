@@ -303,7 +303,7 @@ struct DiaryPage: View {
                     // ✨ 中间标题
                     if let index = entries.firstIndex(where: { $0.id == self.id }) {
                         let pageNumber = index + 1
-                        Text("第 \(pageNumber) 页")
+                        Text("\(String(localized: "页")) \(pageNumber)")
                             .font(.system(size: W_SCALE(18), weight: .medium))
                             .foregroundColor(.primary)
                     }
@@ -322,7 +322,7 @@ struct DiaryPage: View {
 //                        }
                     }
                     .padding(.horizontal)
-                    .alert("确定删除这篇日记吗？", isPresented: $showDeleteConfirmation) {
+                    .alert("确定删除这篇日记吗?", isPresented: $showDeleteConfirmation) {
                         Button("删除", role: .destructive) {
                             if let entry = entry {
                                 let deleteEntryIndex = entries.firstIndex(where: { $0.id == entry.id })
@@ -408,7 +408,7 @@ struct DiaryPage: View {
                     HStack(spacing: infoRowSpacing) {
                         Image(systemName: "character.cursor.ibeam")
 //                            .foregroundColor(.gray)
-                        Text("字数 \(entry.content?.count ?? 0)")
+                        Text("\(String(localized: "字数")) \(entry.content?.count ?? 0)")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Spacer()
