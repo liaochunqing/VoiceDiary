@@ -29,7 +29,7 @@
 "设置页" = "Setting P";
 "列表页" = "List Page";
 "页" = "Page";
-
+"第%lld页" = "Page %lld";
 "主题外观" = "Theme";
 "浅色" = "Light";
 "深色" = "Dark";

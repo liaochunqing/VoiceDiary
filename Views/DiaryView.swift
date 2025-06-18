@@ -303,7 +303,7 @@ struct DiaryPage: View {
                     // ✨ 中间标题
                     if let index = entries.firstIndex(where: { $0.id == self.id }) {
                         let pageNumber = index + 1
-                        Text("\(String(localized: "页")) \(pageNumber)")
+                        Text("第\(pageNumber)页")
                             .font(.system(size: W_SCALE(18), weight: .medium))
                             .foregroundColor(.primary)
                     }
