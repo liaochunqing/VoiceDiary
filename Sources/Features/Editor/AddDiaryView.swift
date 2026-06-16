@@ -1,38 +1,72 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import CoreLocation
 
 struct AddDiaryView: View {
     @Environment(\.palette) private var pal
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    @State private var content = ""
-    @State private var emoji = "🙂"
-    @State private var showLocation = false
-    @State private var location = ""
+    var editingEntry: DiaryEntry? = nil
+
+    @State private var content: String
+    @State private var showLocation: Bool
+    @State private var location: String
     @State private var photoItems: [PhotosPickerItem] = []
-    @State private var photos: [Data] = []
-    @State private var memos: [VoiceResult] = []
+    @State private var photos: [Data]
+    @State private var newMemos: [VoiceResult] = []
+    @State private var existingMemos: [VoiceMemo]
+    @State private var deletedMemoIDs: Set<UUID> = []
     @State private var showRecorder = false
+    @State private var locationFetcher = LocationFetcher()
+    @State private var isFetchingLocation = false
     @FocusState private var writing: Bool
 
-    private let moods = ["🙂", "😊", "🥳", "😌", "😴", "😢", "😡", "🌧", "✨"]
+    init(editingEntry: DiaryEntry? = nil) {
+        self.editingEntry = editingEntry
+        _content       = State(initialValue: editingEntry?.content ?? "")
+        _showLocation  = State(initialValue: editingEntry?.showLocation ?? false)
+        _location      = State(initialValue: editingEntry?.location ?? "")
+        _photos        = State(initialValue: editingEntry?.photos ?? [])
+        _existingMemos = State(initialValue:
+            (editingEntry?.voiceMemos ?? []).sorted { $0.createdAt < $1.createdAt })
+    }
 
-    private var canSave: Bool { !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !memos.isEmpty }
+    private var isEditing: Bool { editingEntry != nil }
+
+    private var canSave: Bool {
+        !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        || !newMemos.isEmpty
+        || !existingMemos.filter { !deletedMemoIDs.contains($0.id) }.isEmpty
+    }
+
+    private var activeMemos: [VoiceMemo] {
+        existingMemos.filter { !deletedMemoIDs.contains($0.id) }
+    }
 
     var body: some View {
         ZStack {
             pal.paper.ignoresSafeArea()
-            VStack(spacing: Metric.m) {
+            VStack(spacing: 0) {
                 topBar
-                pills
-                editor
-                if !memos.isEmpty { memoStrip }
-                photoStrip
-                Spacer()
+                    .padding(.horizontal, Metric.l)
+                    .padding(.top, Metric.m)
+                    .padding(.bottom, Metric.m)
+
+                // 正文填满剩余空间；语音/图片/日期/地址锁在下方始终可见
+                VStack(alignment: .leading, spacing: Metric.m) {
+                    contentEditor
+                        .frame(minHeight: 120, maxHeight: .infinity)
+
+                    voiceSection
+                    photoStrip
+                    dateRow
+                    locationRow
+                }
+                .padding(.horizontal, Metric.l)
+                .padding(.bottom, Metric.m)
             }
-            .padding(.bottom, Metric.s)
         }
         .fullScreenCover(isPresented: $showRecorder) {
             RecordingView { result in
@@ -41,7 +75,7 @@ struct AddDiaryView: View {
                 if r.insertText, !r.transcript.isEmpty {
                     content += (content.isEmpty ? "" : "\n") + r.transcript
                 }
-                if r.keepAudio { memos.append(r) }
+                if r.keepAudio { newMemos.append(r) }
             }
         }
         .onChange(of: photoItems) { _, items in
@@ -53,156 +87,279 @@ struct AddDiaryView: View {
                 photos = datas
             }
         }
+        .onChange(of: showLocation) { _, show in
+            if show && location.isEmpty { fetchLocation() }
+        }
     }
 
-    // MARK: 顶部
+    // MARK: 顶部栏
 
     private var topBar: some View {
         HStack {
-            iconButton("xmark") { dismiss() }
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(pal.ink)
+                    .frame(width: 36, height: 36)
+                    .background(pal.card, in: Circle())
+                    .overlay(Circle().stroke(pal.line, lineWidth: 1))
+            }
             Spacer()
-            Text(dateString).font(.dLargeDate).foregroundStyle(pal.ink)
+            Text(isEditing ? "编辑日记" : dateString)
+                .font(.dCallout).foregroundStyle(pal.inkSoft)
             Spacer()
             Button { save() } label: {
-                Image(systemName: "checkmark").font(.system(size: 15, weight: .bold))
+                Image(systemName: "checkmark")
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(canSave ? pal.onAccent : pal.inkSoft)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 36, height: 36)
                     .background(canSave ? pal.accent : pal.card, in: Circle())
+                    .overlay(Circle().stroke(canSave ? .clear : pal.line, lineWidth: 1))
             }
             .disabled(!canSave)
         }
-        .padding(.horizontal, Metric.l).padding(.top, Metric.m)
     }
 
-    private func iconButton(_ name: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: name).font(.system(size: 14, weight: .bold))
-                .foregroundStyle(pal.ink).frame(width: 40, height: 40)
-                .background(pal.card, in: Circle())
-        }
-    }
+    // MARK: 正文（自适应高度，用隐形 Text 驱动）
 
-    // MARK: pills
-
-    private var pills: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Metric.s) {
-                Menu {
-                    ForEach(moods, id: \.self) { m in Button(m) { emoji = m } }
-                } label: { pill { Text(emoji); Text("心情") } }
-
-                Button { showLocation.toggle() } label: {
-                    pill(active: showLocation) {
-                        Image(systemName: "mappin.and.ellipse")
-                        Text(showLocation ? "隐藏位置" : "位置")
-                    }
-                }
-
-                Button { showRecorder = true } label: {
-                    pill(hot: true) { Image(systemName: "mic.fill"); Text("语音") }
-                }
-            }
-            .padding(.horizontal, Metric.l)
-        }
-    }
-
-    @ViewBuilder
-    private func pill<C: View>(hot: Bool = false, active: Bool = false, @ViewBuilder _ content: () -> C) -> some View {
-        HStack(spacing: Metric.xs) { content() }
-            .font(.dSubhead)
-            .foregroundStyle(hot ? pal.onAccent : pal.ink)
-            .padding(.horizontal, Metric.m).padding(.vertical, Metric.s)
-            .background(hot ? pal.accent : (active ? pal.accentSoft.opacity(0.3) : pal.card), in: Capsule())
-            .overlay(Capsule().stroke(hot ? .clear : pal.line, lineWidth: 1))
-    }
-
-    // MARK: 写作区（纸纹）
-
-    private var editor: some View {
+    private var contentEditor: some View {
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: Metric.cardRadius).fill(pal.card)
-                .overlay(PaperLines(color: pal.line).clipShape(RoundedRectangle(cornerRadius: Metric.cardRadius)))
+                .overlay(PaperLines(color: pal.line)
+                    .clipShape(RoundedRectangle(cornerRadius: Metric.cardRadius)))
                 .overlay(RoundedRectangle(cornerRadius: Metric.cardRadius).stroke(pal.line, lineWidth: 1))
 
             if content.isEmpty {
-                Text("写点什么，或点上面的 🎤 说给它听…")
+                Text("写点什么，或点麦克风说给它听…")
                     .font(.dBody).foregroundStyle(pal.inkSoft)
-                    .padding(.horizontal, Metric.l + 4).padding(.top, Metric.l + 4)
+                    .padding(Metric.l)
+                    .allowsHitTesting(false)
             }
+
+            // TextEditor 填满父级分配的高度，内部自行滚动超长内容
             TextEditor(text: $content)
                 .font(.dBody).foregroundStyle(pal.ink)
                 .scrollContentBackground(.hidden)
                 .padding(Metric.m)
                 .focused($writing)
         }
-        .frame(minHeight: 200)
-        .padding(.horizontal, Metric.l)
     }
 
-    // MARK: 语音附件
+    // MARK: 语音区
 
-    private var memoStrip: some View {
-        VStack(spacing: Metric.s) {
-            ForEach(memos.indices, id: \.self) { i in
-                HStack(spacing: Metric.s) {
-                    Image(systemName: "waveform").foregroundStyle(pal.accent)
-                    Text(memos[i].transcript.isEmpty ? "语音 \(durString(memos[i].duration))" : memos[i].transcript)
-                        .font(.dCaption).foregroundStyle(pal.ink).lineLimit(1)
-                    Spacer()
-                    Text(durString(memos[i].duration)).font(.dCaption).foregroundStyle(pal.inkSoft)
-                    Button { memos.remove(at: i) } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(pal.inkSoft)
-                    }
+    @ViewBuilder
+    private var voiceSection: some View {
+        if !activeMemos.isEmpty || !newMemos.isEmpty {
+            VStack(alignment: .leading, spacing: Metric.s) {
+                ForEach(activeMemos) { m in
+                    memoRow(
+                        icon: "waveform",
+                        text: m.transcript.isEmpty ? "语音 \(durStr(m.duration))" : m.transcript,
+                        dur: m.duration,
+                        onDelete: { deletedMemoIDs.insert(m.id) }
+                    )
                 }
-                .padding(.horizontal, Metric.m).padding(.vertical, Metric.s)
-                .background(pal.card, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(pal.line, lineWidth: 1))
+                ForEach(newMemos.indices, id: \.self) { i in
+                    memoRow(
+                        icon: "waveform.badge.plus",
+                        text: newMemos[i].transcript.isEmpty ? "新录音 \(durStr(newMemos[i].duration))" : newMemos[i].transcript,
+                        dur: newMemos[i].duration,
+                        onDelete: { newMemos.remove(at: i) }
+                    )
+                }
+                Button { showRecorder = true } label: {
+                    Label("添加语音", systemImage: "mic.fill")
+                        .font(.dCaption.weight(.semibold))
+                        .foregroundStyle(pal.onAccent)
+                        .padding(.horizontal, Metric.m)
+                        .padding(.vertical, Metric.s)
+                        .background(pal.accent, in: Capsule())
+                }
+            }
+        } else {
+            // 没有语音时只显示录音入口
+            Button { showRecorder = true } label: {
+                Label("录音", systemImage: "mic.fill")
+                    .font(.dCaption.weight(.semibold))
+                    .foregroundStyle(pal.accent)
+                    .padding(.horizontal, Metric.m)
+                    .padding(.vertical, Metric.s)
+                    .background(pal.card, in: Capsule())
+                    .overlay(Capsule().stroke(pal.line, lineWidth: 1))
             }
         }
-        .padding(.horizontal, Metric.l)
     }
 
-    // MARK: 配图
+    private func memoRow(icon: String, text: String, dur: Double, onDelete: @escaping () -> Void) -> some View {
+        HStack(spacing: Metric.s) {
+            Image(systemName: icon).foregroundStyle(pal.accent)
+                .frame(width: 24)
+            Text(text).font(.dCaption).foregroundStyle(pal.ink).lineLimit(1)
+            Spacer()
+            Text(durStr(dur)).font(.dCaption).foregroundStyle(pal.inkSoft)
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill").foregroundStyle(pal.inkSoft)
+                    .font(.system(size: 18))
+            }
+        }
+        .padding(.horizontal, Metric.m)
+        .padding(.vertical, Metric.s)
+        .background(pal.card, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(pal.line, lineWidth: 1))
+    }
+
+    // MARK: 图片栏
 
     private var photoStrip: some View {
-        HStack(spacing: Metric.s) {
+        let line = pal.line
+        let inkSoft = pal.inkSoft
+        return HStack(spacing: Metric.s) {
             PhotosPicker(selection: $photoItems, maxSelectionCount: 4, matching: .images) {
                 RoundedRectangle(cornerRadius: Metric.thumbRadius)
-                    .strokeBorder(pal.line, style: StrokeStyle(lineWidth: 1.5, dash: [4]))
-                    .frame(width: 48, height: 48)
-                    .overlay(Image(systemName: "camera").foregroundStyle(pal.inkSoft))
+                    .strokeBorder(line, style: StrokeStyle(lineWidth: 1.5, dash: [4]))
+                    .frame(width: 60, height: 60)
+                    .overlay(Image(systemName: "camera").foregroundStyle(inkSoft))
             }
             ForEach(photos.indices, id: \.self) { i in
                 if let ui = UIImage(data: photos[i]) {
-                    Image(uiImage: ui).resizable().scaledToFill()
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
+                    ZStack(alignment: .topTrailing) {
+                        Image(uiImage: ui).resizable().scaledToFill()
+                            .frame(width: 60, height: 60)
+                            .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
+                        Button { photos.remove(at: i) } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.white).shadow(radius: 2)
+                        }
+                        .offset(x: 4, y: -4)
+                    }
                 }
             }
             Spacer()
         }
-        .padding(.horizontal, Metric.l)
     }
 
-    // MARK: 逻辑
+    // MARK: 日期栏
+
+    private var dateRow: some View {
+        Label(dateString, systemImage: "calendar")
+            .font(.dCaption).foregroundStyle(pal.inkSoft)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: 地点栏
+
+    private var locationRow: some View {
+        HStack(spacing: Metric.s) {
+            Button {
+                showLocation.toggle()
+                if !showLocation { location = "" }
+            } label: {
+                Image(systemName: "mappin.and.ellipse")
+                    .foregroundStyle(showLocation ? pal.accent : pal.inkSoft)
+                    .frame(width: 20)
+            }
+
+            if showLocation {
+                if isFetchingLocation {
+                    ProgressView().tint(pal.accent)
+                    Text("获取位置中…").font(.dCaption).foregroundStyle(pal.inkSoft)
+                } else {
+                    TextField("地点", text: $location)
+                        .font(.dCaption).foregroundStyle(pal.ink)
+                }
+            } else {
+                Text("添加地点").font(.dCaption).foregroundStyle(pal.inkSoft)
+            }
+            Spacer()
+        }
+    }
+
+    // MARK: 保存
 
     private func save() {
         guard canSave else { return }
-        let entry = DiaryEntry(content: content, date: Date(),
-                               location: showLocation ? location : "",
-                               showLocation: showLocation, emoji: emoji, photos: photos)
-        context.insert(entry)
-        for m in memos {
-            let memo = VoiceMemo(audio: m.audio, duration: m.duration, transcript: m.transcript)
-            memo.entry = entry
-            context.insert(memo)
+        if let entry = editingEntry {
+            entry.content     = content
+            entry.location    = showLocation ? location : ""
+            entry.showLocation = showLocation
+            entry.photos      = photos
+            for id in deletedMemoIDs {
+                if let m = existingMemos.first(where: { $0.id == id }) { context.delete(m) }
+            }
+            for m in newMemos {
+                let memo = VoiceMemo(audio: m.audio, duration: m.duration, transcript: m.transcript)
+                memo.entry = entry; context.insert(memo)
+            }
+        } else {
+            let entry = DiaryEntry(content: content, date: Date(),
+                                   location: showLocation ? location : "",
+                                   showLocation: showLocation, emoji: "", photos: photos)
+            context.insert(entry)
+            for m in newMemos {
+                let memo = VoiceMemo(audio: m.audio, duration: m.duration, transcript: m.transcript)
+                memo.entry = entry; context.insert(memo)
+            }
         }
         try? context.save()
         dismiss()
     }
 
-    private var dateString: String {
-        let f = DateFormatter(); f.dateFormat = "yyyy.MM.dd"; return f.string(from: Date())
+    // MARK: 位置获取
+
+    private func fetchLocation() {
+        isFetchingLocation = true
+        locationFetcher.onResult = { label in
+            location = label; isFetchingLocation = false
+        }
+        locationFetcher.fetch()
     }
-    private func durString(_ d: TimeInterval) -> String { String(format: "%d:%02d", Int(d) / 60, Int(d) % 60) }
+
+    // MARK: 工具
+
+    private var dateString: String {
+        let f = DateFormatter()
+        if let e = editingEntry {
+            f.dateFormat = "yyyy/MM/dd HH:mm"
+            return f.string(from: e.date)
+        }
+        f.dateFormat = "yyyy.MM.dd"
+        return f.string(from: Date())
+    }
+
+    private func durStr(_ d: TimeInterval) -> String {
+        String(format: "%d:%02d", Int(d) / 60, Int(d) % 60)
+    }
+}
+
+// MARK: - 位置获取器
+
+@MainActor
+private final class LocationFetcher: NSObject {
+    private let manager = CLLocationManager()
+    var onResult: ((String) -> Void)?
+
+    func fetch() {
+        manager.delegate = self
+        manager.requestWhenInUseAuthorization()
+        manager.requestLocation()
+    }
+}
+
+extension LocationFetcher: CLLocationManagerDelegate {
+    nonisolated func locationManager(_ manager: CLLocationManager,
+                                     didUpdateLocations locations: [CLLocation]) {
+        guard let loc = locations.first else { return }
+        CLGeocoder().reverseGeocodeLocation(loc) { [weak self] placemarks, _ in
+            let place = placemarks?.first
+            let label = [place?.locality, place?.name].compactMap { $0 }.joined(separator: " · ")
+            let result = label.isEmpty ? "当前位置" : label
+            Task { @MainActor [weak self] in self?.onResult?(result) }
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager,
+                                     didFailWithError error: any Error) {
+        Task { @MainActor [weak self] in self?.onResult?("当前位置") }
+    }
 }
