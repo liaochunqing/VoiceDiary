@@ -9,6 +9,12 @@
 - iCloud 容器：`iCloud.com.chunqingliao.VoiceDiary`（CloudKit 私有库）
 - Team：`8X79G5XCU6`，部署目标 iOS 17.5，仅 iPhone
 
+## UI 设计准则
+
+- **用图标替代文字按钮**：界面上的操作按钮优先使用 SF Symbols 图标，不写文字标签。文字只保留在内容展示区、空状态提示、以及确实无法用图标传达语义的极少数场景（如付费页定价）。目的：减少视觉噪声，与「仿真日记本」的物理感风格保持一致。
+- **操作按钮统一圆形背景**：`Image(systemName:).frame(36×36).background(pal.card, in: Circle()).overlay(Circle().stroke(pal.line))`，危险操作（删除）图标用红色/accent 强调。
+- **顶栏最多三个操作位**：左一（返回/关闭）、中间（标题）、右侧最多两个操作图标，不使用 menu 隐藏常用动作。
+
 ## 技术栈
 - **Swift 6 language mode**（`SWIFT_VERSION 6.0` + `SWIFT_STRICT_CONCURRENCY complete`，编译期数据竞争检查）。
 - SwiftUI（iOS 17.5+）、`@Observable`（Observation）、SwiftData `@Model` + CloudKit 私有同步、async/await + `@MainActor`。

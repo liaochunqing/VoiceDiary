@@ -16,14 +16,14 @@ struct CoverFace: View {
                 .frame(height: 2)
                 .frame(maxHeight: .infinity, alignment: .center)
 
-            VStack(spacing: Metric.s) {
+            VStack(spacing: Metric.m) {
                 Text("我 的 日 记")
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.system(size: 60, weight: .bold))
                     .tracking(4)
                     .foregroundStyle(pal.gold)
                     .shadow(color: .black.opacity(0.3), radius: 1, y: 1)
                 Text("VOICE DIARY")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .tracking(3)
                     .foregroundStyle(pal.gold.opacity(0.65))
             }
@@ -45,7 +45,7 @@ struct CoverView: View {
                 Spacer()
                 if streak > 1 {
                     Text("🔥 连续记录 \(streak) 天")
-                        .font(.dCaption)
+                        .font(.dSubhead)
                         .foregroundStyle(pal.gold)
                         .padding(.horizontal, Metric.l)
                         .padding(.vertical, Metric.s)
@@ -56,7 +56,7 @@ struct CoverView: View {
                         .padding(.bottom, Metric.l)
                 }
                 Text("轻触翻开")
-                    .font(.dCaption)
+                    .font(.dSubhead)
                     .foregroundStyle(pal.gold.opacity(0.55))
                     .padding(.bottom, Metric.xl)
             }

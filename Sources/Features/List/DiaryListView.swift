@@ -3,10 +3,10 @@ import SwiftData
 
 struct DiaryListView: View {
     @Environment(\.palette) private var pal
+    @Environment(\.bookNavigator) private var navigator
     @Query(sort: \DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
     @State private var search = ""
     @State private var showEditor = false
-    @State private var showSettings = false
 
     private var filtered: [DiaryEntry] {
         guard !search.isEmpty else { return entries }
@@ -27,8 +27,10 @@ struct DiaryListView: View {
                     LazyVStack(spacing: Metric.m) {
                         ForEach(filtered, id: \.id) { entry in
                             let gi = entries.firstIndex { $0.id == entry.id } ?? 0
-                            let page = entries.count - gi
-                            NavigationLink(destination: DiaryDetailView(entry: entry, page: page)) {
+                            let page = gi + 1
+                            Button {
+                                navigator.goToEntry(at: gi)
+                            } label: {
                                 DiaryRow(entry: entry, page: page)
                             }
                             .buttonStyle(.plain)
@@ -39,18 +41,19 @@ struct DiaryListView: View {
                 }
                 .scrollIndicators(.hidden)
             }
+
             fab
         }
-        .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showEditor) { AddDiaryView() }
-        .sheet(isPresented: $showSettings) { SettingsView() }
     }
+
+    // MARK: 顶部栏
 
     private var header: some View {
         HStack {
-            Text("日记").font(.dPageTitle).foregroundStyle(pal.ink)
+            Text("目录").font(.dPageTitle).foregroundStyle(pal.ink)
             Spacer()
-            Button { showSettings = true } label: {
+            Button { navigator.goToSettings() } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(pal.ink)
@@ -62,6 +65,8 @@ struct DiaryListView: View {
         .padding(.horizontal, Metric.l)
         .padding(.top, Metric.s)
     }
+
+    // MARK: 搜索栏
 
     private var searchBar: some View {
         HStack(spacing: Metric.s) {
@@ -75,18 +80,15 @@ struct DiaryListView: View {
         .padding(.horizontal, Metric.l)
     }
 
+    // MARK: 新建按钮（可拖拽）
+
     private var fab: some View {
-        Button { showEditor = true } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 24, weight: .medium))
-                .foregroundStyle(pal.onAccent)
-                .frame(width: 56, height: 56)
-                .background(pal.accent, in: Circle())
-                .shadow(color: pal.accent.opacity(0.35), radius: 8, y: 4)
-        }
-        .padding(Metric.xl)
+        DraggableFAB { showEditor = true }
+            .padding(Metric.xl)
     }
 }
+
+// MARK: - 日记列表行
 
 private struct DiaryRow: View {
     @Environment(\.palette) private var pal
@@ -94,49 +96,59 @@ private struct DiaryRow: View {
     let page: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Metric.xs) {
-            HStack(spacing: Metric.xs) {
-                Text(dateStr).font(.dCaption).foregroundStyle(pal.inkSoft)
-                dot
-                Text(entry.emoji).font(.dCaption)
-                dot
-                Text("第\(page)页").font(.dCaption).foregroundStyle(pal.inkSoft)
-                if let m = entry.memos.first {
-                    dot
-                    Text("🎤 \(durStr(m.duration))")
-                        .font(.dCaption).fontWeight(.semibold)
-                        .foregroundStyle(pal.accent)
-                }
-                Spacer()
-            }
-            Text(entry.content)
-                .font(.dSubhead).foregroundStyle(pal.ink)
-                .lineLimit(2).multilineTextAlignment(.leading)
-            if entry.showLocation, !entry.location.isEmpty {
-                Label(entry.location, systemImage: "mappin")
-                    .font(.dCaption).foregroundStyle(pal.inkSoft)
-            }
-            if !entry.photos.isEmpty {
+        ZStack(alignment: .bottomTrailing) {
+            VStack(alignment: .leading, spacing: Metric.xs) {
                 HStack(spacing: Metric.xs) {
-                    ForEach(entry.photos.prefix(3).indices, id: \.self) { i in
-                        if let ui = UIImage(data: entry.photos[i]) {
-                            Image(uiImage: ui).resizable().scaledToFill()
+                    Text(dateStr).font(.dCaption).foregroundStyle(pal.inkSoft)
+                    if let m = entry.memos.first {
+                        dot
+                        Text("🎤 \(durStr(m.duration))")
+                            .font(.dCaption).fontWeight(.semibold)
+                            .foregroundStyle(pal.accent)
+                    }
+                    Spacer()
+                }
+                Text(entry.content)
+                    .font(.dSubhead).foregroundStyle(pal.ink)
+                    .lineLimit(2).multilineTextAlignment(.leading)
+                if entry.showLocation, !entry.location.isEmpty {
+                    Label(entry.location, systemImage: "mappin")
+                        .font(.dCaption).foregroundStyle(pal.inkSoft)
+                }
+                if !entry.photos.isEmpty {
+                    HStack(spacing: Metric.xs) {
+                        ForEach(entry.photos.prefix(3).indices, id: \.self) { i in
+                            if let ui = UIImage(data: entry.photos[i]) {
+                                Image(uiImage: ui).resizable().scaledToFill()
+                                    .frame(width: 38, height: 38)
+                                    .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
+                            }
+                        }
+                        if entry.photos.count > 3 {
+                            Text("+\(entry.photos.count - 3)")
+                                .font(.dCaption).foregroundStyle(pal.inkSoft)
                                 .frame(width: 38, height: 38)
-                                .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
+                                .background(pal.line, in: RoundedRectangle(cornerRadius: Metric.thumbRadius))
                         }
                     }
-                    if entry.photos.count > 3 {
-                        Text("+\(entry.photos.count - 3)")
-                            .font(.dCaption).foregroundStyle(pal.inkSoft)
-                            .frame(width: 38, height: 38)
-                            .background(pal.line, in: RoundedRectangle(cornerRadius: Metric.thumbRadius))
-                    }
+                    .padding(.top, Metric.xs)
                 }
-                .padding(.top, Metric.xs)
+                // 底部右角占位，防止内容被 badge 遮住
+                Color.clear.frame(height: 16)
             }
+            .padding(Metric.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // 第 n 页 badge
+            Text("第\(page)页")
+                .font(.dMicro)
+                .foregroundStyle(pal.inkSoft)
+                .padding(.horizontal, Metric.s)
+                .padding(.vertical, 3)
+                .background(pal.paper, in: Capsule())
+                .overlay(Capsule().stroke(pal.line, lineWidth: 1))
+                .padding(Metric.s)
         }
-        .padding(Metric.m)
-        .frame(maxWidth: .infinity, alignment: .leading)
         .background(pal.card, in: RoundedRectangle(cornerRadius: Metric.cardRadius))
         .overlay(RoundedRectangle(cornerRadius: Metric.cardRadius).stroke(pal.line, lineWidth: 1))
     }
