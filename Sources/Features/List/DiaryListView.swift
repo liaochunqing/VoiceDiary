@@ -2,8 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct DiaryListView: View {
+    @Environment(\.palette) private var pal
     @Query(sort: \DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
     @State private var search = ""
+    @State private var showEditor = false
+    @State private var showSettings = false
 
     private var filtered: [DiaryEntry] {
         guard !search.isEmpty else { return entries }
@@ -15,7 +18,7 @@ struct DiaryListView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            Palette.paper.ignoresSafeArea()
+            pal.paper.ignoresSafeArea()
 
             VStack(spacing: Metric.m) {
                 header
@@ -24,29 +27,36 @@ struct DiaryListView: View {
                     LazyVStack(spacing: Metric.m) {
                         ForEach(filtered, id: \.id) { entry in
                             let gi = entries.firstIndex { $0.id == entry.id } ?? 0
-                            DiaryRow(entry: entry, page: entries.count - gi)
+                            let page = entries.count - gi
+                            NavigationLink(destination: DiaryDetailView(entry: entry, page: page)) {
+                                DiaryRow(entry: entry, page: page)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, Metric.l)
-                    .padding(.bottom, 90)
+                    .padding(.bottom, 100)
                 }
                 .scrollIndicators(.hidden)
             }
             fab
         }
+        .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $showEditor) { AddDiaryView() }
+        .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
     private var header: some View {
         HStack {
-            Text("日记").font(.dPageTitle).foregroundStyle(Palette.ink)
+            Text("日记").font(.dPageTitle).foregroundStyle(pal.ink)
             Spacer()
-            Button {} label: {
+            Button { showSettings = true } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(pal.ink)
                     .frame(width: 36, height: 36)
-                    .background(Palette.card, in: Circle())
-                    .overlay(Circle().stroke(Palette.line, lineWidth: 1))
+                    .background(pal.card, in: Circle())
+                    .overlay(Circle().stroke(pal.line, lineWidth: 1))
             }
         }
         .padding(.horizontal, Metric.l)
@@ -55,54 +65,56 @@ struct DiaryListView: View {
 
     private var searchBar: some View {
         HStack(spacing: Metric.s) {
-            Image(systemName: "magnifyingglass").foregroundStyle(Palette.inkSoft)
+            Image(systemName: "magnifyingglass").foregroundStyle(pal.inkSoft)
             TextField("搜索内容或地点…", text: $search).font(.dSubhead)
         }
         .padding(.horizontal, Metric.m)
         .padding(.vertical, Metric.s)
-        .background(Palette.card, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Palette.line, lineWidth: 1))
+        .background(pal.card, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(pal.line, lineWidth: 1))
         .padding(.horizontal, Metric.l)
     }
 
     private var fab: some View {
-        Button {} label: {
+        Button { showEditor = true } label: {
             Image(systemName: "plus")
                 .font(.system(size: 24, weight: .medium))
-                .foregroundStyle(Palette.onAccent)
+                .foregroundStyle(pal.onAccent)
                 .frame(width: 56, height: 56)
-                .background(Palette.accent, in: Circle())
-                .shadow(color: Palette.accent.opacity(0.35), radius: 8, y: 4)
+                .background(pal.accent, in: Circle())
+                .shadow(color: pal.accent.opacity(0.35), radius: 8, y: 4)
         }
         .padding(Metric.xl)
     }
 }
 
 private struct DiaryRow: View {
+    @Environment(\.palette) private var pal
     let entry: DiaryEntry
     let page: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metric.xs) {
             HStack(spacing: Metric.xs) {
-                Text(dateStr).font(.dCaption).foregroundStyle(Palette.inkSoft)
+                Text(dateStr).font(.dCaption).foregroundStyle(pal.inkSoft)
                 dot
                 Text(entry.emoji).font(.dCaption)
                 dot
-                Text("第\(page)页").font(.dCaption).foregroundStyle(Palette.inkSoft)
+                Text("第\(page)页").font(.dCaption).foregroundStyle(pal.inkSoft)
                 if let m = entry.memos.first {
                     dot
                     Text("🎤 \(durStr(m.duration))")
                         .font(.dCaption).fontWeight(.semibold)
-                        .foregroundStyle(Palette.accent)
+                        .foregroundStyle(pal.accent)
                 }
                 Spacer()
             }
             Text(entry.content)
-                .font(.dSubhead).foregroundStyle(Palette.ink)
+                .font(.dSubhead).foregroundStyle(pal.ink)
                 .lineLimit(2).multilineTextAlignment(.leading)
             if entry.showLocation, !entry.location.isEmpty {
-                Text(entry.location).font(.dCaption).foregroundStyle(Palette.inkSoft)
+                Label(entry.location, systemImage: "mappin")
+                    .font(.dCaption).foregroundStyle(pal.inkSoft)
             }
             if !entry.photos.isEmpty {
                 HStack(spacing: Metric.xs) {
@@ -113,17 +125,23 @@ private struct DiaryRow: View {
                                 .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
                         }
                     }
+                    if entry.photos.count > 3 {
+                        Text("+\(entry.photos.count - 3)")
+                            .font(.dCaption).foregroundStyle(pal.inkSoft)
+                            .frame(width: 38, height: 38)
+                            .background(pal.line, in: RoundedRectangle(cornerRadius: Metric.thumbRadius))
+                    }
                 }
                 .padding(.top, Metric.xs)
             }
         }
         .padding(Metric.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.card, in: RoundedRectangle(cornerRadius: Metric.cardRadius))
-        .overlay(RoundedRectangle(cornerRadius: Metric.cardRadius).stroke(Palette.line, lineWidth: 1))
+        .background(pal.card, in: RoundedRectangle(cornerRadius: Metric.cardRadius))
+        .overlay(RoundedRectangle(cornerRadius: Metric.cardRadius).stroke(pal.line, lineWidth: 1))
     }
 
-    private var dot: some View { Text("·").font(.dCaption).foregroundStyle(Palette.inkSoft) }
+    private var dot: some View { Text("·").font(.dCaption).foregroundStyle(pal.inkSoft) }
     private var dateStr: String {
         let f = DateFormatter(); f.dateFormat = "yyyy/MM/dd"; return f.string(from: entry.date)
     }

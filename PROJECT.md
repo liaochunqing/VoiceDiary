@@ -9,8 +9,14 @@
 - iCloud 容器：`iCloud.com.chunqingliao.VoiceDiary`（CloudKit 私有库）
 - Team：`8X79G5XCU6`，部署目标 iOS 17.5，仅 iPhone
 
+## 技术栈
+- **Swift 6 language mode**（`SWIFT_VERSION 6.0` + `SWIFT_STRICT_CONCURRENCY complete`，编译期数据竞争检查）。
+- SwiftUI（iOS 17.5+）、`@Observable`（Observation）、SwiftData `@Model` + CloudKit 私有同步、async/await + `@MainActor`。
+- 录音 `AVAudioRecorder` + `AVAudioApplication`（iOS17 权限）、转写 `Speech`（on-device）、`PhotosUI`。
+- 并发约定：跨线程一次性回调用 `OSAllocatedUnfairLock`；Apple 旧框架（Speech）用 `@preconcurrency import`；不使用 `@unchecked Sendable` 糊弄。
+
 ## 工程方式
-- **XcodeGen**：改配置改 `project.yml`，然后 `xcodegen generate` 重新生成 `.xcodeproj`（生成物，不手改）。
+- **XcodeGen**：改配置改 `project.yml`，然后 `xcodegen generate` 重新生成 `.xcodeproj`（生成物，不手改）。新增 `.swift` 文件后必须重新 generate。
 - 编译验证：`xcodebuild -project VoiceDiary.xcodeproj -scheme VoiceDiary -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`
 - 演示数据：DEBUG 下 launch 传 `-seedDemo 1`（见 `DataManager.seedDemoIfNeeded`）。
 

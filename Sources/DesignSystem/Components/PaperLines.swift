@@ -3,7 +3,7 @@ import SwiftUI
 /// 日记本横线纸纹：等距横线，叠在卡片底色上营造纸张质感。
 struct PaperLines: View {
     var spacing: CGFloat = 28
-    var color: Color = Palette.line
+    var color: Color = Color(lightHex: 0xD9CBAC, darkHex: 0x3E3222)
 
     var body: some View {
         Canvas { ctx, size in
