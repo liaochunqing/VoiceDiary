@@ -48,8 +48,62 @@ Support/          VoiceDiary.entitlements, VoiceDiary.storekit
 - iCloud 同步走用户自己的私有 iCloud（`NSPersistentCloudKitContainer`），开发者看不到内容。音频也随私有 iCloud 同步（低码率 AAC）。
 
 ## 进度
-- [x] 工程骨架 + 设计系统 + 模型（含 VoiceMemo）
-- [x] 封面页（皮质）+ 列表页样板（含 🎤 语音标记）
-- [ ] 翻页引擎（pageCurl）/ 写日记(pills+录音) / 详情(语音条) / 设置 / 统计 / 导出 / 付费
-- [ ] 录音功能（AVAudioRecorder + Speech on-device，方案见 `../VoiceDiary-backup/REBUILD_PLAN.md`）
-- 详细方案与设计图：`REBUILD_PLAN.md`、`voice-feature-mockups.html`（在 backup 里，待迁入）
+
+### 已完成（2026-06-16/17 redesign-v2）
+
+#### 翻页引擎
+- [x] `UIPageViewController(.pageCurl)` 真实翻书效果，DataSource/Delegate 全部 `nonisolated + MainActor.assumeIsolated`
+- [x] `BookNavigator`（`@MainActor final class`）程序化翻页：`goToList() / goToSettings() / goToEntry(at:)`
+- [x] 多页连翻动画：每页间隔 70ms 顺序调用 `setViewControllers`，模拟真实翻多页效果
+- [x] 页面结构：`[0=封面, 1=设置, 2=目录, 3..N=日记详情]`，direction 根据目标 index 自动判断
+- [x] `ThemedPage` wrapper 解决 `UIHostingController` 内主题切换不生效问题（`@Observable ThemeManager` 动态读取）
+- [x] 翻页音效（`fp3.m4a`），`UserDefaults "isSoundEnabled"` 控制开关
+- [x] 禁用 `UITapGestureRecognizer`，防止 pageCurl 单击拦截设置页 Toggle 等控件
+
+#### 封面页（CoverView）
+- [x] 标题字体加大一倍（"我 的 日 记" 60pt bold，"VOICE DIARY" 22pt semibold）
+- [x] 连续打卡 streak 徽章、「轻触翻开」提示改用 `.dSubhead`
+
+#### 目录页（DiaryListView）
+- [x] 标题从「日记」改为「目录」
+- [x] 每条 cell 右下角显示「第 n 页」胶囊（离目录最近 = 第 1 页，依次递增）
+- [x] 移除顶部 EmojiBubbleView 储蓄罐
+- [x] 设置按钮点击通过翻页动画跳转到设置页
+- [x] FAB「+」改为 `DraggableFAB`（可拖拽悬浮，按下拖动改变位置，点击触发新建）
+
+#### 详情页（DiaryDetailView）
+- [x] 左上角「返回目录」胶囊按钮（图标 + 文字）
+- [x] 顶栏右侧：垃圾桶（删除，红色）+ 铅笔（编辑），纯图标圆形按钮
+- [x] 正文使用 `SelectableTextView`（`UITextView` 封装），长按弹「选择 / 全选」→ 选区后弹「拷贝」，标准 iOS 文字选择交互
+- [x] 正文区 `frame(maxHeight: .infinity)` 填满剩余屏幕空间，`UITextView` 内部自行滚动超长内容
+- [x] 语音条 / 图片条 / 日期 / 地点固定在文本区下方，始终可见不被挤出屏幕
+- [x] 地点单独一行显示（不与日期并排）
+- [x] 详情页也有可拖拽 FAB「+」（点击新建日记）
+
+#### 编辑页（AddDiaryView）
+- [x] 移除 Emoji 选择 pills 行，emoji 字段保留在 Model 但 UI 不展示
+- [x] 布局与详情页保持一致：正文 → 语音 → 图片 → 日期 → 地点
+- [x] 正文 `TextEditor` + `frame(minHeight: 120, maxHeight: .infinity)` 填满剩余空间，内部自行滚动
+- [x] 语音条支持删除（`xmark.circle.fill`），「添加语音」/ 「录音」按钮左对齐
+- [x] 图片栏 60×60 缩略图，支持删除
+- [x] 地点行：图钉按钮开关，开启后自动 CLGeocoder 反地理编码填充，可手动编辑
+
+#### 设置页（SettingsView）
+- [x] 无 NavigationStack / 无「完成」按钮，通过 `bookNavigator` 翻页进入
+- [x] 付费墙横幅置于顶部（仅未购买时显示）
+- [x] 每日提醒 + 翻页声音 Toggle
+- [x] 关于区：隐私政策、分享给朋友（UIActivityViewController）、意见反馈（mailto）、其他产品、恢复购买
+- [x] 主题切换（橙调 / 暗金 / 茶绿），实时生效
+
+#### 共用组件
+- [x] `DraggableFAB`（`DesignSystem/Components/`）：拖拽手势 + 单击区分，初始位置右下角
+- [x] `EmojiBubbleView`（SpriteKit + CoreMotion 重力感应 + CHHapticEngine）：代码保留，暂不挂入目录
+- [x] Swift 6 并发：`nonisolated` + `MainActor.assumeIsolated`，`@preconcurrency import CoreMotion`
+
+---
+
+### 待完成
+- [ ] 录音功能（AVAudioRecorder + Speech on-device `requiresOnDeviceRecognition = true`）
+- [ ] 统计页（StatsView）
+- [ ] PDFKit 导出（付费功能）
+- [ ] 详细方案与设计图：`REBUILD_PLAN.md`、`voice-feature-mockups.html`（backup 里，待迁入）
