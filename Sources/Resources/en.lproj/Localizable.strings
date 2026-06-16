@@ -1,0 +1,141 @@
+/* 
+  Localizable.strings
+  VoiceDiary
+
+  Created by chunqing liao on 2025/6/15.
+  
+*/
+"设置" = "Setting";
+"通用" = "General";
+"支持" = "Support";
+"其他作品" = "Others";
+
+"emoji储蓄罐" = "Emoji Piggy Bank";
+"emoji时间段" = "Emoji Duration";
+"emoji大小" = "Emoji Size";
+"emoji旋转" = "Emoji Rotation";
+"显示位置" = "Display Position";
+"重力加速度" = "Gravity";
+"本月" = "This M";
+"本年" = "This Y";
+"全部" = "All";
+"特小" = "XS";
+"小" = "Small";
+"中" = "Med";
+"大" = "Large";
+"特大" = "XL";
+"慢" = "Slow";
+"快" = "Fast";
+"设置页" = "Setting P";
+"列表页" = "List Page";
+"页" = "Page";
+"第%lld页" = "Page %lld";
+"主题外观" = "Theme";
+"浅色" = "Light";
+"深色" = "Dark";
+"iCloud同步" = "iCloud Sync";
+"翻页声效" = "Page Turning Sound";
+"面容ID" = "Face ID";
+
+"意见反馈" = "Feedback";
+"分享给朋友" = "Share with Friends";
+"给好评" = "Rate Us";
+"隐私政策" = "Privacy Policy";
+"当前版本" = "Current Version";
+"(已是最新)" = "(Up to date)";
+"睡眠伙伴" = "Sleep Buddy";
+"专注睡眠的音乐和白噪音" = "Sleep-focused music and white noise";
+
+"搜索内容或地点..." = "Search content or location...";
+"欢迎使用,请开始您的日记之旅" = "Welcome, please start your diary journey";
+"写点什么…" = "Write something…";
+"字数" = "Word Count";
+"取消" = "Cancel";
+"确定" = "OK";
+"现在我的心情" = "My mood right now";
+"喜" = "Joy";
+"怒" = "Anger";
+"忧" = "Sorrow";
+"思" = "Melancholy";
+"悲" = "Grief";
+"恐" = "Fear";
+"惊" = "Surprise";
+
+"我是示例文本" = "I am sample text";
+"重置:" = "Reset:";
+"点击恢复出厂字体" = "Tap to restore default font";
+"字体大小:" = "Font Size:";
+"字体颜色:" = "Font Color:";
+"选择字体:" = "Select Font:";
+
+"留下" = "Stay";
+"离开" = "Leave";
+"确定不保存就离开吗?" = "Are you sure you want to leave without saving?";
+"删除" = "Delete";
+"确定删除这篇日记吗?" = "Are you sure you want to delete this diary entry?";
+"连续记录" = "Streak:";
+"天" = "days";
+"每日提醒" = "Daily Reminder";
+"开启提醒" = "Enable Reminder";
+"提醒时间" = "Reminder Time";
+"已连续记录" = "Current Streak";
+"📖 翻页日记" = "📖 Page-Flip Diary";
+"今天的故事，写下来了吗？" = "Have you written today's story yet?";
+"翻开日记本，记录今天的心情吧" = "Open your diary and capture today's mood";
+"别让今天的回忆悄悄溜走" = "Don't let today's memories slip away";
+"日记本已锁定" = "Diary is locked";
+"使用面容ID解锁" = "Unlock with Face ID";
+"输入密码" = "Enter Passcode";
+"输入密码解锁" = "Enter passcode to unlock";
+"设置解锁密码" = "Set Unlock Passcode";
+"再次输入确认" = "Confirm Passcode";
+
+/* Onboarding */
+"像翻书一样写日记" = "Write Your Diary Like a Book";
+"翻开封面，一页一页记录你的生活，找回纸质日记本的温度" = "Open the cover and record your life page by page — feel the warmth of a paper diary";
+"你的日记，只属于你" = "Your Diary, Just for You";
+"开启隐私锁，用面容ID或密码保护你的私密记录" = "Enable Privacy Lock to protect your private entries with Face ID or a passcode";
+"每天写一点，慢慢都会变" = "Write a little every day, and things will change";
+"开启每日提醒，养成记录的习惯，攒下属于自己的连续天数" = "Turn on daily reminders to build a journaling habit and grow your streak";
+"开始使用" = "Get Started";
+"下一步" = "Next";
+"跳过" = "Skip";
+
+/* Stats / Annual Report */
+"我的统计" = "My Stats";
+"总日记数" = "Total Entries";
+"连续天数 🔥" = "Day Streak 🔥";
+"总字数" = "Total Words";
+"记录天数" = "Days Recorded";
+"心情分布" = "Mood Distribution";
+"生成年度报告图" = "Generate Annual Report Image";
+"分享年度报告" = "Share Annual Report";
+"我的日记年度报告" = "My Diary Annual Report";
+"翻页日记" = "Page-Flip Diary";
+"我的统计 / 年度报告" = "My Stats / Annual Report";
+
+/* Export */
+"导出日记本" = "Export Diary";
+"还没有日记，写下第一篇吧" = "No entries yet — write your first one";
+"正在生成 PDF..." = "Generating PDF...";
+"分享 / 保存 PDF" = "Share / Save PDF";
+"导出 PDF" = "Export PDF";
+"生成 PDF 失败，请重试" = "Failed to generate PDF, please try again";
+"导出为 PDF" = "Export as PDF";
+
+/* Settings */
+"我的" = "My";
+
+/* Paywall */
+"解锁完整日记本" = "Unlock the Full Diary";
+"一次购买，永久使用，无需订阅" = "One purchase, forever yours — no subscription";
+"隐私锁（面容ID/密码）" = "Privacy Lock (Face ID / Passcode)";
+"无限图片附件" = "Unlimited Photo Attachments";
+"导出PDF日记本" = "Export Diary as PDF";
+"完整统计与年度报告" = "Full Stats & Annual Report";
+"一次性解锁" = "one-time unlock";
+"无订阅 · 无自动扣费" = "No subscription · No auto-renewal";
+"恢复购买" = "Restore Purchase";
+"已解锁完整版" = "Full Version Unlocked";
+"完整版已解锁" = "Full Version Unlocked";
+"解锁完整版" = "Unlock Full Version";

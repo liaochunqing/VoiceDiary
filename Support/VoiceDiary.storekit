@@ -1,0 +1,37 @@
+{
+  "identifier" : "voicediary-storekit",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "15.00",
+      "familyShareable" : false,
+      "internalID" : "FULLUNLOCK001",
+      "localizations" : [
+        {
+          "description" : "解锁隐私锁、无限图片附件、导出PDF和完整统计/年度报告，一次购买永久使用",
+          "displayName" : "解锁完整版",
+          "locale" : "zh-Hans"
+        },
+        {
+          "description" : "Unlock privacy lock, unlimited photos, PDF export, and full stats/annual report — once, forever",
+          "displayName" : "Full Unlock",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.chunqingliao.VoiceDiary.fullunlock",
+      "referenceName" : "完整版解锁",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>VoiceDiary 语音日记 · 功能设计稿</title>
+<style>
+  :root{
+    --leather:#6b4226; --leather-dark:#4a2c17;
+    --paper:#fbf3e3; --paper-line:#e8dcc4; --card:#fff;
+    --ink:#4a3a2c; --ink2:#a8997f;
+    --accent:#c8763a; --accent-soft:#f0c896; --gold:#d8b56a; --rec:#d9534f;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;background:#2e2a26;margin:0;padding:30px;color:#333;}
+  h1{color:#f0e6d2;text-align:center;margin-bottom:4px;}
+  .subtitle{color:#c9bca3;text-align:center;margin-bottom:34px;font-size:14px;line-height:1.6;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:40px;max-width:1500px;margin:0 auto;}
+  .item{text-align:center;}
+  .item .label{color:#f0e6d2;font-weight:600;margin-bottom:4px;font-size:15px;}
+  .item .desc{color:#a89a82;font-size:12px;margin-bottom:12px;line-height:1.5;min-height:48px;}
+  .new{display:inline-block;background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;}
+  .phone{width:250px;height:520px;margin:0 auto;border-radius:34px;background:#111;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);}
+  .screen{width:100%;height:100%;border-radius:25px;overflow:hidden;position:relative;background:var(--paper);display:flex;flex-direction:column;}
+  .statusbar{height:24px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:10px;font-weight:600;color:var(--ink);}
+  .hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;}
+  .hdr .date{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:1px;font-family:"HelveticaNeue";}
+  .cbtn{width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.12);color:var(--ink);}
+  .cbtn.dim{opacity:.45;}
+  /* pills */
+  .pills{display:flex;gap:7px;padding:6px 12px;flex-wrap:wrap;}
+  .pill{display:flex;align-items:center;gap:4px;border:1px solid var(--paper-line);background:#fff;border-radius:20px;padding:5px 11px;font-size:11px;color:var(--ink);}
+  .pill.hot{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 6px rgba(200,118,58,.4);}
+  /* lined paper */
+  .lined{flex:1;margin:6px 10px;border-radius:12px;background:var(--card),repeating-linear-gradient(var(--paper-line) 0 1px,transparent 1px 22px);background:linear-gradient(#fff,#fff);position:relative;border:1px solid var(--paper-line);overflow:hidden;}
+  .lined .lines{position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 21px,var(--paper-line) 21px 22px);}
+  .lined .ph{position:absolute;top:10px;left:12px;font-size:12px;color:var(--ink2);}
+  .lined .txt{position:relative;padding:7px 12px;font-size:12px;line-height:22px;color:var(--ink);}
+  .photo-row{display:flex;gap:6px;padding:0 12px 8px;}
+  .thumb{width:46px;height:46px;border-radius:8px;background:linear-gradient(135deg,#e8d2b0,#c8a87a);}
+  /* voice memo bar */
+  .voicebar{display:flex;align-items:center;gap:8px;margin:6px 12px;padding:8px 10px;background:#fff;border:1px solid var(--paper-line);border-radius:12px;}
+  .play{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+  .wave{display:flex;align-items:center;gap:2px;flex:1;height:24px;}
+  .wave i{width:2.5px;background:var(--accent);border-radius:2px;opacity:.8;}
+  .wave.soft i{background:var(--ink2);opacity:.5;}
+  .dur{font-size:10px;color:var(--ink2);}
+  /* recording panel */
+  .recwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;}
+  .rectimer{font-size:34px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .recwave{display:flex;align-items:center;gap:3px;height:60px;}
+  .recwave i{width:4px;background:var(--accent);border-radius:3px;}
+  .rectrans{font-size:12px;color:var(--ink);line-height:1.6;text-align:center;background:#fff;border:1px solid var(--paper-line);border-radius:12px;padding:10px;min-height:64px;width:100%;}
+  .rectrans .cursor{color:var(--accent);}
+  .recstop{width:62px;height:62px;border-radius:50%;background:var(--rec);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(217,83,79,.5);}
+  .recstop div{width:22px;height:22px;border-radius:5px;background:#fff;}
+  .recsub{font-size:11px;color:var(--ink2);}
+  /* preview actions */
+  .editbox{margin:8px 12px;background:#fff;border:1px solid var(--paper-line);border-radius:12px;padding:10px;font-size:12px;color:var(--ink);line-height:1.6;text-align:left;min-height:90px;}
+  .editbox .tag{font-size:10px;color:var(--ink2);margin-bottom:4px;}
+  .acts{display:flex;gap:8px;padding:8px 12px;flex-wrap:wrap;}
+  .btn{flex:1;text-align:center;padding:9px;border-radius:10px;font-size:11px;font-weight:600;min-width:88px;}
+  .btn-pri{background:var(--accent);color:#fff;}
+  .btn-sec{background:#fff;border:1px solid var(--paper-line);color:var(--ink);}
+  /* list */
+  .search{margin:8px 10px 4px;height:28px;border-radius:8px;background:#fff;border:1px solid var(--paper-line);display:flex;align-items:center;padding:0 10px;font-size:11px;color:var(--ink2);}
+  .ditem{background:#fff;border:1px solid var(--paper-line);border-radius:10px;padding:8px 10px;margin:6px 10px;text-align:left;}
+  .ditem .meta{font-size:9px;color:var(--ink2);display:flex;align-items:center;gap:5px;}
+  .ditem .ct{font-size:11px;margin-top:4px;color:var(--ink);line-height:1.5;}
+  .vtag{color:var(--accent);font-weight:700;}
+  .pagetitle{font-size:17px;font-weight:700;color:var(--ink);padding:6px 14px;display:flex;justify-content:space-between;}
+  .note{max-width:1100px;margin:36px auto 0;color:#d8cbb3;font-size:13px;line-height:1.9;background:#241f1b;border:1px solid #3a322b;border-radius:12px;padding:18px 22px;}
+  .note b{color:#f0e6d2;}
+  .note .k{color:var(--accent);font-weight:700;}
+</style>
+</head>
+<body>
+<h1>VoiceDiary · 语音日记功能设计稿</h1>
+<p class="subtitle">「能翻页的皮质日记本 + 语音日记」— 语音作为与文字/配图并列的第三种记录方式。橙色徽标=新增。全程端侧、音频不出本机。</p>
+
+<div class="grid">
+
+  <!-- 1 写日记页：新增语音入口 -->
+  <div class="item">
+    <div class="label">① 写日记 · 新增语音入口</div>
+    <div class="desc">工具栏多一个「🎤 语音」pill，点击开始录音。其余沿用心情/地点/字体。</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr"><div class="cbtn">✕</div><div class="date">2026.06.16</div><div class="cbtn dim">✓</div></div>
+      <div class="pills">
+        <span class="pill">🙂 心情</span><span class="pill">📍 上海</span>
+        <span class="pill">Aa 字体</span><span class="pill hot">🎤 语音 <span class="new" style="margin:0">新</span></span>
+      </div>
+      <div class="lined"><div class="lines"></div><div class="ph">写点什么…</div></div>
+      <div class="photo-row"><div class="thumb" style="background:#f3ebda;border:1.5px dashed #c9b896;"></div></div>
+    </div></div>
+  </div>
+
+  <!-- 2 录音中 -->
+  <div class="item">
+    <div class="label">② 录音中 <span class="new">新</span></div>
+    <div class="desc">暖橙波形随声音跳动 + 计时 + 实时端侧转写文字滚动。点红钮停止。</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr"><div class="cbtn">✕</div><div class="date" style="font-size:16px">正在录音</div><div style="width:30px"></div></div>
+      <div class="recwrap">
+        <div class="rectimer">00:12</div>
+        <div class="recwave">
+          <i style="height:16px"></i><i style="height:34px"></i><i style="height:52px"></i><i style="height:28px"></i>
+          <i style="height:46px"></i><i style="height:60px"></i><i style="height:30px"></i><i style="height:50px"></i>
+          <i style="height:20px"></i><i style="height:40px"></i><i style="height:56px"></i><i style="height:24px"></i>
+        </div>
+        <div class="rectrans">今天去公园散步，拍了几张照片，<br>心情也跟着明朗起来了<span class="cursor">▌</span></div>
+        <div class="recstop"><div></div></div>
+        <div class="recsub">🔒 转写在本机完成，音频不上传</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 3 录音完成预览 -->
+  <div class="item">
+    <div class="label">③ 录完预览 · 选择去向 <span class="new">新</span></div>
+    <div class="desc">转写文本可编辑，下方是语音条。可「插入正文」「仅存语音」「都要」「重录」。</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr"><div class="date" style="font-size:16px">这段录音</div></div>
+      <div class="editbox">
+        <div class="tag">识别文字（可编辑）</div>
+        今天去公园散步，拍了几张照片，心情也跟着明朗起来了。傍晚的风很舒服。
+      </div>
+      <div class="voicebar">
+        <div class="play">▶</div>
+        <div class="wave">
+          <i style="height:8px"></i><i style="height:16px"></i><i style="height:22px"></i><i style="height:12px"></i><i style="height:18px"></i><i style="height:10px"></i><i style="height:20px"></i><i style="height:14px"></i><i style="height:22px"></i><i style="height:9px"></i><i style="height:16px"></i><i style="height:12px"></i>
+        </div>
+        <span class="dur">0:12</span>
+      </div>
+      <div class="acts">
+        <div class="btn btn-pri">插入正文</div>
+        <div class="btn btn-sec">仅存语音</div>
+      </div>
+      <div class="acts" style="padding-top:0">
+        <div class="btn btn-sec">两者都要</div>
+        <div class="btn btn-sec">重录</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 4 详情页语音附件 -->
+  <div class="item">
+    <div class="label">④ 详情页 · 语音附件 <span class="new">新</span></div>
+    <div class="desc">正文（横线纸）下方挂语音条，点播放回放原声；与配图并列。</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+      <div class="pagetitle"><span class="cbtn">↩</span><span>第 18 页</span><span class="cbtn">🗑</span></div>
+      <div class="lined" style="flex:none;height:150px"><div class="lines"></div><div class="txt">今天去公园散步，拍了几张照片，心情也跟着明朗起来了。傍晚的风很舒服，坐在湖边发了会儿呆。</div></div>
+      <div class="voicebar">
+        <div class="play">▶</div>
+        <div class="wave soft">
+          <i style="height:8px"></i><i style="height:16px"></i><i style="height:22px"></i><i style="height:12px"></i><i style="height:18px"></i><i style="height:10px"></i><i style="height:20px"></i><i style="height:14px"></i><i style="height:22px"></i><i style="height:9px"></i><i style="height:16px"></i><i style="height:12px"></i>
+        </div>
+        <span class="dur">0:12</span>
+      </div>
+      <div class="photo-row" style="padding-top:4px"><div class="thumb"></div><div class="thumb"></div></div>
+      <div style="font-size:10px;color:var(--ink2);padding:6px 14px;">🕐 14:32　🙂　📍 上海·人民公园</div>
+    </div></div>
+  </div>
+
+  <!-- 5 列表页语音标记 -->
+  <div class="item">
+    <div class="label">⑤ 列表页 · 语音标记 <span class="new">新</span></div>
+    <div class="desc">含语音的日记在 meta 行显示 🎤 标记，一眼区分纯文字 / 带语音。</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+      <div class="pagetitle"><span>日记</span><span class="cbtn">⚙︎</span></div>
+      <div class="search">🔍 搜索内容或地点…</div>
+      <div class="ditem">
+        <div class="meta">2026/06/16 · 🙂 · 第18页 · <span class="vtag">🎤 0:12</span></div>
+        <div class="ct">今天去公园散步，拍了几张照片，心情也跟着…</div>
+      </div>
+      <div class="ditem">
+        <div class="meta">2026/06/15 · 😴 · 第17页</div>
+        <div class="ct">加班到很晚，但终于把项目收尾了。</div>
+      </div>
+      <div class="ditem">
+        <div class="meta">2026/06/14 · 🥳 · 第16页 · <span class="vtag">🎤 0:30</span></div>
+        <div class="ct">和朋友聚会，吃了好吃的火锅～</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>方案要点（评审用）</b><br>
+  · <span class="k">定位</span>：语音=第三种记录方式。两用合一——录音时端侧实时转写，停止后让用户选「插入正文 / 仅存语音 / 两者都要」。<br>
+  · <span class="k">技术</span>（全苹果原生、零第三方）：录音 <b>AVAudioRecorder</b>(m4a)，波形用 averagePower；转写 <b>Speech.framework</b> 强制 <b>on-device</b>(requiresOnDeviceRecognition)；播放 AVAudioPlayer。<br>
+  · <span class="k">数据</span>：`DiaryEntry` 增 `voiceMemos:[VoiceMemo]`（音频/时长/转写文本，externalStorage）。<br>
+  · <span class="k">红线</span>：录音与转写<b>全程端侧，不经过开发者/第三方服务器</b>（不用任何云转写 API）。<br>
+  · <span class="k">同步</span>：<b>保留 iCloud 同步</b>，走用户<b>自己的私有 iCloud</b>(NSPersistentCloudKitContainer)，端到端在苹果生态、开发者看不到——不违反红线。音频也随私有 iCloud 同步(低码率 AAC，约几百 KB/分钟)，换设备可听原声。<br>
+  · <span class="k">变现</span>：免费版可录短语音；「语音转文字 + 无限时长」并入现有 ¥15 一次性买断解锁点。<br>
+  · <span class="k">权限</span>：麦克风 + 语音识别（首次用到时申请，文案说明「仅本机」）。
+</div>
+
+</body>
+</html>
