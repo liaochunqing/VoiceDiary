@@ -8,37 +8,80 @@
 
 /* Begin PBXBuildFile section */
 		105AA767C94FED907F0266AA /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4041AC328A428F032A6DEA32 /* Theme.swift */; };
+		16B1F2EDC17CD159C88E9B95 /* DiaryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAF46BD7E57C1805C313012 /* DiaryDetailView.swift */; };
+		215BA26D7E99600B0B3264C6 /* PurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 795BECD32926790DCDB8E444 /* PurchaseManager.swift */; };
+		2AF724A608895B352E2D69DD /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2C509DE88BD06AE7FADDCFA /* OnboardingView.swift */; };
 		2DBAD8ACF10F2F907BC3A24D /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C5C69451E04E2AA09B2BAD /* Typography.swift */; };
 		3047DE9F956431B56C4C9146 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3CC55F758ED02B829C8F4853 /* Localizable.strings */; };
+		3B7384C5EE00D91F08BE6A63 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B0526507D0402E407D332B7 /* SettingsView.swift */; };
 		5E7D19C257A98B8439A62FCB /* PaperLines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8ED5C18C84778C1F1E0FDE /* PaperLines.swift */; };
+		5EC17C0513A9BB3E60D845BA /* DiaryPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5860D35E25B45942E35CCA9F /* DiaryPalette.swift */; };
 		61FAB8E43B52D68A3D725DDD /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8BE40BE7D50541B46696C2 /* Spacing.swift */; };
+		6D3472382CBC9EF1D986132C /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC167C493898994EF4A3CB8 /* RecordingView.swift */; };
 		777759ED576E09CA64D81F6C /* DiaryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2692BCF76843EDAEAAEEAA79 /* DiaryEntry.swift */; };
 		7AB75BB68EE12C891BE46A75 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636060BD84D5C7955E7590AD /* DataManager.swift */; };
 		7BBC8F20CB6F83BA55531C22 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BFC6227EFBDBF590EDFC68 /* RootView.swift */; };
+		8FC779E3A0050B848B54DE49 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE851D8CB18C5F24C5BFBCEF /* ThemeManager.swift */; };
 		9337A22672680313CE70CFF8 /* VoiceDiaryApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79FAE5AC121B6F79103ED2A6 /* VoiceDiaryApp.swift */; };
+		95D2BAAA94F1F4A581178C6D /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B951EA8982A916BFDFC3DA /* NotificationManager.swift */; };
+		9F84F203ADA80EFA85FEC594 /* AddDiaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57944CDD43799094BE2FA885 /* AddDiaryView.swift */; };
+		B11BA165AF5147E233211181 /* SpeechTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53C32988DDD959208DB6E24 /* SpeechTranscriber.swift */; };
+		B89743C9E648351793B797AC /* PrivacyLockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2196024DED362C7E57040862 /* PrivacyLockManager.swift */; };
+		BCD3546A0814C41E6C32528C /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818105303A993B6FF12D3D78 /* StatsView.swift */; };
 		C4A772EFB5708A1A40380D6D /* CoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5E9FDFD1A8C59494E0506A /* CoverView.swift */; };
 		CE8560DDF30ECAEA72718693 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 387F81EB6595240D8830BD28 /* Assets.xcassets */; };
+		DEB749B16BF6E0EB3A6A8969 /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D82951BF0E45C8A15D4E09 /* VoiceRecorder.swift */; };
 		F6E7675E4B8497379C029B4B /* DiaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E89CD6EF5398B74987B8E /* DiaryListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1C8BE40BE7D50541B46696C2 /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
+		2196024DED362C7E57040862 /* PrivacyLockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyLockManager.swift; sourceTree = "<group>"; };
+		23B951EA8982A916BFDFC3DA /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		2692BCF76843EDAEAAEEAA79 /* DiaryEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryEntry.swift; sourceTree = "<group>"; };
+		2FAF46BD7E57C1805C313012 /* DiaryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryDetailView.swift; sourceTree = "<group>"; };
 		30040C9F616FE5225F189FF9 /* VoiceDiary.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VoiceDiary.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		371E89CD6EF5398B74987B8E /* DiaryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryListView.swift; sourceTree = "<group>"; };
 		387F81EB6595240D8830BD28 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4041AC328A428F032A6DEA32 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		44BFC6227EFBDBF590EDFC68 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		557D979F77063A5A68B37502 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		57944CDD43799094BE2FA885 /* AddDiaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDiaryView.swift; sourceTree = "<group>"; };
+		5860D35E25B45942E35CCA9F /* DiaryPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryPalette.swift; sourceTree = "<group>"; };
 		636060BD84D5C7955E7590AD /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		795BECD32926790DCDB8E444 /* PurchaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseManager.swift; sourceTree = "<group>"; };
 		79FAE5AC121B6F79103ED2A6 /* VoiceDiaryApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDiaryApp.swift; sourceTree = "<group>"; };
 		7B8ED5C18C84778C1F1E0FDE /* PaperLines.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperLines.swift; sourceTree = "<group>"; };
+		818105303A993B6FF12D3D78 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		8B0526507D0402E407D332B7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9AC167C493898994EF4A3CB8 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
+		A2D82951BF0E45C8A15D4E09 /* VoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecorder.swift; sourceTree = "<group>"; };
+		B53C32988DDD959208DB6E24 /* SpeechTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriber.swift; sourceTree = "<group>"; };
 		C2C5C69451E04E2AA09B2BAD /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		CEBDAF46C884805F53BB9EAD /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		DF5E9FDFD1A8C59494E0506A /* CoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverView.swift; sourceTree = "<group>"; };
+		E2C509DE88BD06AE7FADDCFA /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		FE851D8CB18C5F24C5BFBCEF /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		0CE8116EF08A255821630854 /* Editor */ = {
+			isa = PBXGroup;
+			children = (
+				57944CDD43799094BE2FA885 /* AddDiaryView.swift */,
+				9AC167C493898994EF4A3CB8 /* RecordingView.swift */,
+			);
+			path = Editor;
+			sourceTree = "<group>";
+		};
+		14C3FA1282702A1A8BE3A3D0 /* Detail */ = {
+			isa = PBXGroup;
+			children = (
+				2FAF46BD7E57C1805C313012 /* DiaryDetailView.swift */,
+			);
+			path = Detail;
+			sourceTree = "<group>";
+		};
 		2FD792B567C21ED089746326 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -58,8 +101,10 @@
 		4BD093A34E34B82D965DD6EC /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				5860D35E25B45942E35CCA9F /* DiaryPalette.swift */,
 				1C8BE40BE7D50541B46696C2 /* Spacing.swift */,
 				4041AC328A428F032A6DEA32 /* Theme.swift */,
+				FE851D8CB18C5F24C5BFBCEF /* ThemeManager.swift */,
 				C2C5C69451E04E2AA09B2BAD /* Typography.swift */,
 				2FD792B567C21ED089746326 /* Components */,
 			);
@@ -70,8 +115,21 @@
 			isa = PBXGroup;
 			children = (
 				636060BD84D5C7955E7590AD /* DataManager.swift */,
+				23B951EA8982A916BFDFC3DA /* NotificationManager.swift */,
+				2196024DED362C7E57040862 /* PrivacyLockManager.swift */,
+				795BECD32926790DCDB8E444 /* PurchaseManager.swift */,
+				B53C32988DDD959208DB6E24 /* SpeechTranscriber.swift */,
+				A2D82951BF0E45C8A15D4E09 /* VoiceRecorder.swift */,
 			);
 			path = Managers;
+			sourceTree = "<group>";
+		};
+		675FEEB342DF2EC4CAD3033E /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				8B0526507D0402E407D332B7 /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		6FF945EB2E1AFBBB8BB984A5 /* List */ = {
@@ -111,6 +169,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		CBA52ED6467EC934EAFD89E5 /* Stats */ = {
+			isa = PBXGroup;
+			children = (
+				818105303A993B6FF12D3D78 /* StatsView.swift */,
+			);
+			path = Stats;
+			sourceTree = "<group>";
+		};
 		DA3C886529BDBC4095712204 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -141,9 +207,22 @@
 			isa = PBXGroup;
 			children = (
 				B6017A097C1AAAAF6ABAFDF4 /* Cover */,
+				14C3FA1282702A1A8BE3A3D0 /* Detail */,
+				0CE8116EF08A255821630854 /* Editor */,
 				6FF945EB2E1AFBBB8BB984A5 /* List */,
+				FA9653EC7290C6D840576A5D /* Onboarding */,
+				675FEEB342DF2EC4CAD3033E /* Settings */,
+				CBA52ED6467EC934EAFD89E5 /* Stats */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		FA9653EC7290C6D840576A5D /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				E2C509DE88BD06AE7FADDCFA /* OnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -219,16 +298,29 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F84F203ADA80EFA85FEC594 /* AddDiaryView.swift in Sources */,
 				C4A772EFB5708A1A40380D6D /* CoverView.swift in Sources */,
 				7AB75BB68EE12C891BE46A75 /* DataManager.swift in Sources */,
+				16B1F2EDC17CD159C88E9B95 /* DiaryDetailView.swift in Sources */,
 				777759ED576E09CA64D81F6C /* DiaryEntry.swift in Sources */,
 				F6E7675E4B8497379C029B4B /* DiaryListView.swift in Sources */,
+				5EC17C0513A9BB3E60D845BA /* DiaryPalette.swift in Sources */,
+				95D2BAAA94F1F4A581178C6D /* NotificationManager.swift in Sources */,
+				2AF724A608895B352E2D69DD /* OnboardingView.swift in Sources */,
 				5E7D19C257A98B8439A62FCB /* PaperLines.swift in Sources */,
+				B89743C9E648351793B797AC /* PrivacyLockManager.swift in Sources */,
+				215BA26D7E99600B0B3264C6 /* PurchaseManager.swift in Sources */,
+				6D3472382CBC9EF1D986132C /* RecordingView.swift in Sources */,
 				7BBC8F20CB6F83BA55531C22 /* RootView.swift in Sources */,
+				3B7384C5EE00D91F08BE6A63 /* SettingsView.swift in Sources */,
 				61FAB8E43B52D68A3D725DDD /* Spacing.swift in Sources */,
+				B11BA165AF5147E233211181 /* SpeechTranscriber.swift in Sources */,
+				BCD3546A0814C41E6C32528C /* StatsView.swift in Sources */,
 				105AA767C94FED907F0266AA /* Theme.swift in Sources */,
+				8FC779E3A0050B848B54DE49 /* ThemeManager.swift in Sources */,
 				2DBAD8ACF10F2F907BC3A24D /* Typography.swift in Sources */,
 				9337A22672680313CE70CFF8 /* VoiceDiaryApp.swift in Sources */,
+				DEB749B16BF6E0EB3A6A8969 /* VoiceRecorder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -327,7 +419,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -418,7 +511,8 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};

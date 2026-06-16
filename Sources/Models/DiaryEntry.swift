@@ -43,7 +43,8 @@ final class DiaryEntry {
     }
 
     var fontColor: Color {
-        fontColorHex.isEmpty ? Palette.ink : (Color(hexString: fontColorHex) ?? Palette.ink)
+        // 返回用户自选颜色，无选择时返回 nil，由视图层决定使用主题色
+        Color(hexString: fontColorHex) ?? Color(lightHex: 0x221A0E, darkHex: 0xECE0C8)
     }
 }
 

@@ -4,16 +4,22 @@ import SwiftData
 @main
 struct VoiceDiaryApp: App {
     @State private var container: ModelContainer?
+    @State private var themeManager = ThemeManager()
 
     var body: some Scene {
         WindowGroup {
             if let container {
                 RootView()
                     .modelContainer(container)
-                    .tint(Palette.accent)
+                    .environment(themeManager)
+                    .environment(\.palette, themeManager.palette)
+                    .tint(themeManager.palette.accent)
             } else {
-                ZStack { Palette.paper.ignoresSafeArea(); ProgressView() }
-                    .task { await makeContainer() }
+                ZStack {
+                    Color(lightHex: 0xF5EBD5, darkHex: 0x1E1810).ignoresSafeArea()
+                    ProgressView()
+                }
+                .task { await makeContainer() }
             }
         }
     }
