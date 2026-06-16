@@ -1,0 +1,19 @@
+# Xcode / build
+DerivedData/
+build/
+*.xcodeproj        # 由 xcodegen 从 project.yml 生成
+*.xcworkspace
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# SwiftPM
+.swiftpm/
+.build/
+
+# Misc
+*.moved-aside
+*.hmap
+*.ipa
