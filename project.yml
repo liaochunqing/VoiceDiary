@@ -1,6 +1,7 @@
 name: VoiceDiary
 options:
   bundleIdPrefix: com.chunqingliao
+  developmentLanguage: en
   deploymentTarget:
     iOS: "17.5"
   createIntermediateGroups: true
@@ -23,17 +24,20 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: "com.chunqingliao.VoiceDiary"
         PRODUCT_NAME: "VoiceDiary"
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: "YES"
         CODE_SIGN_ENTITLEMENTS: "Support/VoiceDiary.entitlements"
         CODE_SIGN_STYLE: "Automatic"
-        INFOPLIST_KEY_CFBundleDisplayName: "翻页日记"
-        INFOPLIST_KEY_CFBundleDevelopmentRegion: "zh-Hans"
+        INFOPLIST_KEY_CFBundleDisplayName: "Voice Diary"
+        INFOPLIST_KEY_CFBundleDevelopmentRegion: "en"
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "录制语音日记需要使用麦克风。录音只保存在你的设备和你自己的 iCloud，不会上传给我们或第三方。"
-        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "把语音转写成文字日记，识别全部在本机完成，不会上传。"
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "记录这篇日记写于哪里，仅在写日记时使用一次，不会持续追踪。"
+        # iPad 关闭多任务分屏，否则系统会忽略竖屏限制仍可横过来；纯竖屏靠这条兜底。
+        INFOPLIST_KEY_UIRequiresFullScreen: "YES"
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Recording a voice diary needs the microphone. Audio stays on your device and your own iCloud — never uploaded to us or any third party."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Used to transcribe your voice into text. Recognition runs entirely on your device and is never uploaded."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Records where a diary entry was written. Used once while writing — never tracked continuously."
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens."
 schemes:
   VoiceDiary:
     build:

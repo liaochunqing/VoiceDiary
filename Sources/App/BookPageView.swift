@@ -94,7 +94,6 @@ struct BookPageView: UIViewControllerRepresentable {
         private var entries: [DiaryEntry]
 
         private var audioPlayer: AVAudioPlayer?
-        private var activePlayers: [AVAudioPlayer] = []
 
         init(entries: [DiaryEntry], themeManager: ThemeManager,
              navigator: BookNavigator, container: ModelContainer) {
@@ -198,7 +197,10 @@ struct BookPageView: UIViewControllerRepresentable {
         }
 
         private func playPageSound() {
-            guard UserDefaults.standard.bool(forKey: "isSoundEnabled") else { return }
+            // @AppStorage 默认值 true 不会写入 UserDefaults，键缺失时 bool(forKey:) 返回 false，
+            // 会导致全新安装翻页静音（与设置开关显示的「开」不一致）。键缺失按 true 处理。
+            let soundOn = UserDefaults.standard.object(forKey: "isSoundEnabled") as? Bool ?? true
+            guard soundOn else { return }
             guard let player = audioPlayer else { return }
             if player.isPlaying { player.stop(); player.currentTime = 0 }
             player.play()

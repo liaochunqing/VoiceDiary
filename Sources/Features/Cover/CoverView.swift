@@ -17,7 +17,7 @@ struct CoverFace: View {
                 .frame(maxHeight: .infinity, alignment: .center)
 
             VStack(spacing: Metric.m) {
-                Text("我 的 日 记")
+                Text("My Diary")
                     .font(.system(size: 60, weight: .bold))
                     .tracking(4)
                     .foregroundStyle(pal.gold)
@@ -26,6 +26,11 @@ struct CoverFace: View {
                     .font(.system(size: 22, weight: .semibold))
                     .tracking(3)
                     .foregroundStyle(pal.gold.opacity(0.65))
+                Text("Open the book. Talk to it.")
+                    .font(.system(size: 14))
+                    .tracking(2)
+                    .foregroundStyle(pal.gold.opacity(0.5))
+                    .padding(.top, Metric.xs)
             }
             .offset(y: -12)
         }
@@ -34,28 +39,13 @@ struct CoverFace: View {
 
 struct CoverView: View {
     @Environment(\.palette) private var pal
-    @Query(sort: \DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
-
-    private var streak: Int { DataManager.currentStreak(entries) }
 
     var body: some View {
         ZStack {
             CoverFace()
             VStack {
                 Spacer()
-                if streak > 1 {
-                    Text("🔥 连续记录 \(streak) 天")
-                        .font(.dSubhead)
-                        .foregroundStyle(pal.gold)
-                        .padding(.horizontal, Metric.l)
-                        .padding(.vertical, Metric.s)
-                        .background(
-                            Capsule().fill(pal.gold.opacity(0.15))
-                                .overlay(Capsule().strokeBorder(pal.gold, lineWidth: 1))
-                        )
-                        .padding(.bottom, Metric.l)
-                }
-                Text("轻触翻开")
+                Text("Swipe to open")
                     .font(.dSubhead)
                     .foregroundStyle(pal.gold.opacity(0.55))
                     .padding(.bottom, Metric.xl)

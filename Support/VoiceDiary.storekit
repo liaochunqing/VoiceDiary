@@ -5,30 +5,161 @@
   ],
   "products" : [
     {
-      "displayPrice" : "15.00",
+      "displayPrice" : "1.49",
       "familyShareable" : false,
-      "internalID" : "FULLUNLOCK001",
+      "internalID" : "WEEKLY001",
       "localizations" : [
         {
-          "description" : "解锁隐私锁、无限图片附件、导出PDF和完整统计/年度报告，一次购买永久使用",
-          "displayName" : "解锁完整版",
-          "locale" : "zh-Hans"
+          "description" : "Full access to all Pro features, billed weekly. Auto-renews. Cancel anytime.",
+          "displayName" : "VoiceDiary Pro Weekly",
+          "locale" : "en_US"
         },
         {
-          "description" : "Unlock privacy lock, unlimited photos, PDF export, and full stats/annual report — once, forever",
-          "displayName" : "Full Unlock",
+          "description" : "解锁全部 Pro 功能，按周计费，自动续订，可随时取消",
+          "displayName" : "Pro 周订阅",
+          "locale" : "zh-Hans"
+        }
+      ],
+      "productID" : "com.chunqingliao.VoiceDiary.weekly",
+      "referenceName" : "Pro 周订阅",
+      "type" : "AutoRenewableSubscription"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "MONTHLY001",
+      "localizations" : [
+        {
+          "description" : "Full access to all Pro features, billed monthly. Auto-renews. Cancel anytime.",
+          "displayName" : "VoiceDiary Pro Monthly",
           "locale" : "en_US"
+        },
+        {
+          "description" : "解锁全部 Pro 功能，按月计费，自动续订，可随时取消",
+          "displayName" : "Pro 月订阅",
+          "locale" : "zh-Hans"
+        }
+      ],
+      "productID" : "com.chunqingliao.VoiceDiary.monthly",
+      "referenceName" : "Pro 月订阅",
+      "type" : "AutoRenewableSubscription"
+    },
+    {
+      "displayPrice" : "24.99",
+      "familyShareable" : false,
+      "internalID" : "ANNUAL001",
+      "localizations" : [
+        {
+          "description" : "Full access to all Pro features, billed annually. Best value — save 30% vs monthly. Auto-renews. Cancel anytime.",
+          "displayName" : "VoiceDiary Pro Annual",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "解锁全部 Pro 功能，按年计费，最优惠（相比月付省 30%），自动续订，可随时取消",
+          "displayName" : "Pro 年订阅",
+          "locale" : "zh-Hans"
+        }
+      ],
+      "productID" : "com.chunqingliao.VoiceDiary.annual",
+      "referenceName" : "Pro 年订阅",
+      "type" : "AutoRenewableSubscription"
+    },
+    {
+      "displayPrice" : "59.99",
+      "familyShareable" : false,
+      "internalID" : "LIFETIME001",
+      "localizations" : [
+        {
+          "description" : "Unlock all Pro features forever — iCloud sync, unlimited photos & transcription, all themes & fonts, Face ID lock, detailed stats, PDF export. One payment, lifetime access.",
+          "displayName" : "VoiceDiary Pro Lifetime",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "一次性解锁全部 Pro 功能：iCloud 同步、无限照片与转写、全部主题与字体、Face ID 隐私锁、完整统计、PDF 导出。永久使用。",
+          "displayName" : "Pro 永久买断",
+          "locale" : "zh-Hans"
         }
       ],
       "productID" : "com.chunqingliao.VoiceDiary.fullunlock",
-      "referenceName" : "完整版解锁",
+      "referenceName" : "Pro 永久买断",
       "type" : "NonConsumable"
     }
   ],
   "settings" : {
   },
   "subscriptionGroups" : [
+    {
+      "id" : "PRO_SUB_GROUP",
+      "name" : "VoiceDiary Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
 
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.49",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "WEEKLY001",
+          "localizations" : [
+            {
+              "description" : "Full access to all Pro features, billed weekly.",
+              "displayName" : "VoiceDiary Pro Weekly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.chunqingliao.VoiceDiary.weekly",
+          "renewalRate" : "1 week",
+          "subscriptionGroupID" : "PRO_SUB_GROUP"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "MONTHLY001",
+          "localizations" : [
+            {
+              "description" : "Full access to all Pro features, billed monthly.",
+              "displayName" : "VoiceDiary Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.chunqingliao.VoiceDiary.monthly",
+          "renewalRate" : "1 month",
+          "subscriptionGroupID" : "PRO_SUB_GROUP"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "24.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "ANNUAL001",
+          "localizations" : [
+            {
+              "description" : "Full access to all Pro features, billed annually. Best value.",
+              "displayName" : "VoiceDiary Pro Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.chunqingliao.VoiceDiary.annual",
+          "renewalRate" : "1 year",
+          "subscriptionGroupID" : "PRO_SUB_GROUP"
+        }
+      ]
+    }
   ],
   "version" : {
     "major" : 3,

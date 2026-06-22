@@ -8,17 +8,14 @@ struct OnboardingView: View {
 
     private let pages: [PageData] = [
         PageData(icon: "book.closed.fill",
-                 title: "这是你的日记",
-                 body: "翻着看，像真正的日记本。每一页都是你的故事，只属于你。",
-                 bg: false),
+                 title: "This is your diary",
+                 body: "Flip through it like a real journal. Every page is your story — and yours alone."),
         PageData(icon: "mic.fill",
-                 title: "用声音，也用文字",
-                 body: "说出来，让它帮你整理成文字。转写全程在本机完成，不经过任何服务器。",
-                 bg: false),
+                 title: "Use your voice, or type",
+                 body: "Just speak, and it turns into text for you. Transcription runs entirely on your device — never through a server."),
         PageData(icon: "icloud.fill",
-                 title: "安全同步到你的 iCloud",
-                 body: "日记和录音同步到你自己的私有 iCloud，我们看不到任何内容。",
-                 bg: false),
+                 title: "Synced safely to your iCloud",
+                 body: "Entries and recordings sync to your own private iCloud. We can't see any of it."),
     ]
 
     var body: some View {
@@ -46,11 +43,11 @@ struct OnboardingView: View {
                 // 文案区
                 VStack(spacing: Metric.m) {
                     Text(pages[page].title)
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.dSerifPageTitle)
                         .foregroundStyle(pal.gold)
                         .multilineTextAlignment(.center)
                     Text(pages[page].body)
-                        .font(.dBody)
+                        .font(.dSerifBody)
                         .foregroundStyle(pal.gold.opacity(0.75))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, Metric.xl)
@@ -78,7 +75,7 @@ struct OnboardingView: View {
                             onFinish()
                         }
                     } label: {
-                        Text(page < pages.count - 1 ? "下一步" : "开始记录")
+                        Text(page < pages.count - 1 ? "Next" : "Start writing")
                             .font(.dCallout.weight(.semibold))
                             .foregroundStyle(colors.first ?? .black)
                             .frame(maxWidth: .infinity)
@@ -87,7 +84,7 @@ struct OnboardingView: View {
                     }
 
                     if page == 0 {
-                        Button("跳过引导") { onFinish() }
+                        Button("Skip") { onFinish() }
                             .font(.dCaption)
                             .foregroundStyle(pal.gold.opacity(0.5))
                     }
@@ -95,6 +92,7 @@ struct OnboardingView: View {
                 .padding(.horizontal, Metric.xl)
                 .padding(.bottom, Metric.xxl)
             }
+            .readableColumn()
         }
         .animation(.easeInOut, value: page)
     }
@@ -104,5 +102,4 @@ private struct PageData {
     let icon: String
     let title: String
     let body: String
-    let bg: Bool
 }

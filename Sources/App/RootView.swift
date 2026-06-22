@@ -41,9 +41,15 @@ struct RootView: View {
                         radius: 20, x: 12, y: 0
                     )
                     .ignoresSafeArea()
-                    .allowsHitTesting(coverAngle == 0)
-                    // 点击可跳过动画
-                    .onTapGesture { skipCover() }
+                    // 左滑可跳过动画
+                    .gesture(
+                        DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                            .onEnded { value in
+                                if value.translation.width < -60 {
+                                    skipCover()
+                                }
+                            }
+                    )
                     .onAppear { startCoverAnimation() }
             }
         }
@@ -58,8 +64,11 @@ struct RootView: View {
                 showOnboarding = false
             }
         }
-        .onChange(of: scenePhase) { _, phase in
+        // initial: true 关键 —— .onChange 默认不在初始值触发，会导致冷启动时
+        // 即使开了隐私锁也不上锁（日记直接可见），只有切后台再回来才锁。
+        .onChange(of: scenePhase, initial: true) { _, phase in
             if phase == .background { lockManager.lockIfNeeded() }
+            if phase == .active && !coverRemoved { lockManager.lockIfNeeded() }
         }
     }
 
@@ -87,16 +96,16 @@ struct RootView: View {
         ZStack {
             pal.leather.ignoresSafeArea()
             VStack(spacing: Metric.l) {
-                Image(systemName: "lock.fill")
+                Image(systemName: lockManager.biometryIconName)
                     .font(.system(size: 48))
                     .foregroundStyle(pal.gold)
-                Text("翻页日记已锁定")
+                Text("Voice Diary is locked")
                     .font(.dTitle)
                     .foregroundStyle(pal.gold)
                 Button {
                     Task { await lockManager.unlock() }
                 } label: {
-                    Text("解锁")
+                    Text("Try Again")
                         .font(.dCallout.weight(.semibold))
                         .foregroundStyle(pal.leather)
                         .padding(.horizontal, Metric.xxl)
@@ -105,5 +114,6 @@ struct RootView: View {
                 }
             }
         }
+        .task { await lockManager.unlock() }
     }
 }

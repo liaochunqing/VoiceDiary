@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>字体自定义面板 | VoiceDiary</title>
+<style>
+  :root {
+    --paper: #F5EBD5;
+    --card: #FFFEF8;
+    --line: #D9CBAC;
+    --ink: #221A0E;
+    --inkSoft: #8A7860;
+    --accent: #7A5A14;
+    --gold: #C9A23A;
+    --onAccent: #FFFFFF;
+    --red: #C0392B;
+    --radius: 14px;
+    --radiusSm: 10px;
+    --font: -apple-system, 'PingFang SC', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: #E8E0CE;
+    padding: 48px 0 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page-header { text-align: center; max-width: 700px; margin: 0 auto 48px; }
+  .page-header h1 { font-size: 28px; font-weight: 700; color: #221A0E; letter-spacing: 0.02em; }
+  .page-header .sub { font-size: 15px; color: var(--inkSoft); margin-top: 6px; line-height: 1.6; }
+
+  .section { max-width: 1200px; margin: 0 auto 56px; padding: 0 24px; }
+  .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .section-head h2 { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .section-head .tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: #E3F0DC; color: #4A6B3A; }
+  .section-desc { font-size: 14px; color: var(--inkSoft); line-height: 1.7; margin-bottom: 28px; max-width: 700px; }
+
+  /* ── Phone frame ── */
+  .phones { display: flex; gap: 40px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .phone-col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .phone-label { font-size: 13px; color: var(--inkSoft); font-weight: 500; text-align: center; max-width: 300px; line-height: 1.5; }
+  .phone-label strong { color: var(--ink); }
+  .phone {
+    width: 320px; background: var(--paper);
+    border-radius: 36px;
+    box-shadow: 0 0 0 2px #1A1A1A, 0 0 0 4px #4A4A4A, 0 16px 48px rgba(0,0,0,.18);
+    overflow: hidden; position: relative;
+  }
+  .phone-notch { width: 88px; height: 26px; background: #1A1A1A; border-radius: 0 0 16px 16px; margin: 0 auto; }
+  .phone-body { padding: 12px 16px 20px; }
+
+  /* ── Top bar (editor) ── */
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .topbar .btn-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--ink); cursor: pointer;
+    flex-shrink: 0;
+  }
+  .topbar-title { font-size: 14px; color: var(--inkSoft); }
+
+  /* ── Content area ── */
+  .editor-area {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; margin-bottom: 10px; position: relative; overflow: hidden;
+  }
+  /* paper lines */
+  .editor-area::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(
+      var(--line) 0px, var(--line) 1px,
+      transparent 1px, transparent 28px
+    );
+    opacity: 0.5;
+    mask-image: linear-gradient(to bottom, var(--line) 0px, transparent 220px);
+    -webkit-mask-image: linear-gradient(to bottom, var(--line) 0px, transparent 220px);
+  }
+  .editor-area .placeholder { font-size: 15px; color: var(--inkSoft); position: relative; z-index: 1; }
+
+  /* ── Voice / Photo section (compact) ── */
+  .tool-row {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .tool-pill {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--accent); font-weight: 600;
+    padding: 4px 10px; border-radius: 100px;
+    background: var(--card); border: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .tool-pill svg, .tool-pill .icon { width: 12px; height: 12px; }
+
+  .meta-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--inkSoft); margin-bottom: 8px;
+  }
+
+  /* ── FONT TOOLBAR (the new entry point) ── */
+  .font-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; margin-bottom: 8px;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radiusSm);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .font-toolbar:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .font-toolbar .ft-icon {
+    font-size: 17px; font-weight: 700; color: var(--accent);
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    background: var(--paper); border-radius: 6px; flex-shrink: 0;
+  }
+  .font-toolbar .ft-info { flex: 1; min-width: 0; }
+  .font-toolbar .ft-current { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .font-toolbar .ft-detail { font-size: 11px; color: var(--inkSoft); }
+  .font-toolbar .ft-chevron { font-size: 14px; color: var(--inkSoft); }
+
+  /* ── Location row ── */
+  .location-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--inkSoft);
+  }
+  .location-row .pin { color: var(--inkSoft); }
+
+  /* active state for font toolbar */
+  .font-toolbar.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(122,90,20,0.12); }
+
+  /* ══════════════════════════════════════════ */
+  /*  FONT PANEL (bottom sheet style)          */
+  /* ══════════════════════════════════════════ */
+
+  .font-panel {
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    border-radius: 20px 20px 0 0;
+    padding: 16px 16px 24px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.10);
+  }
+  .panel-handle {
+    width: 36px; height: 4px; background: var(--line);
+    border-radius: 2px; margin: 0 auto 16px;
+  }
+  .panel-sec { margin-bottom: 14px; }
+  .panel-sec-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    color: var(--inkSoft); letter-spacing: 0.08em; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .panel-sec-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--line); opacity: 0.6;
+  }
+
+  /* ── Preview card ── */
+  .preview-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radiusSm);
+    padding: 12px 14px; margin-bottom: 14px;
+    font-size: 17px; line-height: 1.6; min-height: 48px;
+    transition: all 0.2s;
+  }
+
+  /* ── Font family cards ── */
+  .font-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  }
+  .font-card {
+    background: var(--card); border: 2px solid var(--line); border-radius: var(--radiusSm);
+    padding: 10px 6px; text-align: center; cursor: pointer;
+    transition: all 0.15s; position: relative;
+  }
+  .font-card:hover { border-color: var(--accent); }
+  .font-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122,90,20,0.10);
+  }
+  .font-card.selected::after {
+    content: '✓'; position: absolute; top: 6px; right: 8px;
+    font-size: 9px; color: var(--onAccent); font-weight: 900;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .font-card .fc-aa {
+    font-size: 26px; font-weight: 400; color: var(--ink); line-height: 1.3;
+    margin-bottom: 2px;
+  }
+  .font-card .fc-name {
+    font-size: 10px; color: var(--inkSoft); line-height: 1.3;
+  }
+  .font-card .fc-tag {
+    font-size: 8px; color: var(--accent); font-weight: 600;
+  }
+
+  /* custom font overrides — simulate the real thing */
+  .fc-system { font-family: 'PingFang SC', -apple-system, sans-serif; }
+  .fc-songti { font-family: 'Songti SC', 'STSong', 'SimSun', serif; }
+  .fc-kaiti  { font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', serif; }
+  .fc-yuanti { font-family: 'Yuanti SC', 'STYuanti', 'YouYuan', sans-serif; font-weight: 400; }
+  .fc-longcang { font-family: 'Long Cang', 'Kaiti SC', cursive; font-size: 28px; }
+  .fc-slide   { font-family: 'Slidexiaxing', 'Kaiti SC', cursive; font-size: 28px; }
+  .fc-haoshen { font-family: 'YSHaoShenTi', 'Kaiti SC', cursive; font-size: 28px; }
+  .fc-cheese  { font-family: 'XiaoKeNaiLaoTi', 'STYuanti', sans-serif; font-size: 28px; }
+
+  /* ── Size pills ── */
+  .size-row { display: flex; gap: 8px; }
+  .size-pill {
+    flex: 1; text-align: center;
+    font-size: 12px; font-weight: 500;
+    padding: 7px 0; border-radius: 8px;
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--inkSoft); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .size-pill:hover { border-color: var(--accent); }
+  .size-pill.selected { background: var(--accent); color: var(--onAccent); border-color: var(--accent); }
+  .size-pill .sp-val { font-size: 15px; font-weight: 700; display: block; }
+  .size-pill .sp-label { font-size: 10px; opacity: 0.8; }
+
+  /* ── Color dots ── */
+  .color-row { display: flex; gap: 12px; }
+  .color-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    cursor: pointer; transition: all 0.15s;
+    border: 2px solid transparent;
+    position: relative;
+  }
+  .color-dot:hover { transform: scale(1.12); }
+  .color-dot.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(122,90,20,0.12); }
+  .color-dot.selected::after {
+    content: '✓'; position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900; color: #FFF;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  /* ── Line spacing pills ── */
+  .spacing-row { display: flex; gap: 8px; }
+  .spacing-pill {
+    flex: 1; text-align: center; font-size: 12px; font-weight: 500;
+    padding: 6px 0; border-radius: 8px;
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--inkSoft); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .spacing-pill:hover { border-color: var(--accent); }
+  .spacing-pill.selected { background: var(--accent); color: var(--onAccent); border-color: var(--accent); }
+
+  /* ── Close / Apply ── */
+  .panel-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-close {
+    flex: 1; text-align: center; font-size: 14px; font-weight: 600;
+    padding: 9px 0; border-radius: var(--radiusSm);
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--ink); cursor: pointer;
+  }
+  .btn-apply {
+    flex: 2; text-align: center; font-size: 14px; font-weight: 600;
+    padding: 9px 0; border-radius: var(--radiusSm);
+    background: var(--accent); color: var(--onAccent);
+    border: none; cursor: pointer;
+  }
+
+  /* ── Info callout ── */
+  .callout {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radiusSm);
+    padding: 13px 16px; margin: 12px 0 0;
+    font-size: 12px; color: var(--inkSoft); line-height: 1.6;
+  }
+  .callout .icon { margin-right: 4px; }
+  .callout .font-spec {
+    display: inline-block; padding: 1px 6px; border-radius: 4px;
+    background: var(--paper); color: var(--ink); font-weight: 600;
+    margin: 2px 0; font-size: 13px;
+  }
+
+  /* ── 2-column layout for wider section ── */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 1000px; margin: 0 auto; }
+  .compare-col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .compare-col-label { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  SECTION 1 — Editor with font toolbar      -->
+<!-- ══════════════════════════════════════════ -->
+<div class="page-header">
+  <h1>字体自定义 — 设计方案</h1>
+  <p class="sub">入口在编辑器地点行上方 · 点击弹出底部面板 · 4 系统字体 + 4 第三方免费字体<br>
+  <span style="font-size:13px;color:var(--inkSoft);">自定义项：字体 · 字号 · 颜色 · 行距</span></p>
+</div>
+
+<div class="section">
+  <div class="section-head"><h2>❶ 编辑器入口</h2><span class="tag">位置</span></div>
+  <p class="section-desc">「Aa 字体」工具栏插入在日期行与地点行之间。显示当前字体名 + 字号 + 颜色预览圆点，点按弹出字体面板。</p>
+
+  <div class="phones">
+    <!-- Col 1: Editor with font toolbar collapsed -->
+    <div class="phone-col">
+      <div class="phone-label"><strong>编辑页</strong> — 字体工具栏在日期下方</div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-body">
+          <!-- top bar -->
+          <div class="topbar">
+            <div class="btn-circle">✕</div>
+            <span class="topbar-title">2025.06.17</span>
+            <div class="btn-circle" style="background:var(--accent);color:var(--onAccent);border:none;">✓</div>
+          </div>
+
+          <!-- editor area -->
+          <div class="editor-area" style="height:120px;">
+            <span class="placeholder">今天去公园散步，拍了几张照片，心情也跟着明朗起来了。傍晚的风很舒服…</span>
+          </div>
+
+          <!-- voice / photo meta rows -->
+          <div class="meta-row" style="margin-top:2px;">
+            <span>📅 2025.06.17</span>
+          </div>
+
+          <!-- ═══ FONT TOOLBAR ═══ -->
+          <div class="font-toolbar" style="margin-bottom:7px;">
+            <div class="ft-icon">Aa</div>
+            <div class="ft-info">
+              <div class="ft-current">楷体 · 17pt</div>
+              <div class="ft-detail">字体 · 字号 · 颜色 · 行距</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#4A3728;border:1.5px solid var(--line);flex-shrink:0;"></div>
+              <span class="ft-chevron">▸</span>
+            </div>
+          </div>
+
+          <!-- location row -->
+          <div class="location-row">
+            <span class="pin">📍</span> 上海 · 人民公园
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 2: Font toolbar tapped → active state -->
+    <div class="phone-col">
+      <div class="phone-label"><strong>点按 Aa</strong> — 工具栏高亮，底部面板滑出</div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-body">
+          <div class="topbar">
+            <div class="btn-circle">✕</div>
+            <span class="topbar-title">2025.06.17</span>
+            <div class="btn-circle" style="background:var(--accent);color:var(--onAccent);border:none;">✓</div>
+          </div>
+
+          <div class="editor-area" style="height:80px;">
+            <span style="font-family:'Kaiti SC','STKaiti',serif;font-size:17px;color:#4A3728;position:relative;z-index:1;">今天去公园散步，拍了几张…</span>
+          </div>
+
+          <div class="meta-row" style="margin-top:2px;">
+            <span>📅 2025.06.17</span>
+          </div>
+
+          <!-- FONT TOOLBAR — active -->
+          <div class="font-toolbar active" style="margin-bottom:7px;">
+            <div class="ft-icon">Aa</div>
+            <div class="ft-info">
+              <div class="ft-current">楷体 · 17pt</div>
+              <div class="ft-detail">字体 · 字号 · 颜色 · 行距</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#4A3728;border:1.5px solid var(--accent);"></div>
+              <span class="ft-chevron" style="transform:rotate(90deg);">▸</span>
+            </div>
+          </div>
+
+          <div class="location-row">
+            <span class="pin">📍</span> 上海 · 人民公园
+          </div>
+
+          <!-- ═══ FONT PANEL ═══ -->
+          <div class="font-panel" style="margin-top:4px;">
+            <div class="panel-handle"></div>
+
+            <!-- Preview -->
+            <div class="preview-card" style="font-family:'Kaiti SC','STKaiti',serif;font-size:17px;color:#4A3728;line-height:1.6;">
+              窗前明月光，疑是地上霜。<br>举头望明月，低头思故乡。
+            </div>
+
+            <!-- Font family -->
+            <div class="panel-sec">
+              <div class="panel-sec-label">字体</div>
+              <div class="font-grid">
+                <div class="font-card"><div class="fc-aa fc-system">Aa</div><div class="fc-name">系统默认</div></div>
+                <div class="font-card"><div class="fc-aa fc-songti">Aa</div><div class="fc-name">宋体</div></div>
+                <div class="font-card selected"><div class="fc-aa fc-kaiti">Aa</div><div class="fc-name">楷体</div></div>
+                <div class="font-card"><div class="fc-aa fc-yuanti">Aa</div><div class="fc-name">圆体</div></div>
+                <div class="font-card"><div class="fc-aa fc-haoshen">Aa</div><div class="fc-name">有好身体</div><div class="fc-tag">第三⽅</div></div>
+                <div class="font-card"><div class="fc-aa fc-slide">Aa</div><div class="fc-name">手写体</div><div class="fc-tag">第三⽅</div></div>
+                <div class="font-card"><div class="fc-aa fc-cheese">Aa</div><div class="fc-name">⼩可奶酪</div><div class="fc-tag">第三⽅</div></div>
+                <div class="font-card"><div class="fc-aa fc-longcang">Aa</div><div class="fc-name">龙藏体</div><div class="fc-tag">第三⽅</div></div>
+              </div>
+            </div>
+
+            <!-- Font size -->
+            <div class="panel-sec">
+              <div class="panel-sec-label">字号</div>
+              <div class="size-row">
+                <div class="size-pill"><span class="sp-val">14</span><span class="sp-label">小</span></div>
+                <div class="size-pill selected"><span class="sp-val">17</span><span class="sp-label">中</span></div>
+                <div class="size-pill"><span class="sp-val">20</span><span class="sp-label">大</span></div>
+                <div class="size-pill"><span class="sp-val">24</span><span class="sp-label">特大</span></div>
+              </div>
+            </div>
+
+            <!-- Color -->
+            <div class="panel-sec">
+              <div class="panel-sec-label">颜色</div>
+              <div class="color-row">
+                <div class="color-dot" style="background:#221A0E;" title="主题墨色"></div>
+                <div class="color-dot selected" style="background:#4A3728;" title="深棕"></div>
+                <div class="color-dot" style="background:#000000;" title="纯黑"></div>
+                <div class="color-dot" style="background:#2C3E50;" title="深蓝"></div>
+                <div class="color-dot" style="background:#3B4F3A;" title="墨绿"></div>
+              </div>
+            </div>
+
+            <!-- Line spacing -->
+            <div class="panel-sec">
+              <div class="panel-sec-label">行距</div>
+              <div class="spacing-row">
+                <div class="spacing-pill">窄</div>
+                <div class="spacing-pill selected">标准</div>
+                <div class="spacing-pill">宽松</div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="panel-actions">
+              <div class="btn-close">关闭</div>
+              <div class="btn-apply">应用</div>
+            </div>
+          </div>
+          <!-- end font panel -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  SECTION 2 — All fonts preview             -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-head"><h2>❷ 全字体预览</h2><span class="tag">总览</span></div>
+  <p class="section-desc">8 款字体在 17pt / 主题墨色 / 标准行距下的效果对比。灰色底为系统自带，米色底为第三⽅免费字体（从旧项目迁移）。</p>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1100px;margin:0 auto;">
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:11px;color:var(--inkSoft);margin-bottom:8px;">系统字体</div>
+      <div style="font-size:36px;color:var(--ink);margin-bottom:4px;font-family:'PingFang SC',-apple-system,sans-serif;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);font-family:'PingFang SC',-apple-system,sans-serif;">PingFang SC<br>干净现代 · 日常记录</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:11px;color:var(--inkSoft);margin-bottom:8px;">宋体</div>
+      <div style="font-size:36px;color:var(--ink);margin-bottom:4px;font-family:'Songti SC','STSong',serif;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);font-family:'Songti SC',serif;">Songti SC<br>书卷气 · 像印刷的书页</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:11px;color:var(--inkSoft);margin-bottom:8px;">楷体</div>
+      <div style="font-size:36px;color:var(--ink);margin-bottom:4px;font-family:'Kaiti SC','STKaiti',serif;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);font-family:'Kaiti SC',serif;">Kaiti SC<br>手写感 · 最像写日记</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:11px;color:var(--inkSoft);margin-bottom:8px;">圆体</div>
+      <div style="font-size:36px;color:var(--ink);margin-bottom:4px;font-family:'Yuanti SC','STYuanti',sans-serif;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);font-family:'Yuanti SC',sans-serif;">Yuanti SC<br>圆润温暖 · 轻松随笔</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1100px;margin:12px auto 0;">
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:10px;color:var(--accent);margin-bottom:8px;font-weight:600;">第三⽅ · 免费</div>
+      <div style="font-size:32px;color:var(--ink);margin-bottom:4px;font-family:'YSHaoShenTi','Kaiti SC',cursive;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);">有好身体<br>瘦长手写 · 个性十足</div>
+    </div>
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:10px;color:var(--accent);margin-bottom:8px;font-weight:600;">第三⽅ · 免费</div>
+      <div style="font-size:32px;color:var(--ink);margin-bottom:4px;font-family:'Slidexiaxing','Kaiti SC',cursive;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);">Slidexiaxing<br>流畅行书 · 自然随性</div>
+    </div>
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:10px;color:var(--accent);margin-bottom:8px;font-weight:600;">第三⽅ · 免费</div>
+      <div style="font-size:32px;color:var(--ink);margin-bottom:4px;font-family:'XiaoKeNaiLaoTi','STYuanti',sans-serif;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);">小可奶酪体<br>圆胖可爱 · 轻松活泼</div>
+    </div>
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;text-align:center;">
+      <div style="font-size:10px;color:var(--accent);margin-bottom:8px;font-weight:600;">第三⽅ · 免费</div>
+      <div style="font-size:32px;color:var(--ink);margin-bottom:4px;font-family:'Long Cang','Kaiti SC',cursive;">日记</div>
+      <div style="font-size:13px;color:var(--inkSoft);">龙藏体 Long Cang<br>毛笔手写 · 古朴有力</div>
+    </div>
+  </div>
+
+  <div class="callout" style="max-width:1100px;margin:16px auto 0;">
+    <span class="icon">ℹ️</span> 第三方字体 <span class="font-spec">.ttf</span> 文件需拷贝到新工程 <span class="font-spec">Sources/Resources/Fonts/</span>，并在 <span class="font-spec">Info.plist</span> 的 <span class="font-spec">UIAppFonts</span> 中注册。均为免费可商用字体（来自旧项目 FontLab 目录）。
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  SECTION 3 — Detail view rendering         -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-head"><h2>❸ 详情页效果</h2><span class="tag">阅读</span></div>
+  <p class="section-desc">每篇日记保留各自的字体设置。详情页的 <span style="font-weight:600;">SelectableTextView</span> 读取 entry.fontName / fontSize / fontColorHex / lineSpacing 来渲染。
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto;">
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;">
+      <div style="font-size:11px;color:var(--inkSoft);margin-bottom:10px;">系统默认 · 17pt · 主题墨色</div>
+      <div style="font-family:'PingFang SC',sans-serif;font-size:17px;color:#221A0E;line-height:1.6;">
+        生活不是等待暴风雨过去，而是学会在雨中跳舞。
+      </div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;">
+      <div style="font-size:11px;color:var(--inkSoft);margin-bottom:10px;">楷体 · 20pt · 深蓝 · 宽松行距</div>
+      <div style="font-family:'Kaiti SC',serif;font-size:20px;color:#2C3E50;line-height:2.0;">
+        生活不是等待暴风雨过去，而是学会在雨中跳舞。
+      </div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;">
+      <div style="font-size:11px;color:var(--inkSoft);margin-bottom:10px;">龙藏体 · 24pt · 深棕</div>
+      <div style="font-family:'Long Cang','Kaiti SC',cursive;font-size:24px;color:#4A3728;line-height:1.6;">
+        生活不是等待暴风雨过去，而是学会在雨中跳舞。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  SECTION 4 — Data model                    -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-head"><h2>❹ 数据模型</h2><span class="tag">技术</span></div>
+  <p class="section-desc">DiaryEntry 已有 <span style="font-weight:600;">fontName</span>、<span style="font-weight:600;">fontSize</span>、<span style="font-weight:600;">fontColorHex</span> 字段，本次只需加 <span style="font-weight:600;">lineSpacing</span>（Double，默认 1.6）。</p>
+
+  <div style="max-width:700px;margin:0 auto;background:#1E1E1E;border-radius:var(--radius);padding:18px 22px;font-family:'SF Mono',Menlo,monospace;font-size:13px;color:#D4D4D4;line-height:1.8;">
+    <span style="color:#569CD6;">@Model</span> <span style="color:#4EC9B0;">final class</span> <span style="color:#4EC9B0;">DiaryEntry</span> {<br>
+    &nbsp;&nbsp;<span style="color:#6A9955;">// … existing fields …</span><br>
+    &nbsp;&nbsp;<span style="color:#569CD6;">var</span> fontName: <span style="color:#4EC9B0;">String</span> = <span style="color:#CE9178;">"System"</span><br>
+    &nbsp;&nbsp;<span style="color:#569CD6;">var</span> fontSize: <span style="color:#4EC9B0;">Double</span> = <span style="color:#B5CEA8;">17</span><br>
+    &nbsp;&nbsp;<span style="color:#569CD6;">var</span> fontColorHex: <span style="color:#4EC9B0;">String</span> = <span style="color:#CE9178;">""</span><br>
+    &nbsp;&nbsp;<span style="color:#569CD6;">var</span> lineSpacing: <span style="color:#4EC9B0;">Double</span> = <span style="color:#B5CEA8;">1.6</span>&nbsp;&nbsp;<span style="color:#6A9955;">// ← 新增</span><br>
+    }
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  SECTION 5 — Settings default              -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-head"><h2>❺ 与设置页的关系</h2><span class="tag">默认值</span></div>
+  <p class="section-desc">设置页「写日记偏好」中的<span style="font-weight:600;">默认字体</span>和<span style="font-weight:600;">默认字号</span>，控制新建日记时字体面板的初始选中值。用户在任何一篇日记里改了字体，不影响默认值，也不影响其他日记。</p>
+
+  <div style="display:flex;gap:20px;max-width:700px;margin:0 auto;">
+    <div style="flex:1;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;text-align:center;">
+      <div style="font-size:12px;color:var(--inkSoft);margin-bottom:6px;">设置 → 默认字体 / 字号</div>
+      <div style="font-size:15px;color:var(--ink);font-weight:600;">「写日记偏好」分区</div>
+      <div style="font-size:12px;color:var(--inkSoft);margin-top:4px;">控制新日记的初始字体</div>
+    </div>
+    <div style="flex:1;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px;text-align:center;">
+      <div style="font-size:12px;color:var(--accent);margin-bottom:6px;font-weight:600;">编辑器 → 字体面板</div>
+      <div style="font-size:15px;color:var(--ink);font-weight:600;">本日记的字体设置</div>
+      <div style="font-size:12px;color:var(--inkSoft);margin-top:4px;">只影响这一篇，互不干扰</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

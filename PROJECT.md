@@ -4,10 +4,11 @@
 
 ## 复用的上架 ID（其余全部重建）
 - Bundle ID：`com.chunqingliao.VoiceDiary`
-- App Store ID：`6670278331`，显示名「翻页日记」
-- IAP product：`com.chunqingliao.VoiceDiary.fullunlock`（一次性买断 ¥15，NonConsumable）
+- App Store ID：`6670278331`，显示名：英文 `Voice Diary` / 简中「翻页日记」（随系统语言）
+- IAP：`com.chunqingliao.VoiceDiary.fullunlock`（永久买断 $59.99，NonConsumable）
+  - 新增订阅：`weekly` $1.49 / `monthly` $2.99 / `annual` $24.99（Auto-Renewable Subscription）
 - iCloud 容器：`iCloud.com.chunqingliao.VoiceDiary`（CloudKit 私有库）
-- Team：`8X79G5XCU6`，部署目标 iOS 17.5，仅 iPhone
+- Team：`8X79G5XCU6`，部署目标 iOS 17.5，iPhone + iPad（通用 App，纯竖屏 / `UIRequiresFullScreen`）
 
 ## UI 设计准则
 
@@ -33,8 +34,8 @@ Sources/
   DesignSystem/   Theme(Palette) / Spacing(Metric) / Typography(Font) / Components(PaperLines…)
   Models/         DiaryEntry, VoiceMemo（SwiftData，CloudKit 同步兼容）
   Managers/       DataManager（streak / 演示种子）…后续：录音/转写/通知/隐私锁/购买/导出
-  Features/       Cover / List / Editor / Detail / Settings …
-  Resources/      Assets.xcassets, zh-Hans.lproj, en.lproj
+  Features/       Cover / List / Editor / Detail / Settings / Stats / Prompts / Onboarding …
+  Resources/      Assets.xcassets, Fonts/, Localizable.xcstrings, InfoPlist.xcstrings
 Support/          VoiceDiary.entitlements, VoiceDiary.storekit
 ```
 
@@ -102,8 +103,33 @@ Support/          VoiceDiary.entitlements, VoiceDiary.storekit
 
 ---
 
+### 已完成（2026-06-22）
+
+#### 评分 / 分享
+- [x] 「给我们评分」抽成 `rateApp()`：`write-review` 直达 + `canOpenURL` 判断 + `https` 兜底
+- [x] 「分享给朋友」`shareApp()`：带邀请语 + 取前台活跃场景顶层 VC 弹分享面板，设 `popoverPresentationController` 锚点（修掉 iPad 必崩）；App Store ID 提成 `appStoreID` 常量
+
+#### iPad 支持
+- [x] `TARGETED_DEVICE_FAMILY "1,2"`，通用 App（不再是放大兼容模式）
+- [x] **纯竖屏**：单 `UISupportedInterfaceOrientations` Portrait + `UIRequiresFullScreen YES`（关 iPad 多任务，竖屏才锁得住）
+- [x] `.readableColumn()`（`DesignSystem/ReadableColumn.swift`，上限 680pt 居中）套到 9 个内容页，iPad/横屏正文不拉长行；iPhone 触不到该宽度、表现不变
+
+#### 设置页重构（7 组，归类有层次）
+- [x] 偏好 / 外观 / 隐私与安全 / 数据 / 订阅 / 支持我们 / 关于（Debug 仅 DEBUG）
+- [x] 翻页声音→偏好；恢复购买→订阅；**新增** 管理订阅、**使用条款（订阅合规必需）**；支持类独立成组
+- [x] HTML 设计稿：`settings-redesign.html`
+
+#### 目录页三入口
+- [x] header 改「标题行 + 一排等宽特性卡」：今日引导 · AI 洞察 · 统计（暗金徽章 + `FeatureButtonStyle` 按压反馈）
+- [x] 统计入口从设置迁来，`StatsView` 由此弹出
+
+#### 多语言（英文优先 + 简体中文）
+- [x] 工程切英文源语言；全工程 UI 英文化；`Localizable.xcstrings`(~266) + `InfoPlist.xcstrings`；详见记忆 `project_voicediary_i18n`
+- [x] 引导文案库（`DailyPrompt` + 5 个 PromptPack）重写地道英文；日期改 locale-aware
+
+---
+
 ### 待完成
-- [ ] 录音功能（AVAudioRecorder + Speech on-device `requiresOnDeviceRecognition = true`）
-- [ ] 统计页（StatsView）
-- [ ] PDFKit 导出（付费功能）
-- [ ] 详细方案与设计图：`REBUILD_PLAN.md`、`voice-feature-mockups.html`（backup 里，待迁入）
+- [ ] 把占位法律页换成自有链接（隐私政策 / 使用条款现指向 apple.com 通用页）
+- [ ] iPad 截图 + 真机逐屏核对（中英 + iPad 竖屏布局）
+- [ ] 上架前：英文/中文 ASO 文案、截图、What's New

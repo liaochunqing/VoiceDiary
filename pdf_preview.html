@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "PingFang SC", sans-serif;
+    background: #D9CDB8;
+    padding: 40px 0 80px;
+  }
+
+  /* A4 页面 */
+  .page {
+    width: 794px;
+    min-height: 1123px;
+    margin: 0 auto 32px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.18);
+    page-break-after: always;
+  }
+
+  /* ── 封面 ── */
+  .cover {
+    background: linear-gradient(135deg, #5C3D1E, #3A2210);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 80px;
+    min-height: 1123px;
+  }
+  .cover hr { width: 100%; border: none; border-top: 1px solid rgba(200,150,12,.3); margin: 28px 0; }
+  .cover-title { font-size: 52px; font-weight: 700; color: #C8960C; letter-spacing: 14px; }
+  .cover-sub   { font-size: 18px; font-weight: 600; color: rgba(200,150,12,.6); letter-spacing: 5px; margin-top: 12px; }
+  .cover-slogan{ font-size: 13px; color: rgba(200,150,12,.4); letter-spacing: 3px; margin-top: 8px; }
+  .cover-meta  { margin-top: 40px; font-size: 14px; color: rgba(200,150,12,.5); line-height: 2.2; text-align: center; letter-spacing: 1px; }
+
+  /* ── 列表页 ── */
+  .list-page {
+    background: #F5EBD5;
+    padding: 64px 72px;
+  }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid #C8960C;
+    margin-bottom: 32px;
+  }
+  .list-header-title { font-size: 13px; font-weight: 600; color: #7A6A55; letter-spacing: 2px; }
+  .list-header-count { font-size: 12px; color: #7A6A55; opacity: .6; }
+
+  /* 表格 */
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    font-size: 11px;
+    font-weight: 600;
+    color: #7A6A55;
+    letter-spacing: 1.5px;
+    text-align: left;
+    padding: 0 0 10px;
+    border-bottom: 1px solid #E0D0B0;
+  }
+  thead th:last-child { text-align: right; }
+
+  tbody tr { border-bottom: 1px solid #EDE0C8; }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 14px 0;
+    vertical-align: top;
+    font-size: 13px;
+    color: #221A0E;
+  }
+
+  .col-date    { width: 110px; color: #7A6A55; font-size: 12px; white-space: nowrap; padding-right: 16px; }
+  .col-content { color: #221A0E; line-height: 1.5; }
+  .col-content .preview { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .col-loc     { width: 120px; font-size: 12px; color: #7A6A55; padding-left: 16px; }
+  .col-page    { width: 50px; text-align: right; font-size: 11px; color: #7A6A55; opacity: .5; padding-left: 8px; white-space: nowrap; }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #C8960C;
+    background: rgba(200,150,12,.08);
+    border: 1px solid rgba(200,150,12,.25);
+    border-radius: 100px;
+    padding: 1px 7px;
+    margin-top: 4px;
+  }
+
+  .footer {
+    margin-top: 48px;
+    text-align: center;
+    font-size: 11px;
+    color: #7A6A55;
+    opacity: .5;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 封面 -->
+<div class="page cover">
+  <hr>
+  <div class="cover-title">我 的 日 记</div>
+  <div class="cover-sub">VOICE DIARY</div>
+  <div class="cover-slogan">翻开本子，对它说话</div>
+  <hr>
+  <div class="cover-meta">
+    2026 年 01 月 01 日 — 2026 年 06 月 21 日<br>
+    共 42 篇
+  </div>
+</div>
+
+<!-- 列表页 -->
+<div class="page list-page">
+  <div class="list-header">
+    <span class="list-header-title">日 记 列 表</span>
+    <span class="list-header-count">共 42 篇</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="col-date">日期</th>
+        <th class="col-content">内容摘要</th>
+        <th class="col-loc">地点</th>
+        <th class="col-page">页码</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-date">2026/06/21<br>周日</td>
+        <td class="col-content">
+          <div class="preview">今天去公园散步，拍了几张照片，心情也跟着明朗起来了。傍晚的风很舒服，坐在湖边发了会儿呆。</div>
+          <span class="badge">🎙 0:12</span>
+        </td>
+        <td class="col-loc">上海 · 人民公园</td>
+        <td class="col-page">第 1 页</td>
+      </tr>
+      <tr>
+        <td class="col-date">2026/06/20<br>周六</td>
+        <td class="col-content">
+          <div class="preview">加班到很晚，但终于把那个拖了一周的项目收尾了，松了一口气。</div>
+        </td>
+        <td class="col-loc">公司</td>
+        <td class="col-page">第 2 页</td>
+      </tr>
+      <tr>
+        <td class="col-date">2026/06/19<br>周五</td>
+        <td class="col-content">
+          <div class="preview">和好久不见的朋友聚会，吃了好吃的火锅，聊到深夜，太开心了～</div>
+          <span class="badge">🎙 0:30</span>
+        </td>
+        <td class="col-loc">成都 · 春熙路</td>
+        <td class="col-page">第 3 页</td>
+      </tr>
+      <tr>
+        <td class="col-date">2026/06/18<br>周四</td>
+        <td class="col-content">
+          <div class="preview">下雨天，哪也没去，在家泡了壶茶看了一整天书，难得的安静。</div>
+        </td>
+        <td class="col-loc">家</td>
+        <td class="col-page">第 4 页</td>
+      </tr>
+      <tr>
+        <td class="col-date">2026/06/16<br>周二</td>
+        <td class="col-content">
+          <div class="preview">学会了一道新菜，糖醋排骨，家里人都说好吃，很有成就感。</div>
+        </td>
+        <td class="col-loc">家</td>
+        <td class="col-page">第 5 页</td>
+      </tr>
+      <tr>
+        <td class="col-date">2026/01/01<br>周四</td>
+        <td class="col-content">
+          <div class="preview">新年第一天，写下这一年想做的事。</div>
+        </td>
+        <td class="col-loc">—</td>
+        <td class="col-page">第 42 页</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">由 Voice Diary 导出 · 翻开本子，对它说话</div>
+</div>
+
+</body>
+</html>

@@ -16,12 +16,11 @@ struct DiaryDetailView: View {
     @State private var playingMemoID: UUID?
     @State private var showDeleteAlert = false
     @State private var showEditor = false
-    @State private var showNewEntry = false
     @State private var photoViewerIndex: Int? = nil
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            pal.paper.ignoresSafeArea()
+            PaperBackground()
 
             VStack(spacing: 0) {
                 topBar
@@ -29,34 +28,33 @@ struct DiaryDetailView: View {
                     .padding(.top, Metric.m)
                     .padding(.bottom, Metric.m)
 
-                // 文本撑满剩余空间；语音/图片/日期锁在下方始终可见
-                VStack(alignment: .leading, spacing: Metric.m) {
-                    textCard
-                        .frame(maxHeight: .infinity)
-
+                // 正文信纸自适应内容（落款在卡内底部）；语音/照片分区列于其下
+                ScrollView(showsIndicators: false) {
                     let sorted = (entry.voiceMemos ?? []).sorted { $0.createdAt < $1.createdAt }
-                    ForEach(sorted) { voiceBar(memo: $0) }
-                    if !entry.photos.isEmpty { photoStrip }
-                    metaSection
+                    VStack(alignment: .leading, spacing: Metric.m) {
+                        dateHeader
+                        textCard
+
+                        // 语音 + 照片合进一张「附件」卡，整页只剩正文卡 + 附件卡两块
+                        if !sorted.isEmpty || !entry.photos.isEmpty {
+                            attachmentCard(memos: sorted)
+                        }
+                    }
+                    .padding(.horizontal, Metric.l)
+                    .padding(.top, Metric.xs)
+                    .padding(.bottom, 88)
                 }
-                .padding(.horizontal, Metric.l)
-                .padding(.bottom, Metric.m)
             }
-            // 可拖拽新建按钮
-            DraggableFAB { showNewEntry = true }
-                .padding(Metric.xl)
+            .readableColumn()
         }
-        .alert("删除这篇日记？", isPresented: $showDeleteAlert) {
-            Button("删除", role: .destructive) { deleteEntry() }
-            Button("取消", role: .cancel) {}
+        .alert("Delete this entry?", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) { deleteEntry() }
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("此操作不可撤销")
+            Text("This can't be undone")
         }
-        .fullScreenCover(isPresented: $showEditor) {
+        .sheet(isPresented: $showEditor) {
             AddDiaryView(editingEntry: entry)
-        }
-        .fullScreenCover(isPresented: $showNewEntry) {
-            AddDiaryView()
         }
         .overlay {
             if let idx = photoViewerIndex {
@@ -80,58 +78,92 @@ struct DiaryDetailView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.uturn.backward")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("返回目录")
+                    Text("Back to Contents")
                         .font(.dCaption.weight(.semibold))
                 }
                 .foregroundStyle(pal.ink)
                 .padding(.horizontal, Metric.m)
                 .padding(.vertical, Metric.s)
                 .background(pal.card, in: Capsule())
-                .overlay(Capsule().stroke(pal.line, lineWidth: 1))
+                .softEdge(Capsule())
             }
             Spacer()
-            Text("第 \(page) 页")
+            Text("Page \(page)")
                 .font(.dCallout)
                 .foregroundStyle(pal.inkSoft)
             Spacer()
             HStack(spacing: Metric.s) {
-                iconBtn("trash", tint: .red) { showDeleteAlert = true }
-                iconBtn("pencil") { showEditor = true }
+                emojiBtn("🗑️") { showDeleteAlert = true }
+                emojiBtn("✏️") { showEditor = true }
             }
         }
     }
 
-    private func iconBtn(_ name: String, tint: Color? = nil, action: @escaping () -> Void) -> some View {
+    private func emojiBtn(_ emoji: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: name)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(tint ?? pal.ink)
+            Text(emoji)
+                .font(.system(size: 17))
                 .frame(width: 36, height: 36)
                 .background(pal.card, in: Circle())
-                .overlay(Circle().stroke(pal.line, lineWidth: 1))
+                .softEdge(Circle())
         }
     }
 
     // MARK: 正文卡片（UITextView 支持 Select/Select All → Copy）
 
     private var textCard: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: Metric.cardRadius).fill(pal.card)
-                .overlay(PaperLines(color: pal.line)
-                    .clipShape(RoundedRectangle(cornerRadius: Metric.cardRadius)))
-                .overlay(RoundedRectangle(cornerRadius: Metric.cardRadius).stroke(pal.line, lineWidth: 1))
-
+        VStack(alignment: .leading, spacing: Metric.m) {
             if entry.content.isEmpty {
-                Text("（空）")
-                    .font(.dBody).foregroundStyle(pal.inkSoft)
-                    .padding(Metric.l)
+                Text("(empty)")
+                    .font(.dSerifReading).foregroundStyle(pal.inkSoft)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                SelectableTextView(
-                    text: entry.content,
-                    textColor: UIColor(pal.ink)
-                )
-                .padding(Metric.l)
+                // 原生 Text + textSelection：保留长按选择/拷贝，又不引入嵌套 UITextView
+                // 的滚动/选择手势冲突——长正文时外层 ScrollView 才能正常滚到附件。
+                Text(entry.content)
+                    .font(entry.bodyFont(palette: pal))
+                    .foregroundStyle(entry.bodyColor(palette: pal))
+                    .lineSpacing(6)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+        }
+        .padding(Metric.l)
+        .paperLinedCard()
+    }
+
+    // MARK: 日期页眉（正文卡上方，左日期右地点 + 一条底线）
+
+    private var dateHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
+                if let year = yearString {
+                    Text(year)
+                        .font(.dCaption)
+                        .foregroundStyle(pal.inkSoft)
+                }
+                Text(monthDayString)
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(pal.ink)
+                Text(weekdayTimeString)
+                    .font(.dCaption)
+                    .foregroundStyle(pal.inkSoft)
+            }
+            Spacer()
+            if entry.showLocation, !entry.location.isEmpty {
+                HStack(spacing: 4) {
+                    LocationPin(size: 13, color: pal.accent)
+                    Text(entry.location)
+                        .font(.dCaption)
+                        .foregroundStyle(pal.inkSoft)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .padding(.horizontal, Metric.xs)
+        .padding(.bottom, Metric.s)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(pal.line).frame(height: 1)
         }
     }
 
@@ -152,44 +184,64 @@ struct DiaryDetailView: View {
         }
     }
 
-    // MARK: 元信息区（日期 + 地点各占一行）
+    // MARK: 附件卡（语音 + 照片合一张，细分隔线分行 → 盒子从多个变一个）
 
-    private var metaSection: some View {
-        VStack(alignment: .leading, spacing: Metric.xs) {
-            Label(timeString, systemImage: "clock")
-                .font(.dCaption).foregroundStyle(pal.inkSoft)
-            if entry.showLocation, !entry.location.isEmpty {
-                Label(entry.location, systemImage: "mappin")
-                    .font(.dCaption).foregroundStyle(pal.inkSoft)
+    private func attachmentCard(memos: [VoiceMemo]) -> some View {
+        let hasVoice = !memos.isEmpty
+        let hasPhoto = !entry.photos.isEmpty
+        return VStack(alignment: .leading, spacing: Metric.m) {
+            if hasVoice {
+                segLabel("Voice", "· \(memos.count)")
+                VStack(spacing: 0) {
+                    ForEach(Array(memos.enumerated()), id: \.element.id) { idx, memo in
+                        if idx > 0 { hairline }
+                        voiceRow(memo: memo)
+                    }
+                }
+            }
+            if hasVoice && hasPhoto { hairline }
+            if hasPhoto {
+                segLabel("Photos", "· \(entry.photos.count)")
+                photoStrip
             }
         }
-        .padding(.top, Metric.xs)
+        .padding(Metric.l)
+        .diaryCard()
     }
 
-    // MARK: 语音条
+    private var hairline: some View {
+        Rectangle().fill(pal.line.opacity(0.6)).frame(height: 1)
+    }
+
+    // MARK: 分区小标签（金点 + 文字，附件卡内）
+
+    private func segLabel(_ title: LocalizedStringKey, _ trailing: String) -> some View {
+        HStack(spacing: Metric.xs) {
+            Circle().fill(pal.gold).frame(width: 5, height: 5)
+            Text(title).font(.dLabel).foregroundStyle(pal.inkSoft)
+            Text(trailing).font(.dLabel).foregroundStyle(pal.inkSoft.opacity(0.8))
+            Spacer()
+        }
+    }
+
+    // MARK: 语音行（无独立边框，靠附件卡承载 + 细分隔线分行）
 
     @ViewBuilder
-    private func voiceBar(memo: VoiceMemo) -> some View {
+    private func voiceRow(memo: VoiceMemo) -> some View {
         let isThisPlaying = isPlaying && playingMemoID == memo.id
         HStack(spacing: Metric.s) {
             Button { togglePlay(memo: memo) } label: {
                 Image(systemName: isThisPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(pal.onAccent)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 30, height: 30)
                     .background(pal.accent, in: Circle())
             }
             WaveformStatic(color: isThisPlaying ? pal.accent : pal.inkSoft)
-                .frame(height: 24)
-            Spacer()
+                .frame(height: 22)
             Text(durString(memo.duration)).font(.dCaption).foregroundStyle(pal.inkSoft)
-            Image(systemName: "waveform")
-                .foregroundStyle(pal.accent.opacity(isThisPlaying ? 1 : 0.5))
-                .symbolEffect(.variableColor.iterative.dimInactiveLayers, isActive: isThisPlaying)
         }
-        .padding(Metric.m)
-        .background(pal.card, in: RoundedRectangle(cornerRadius: Metric.cardRadius))
-        .overlay(RoundedRectangle(cornerRadius: Metric.cardRadius).stroke(pal.line, lineWidth: 1))
+        .padding(.vertical, Metric.s)
     }
 
     // MARK: 逻辑
@@ -199,25 +251,48 @@ struct DiaryDetailView: View {
             player?.pause(); isPlaying = false; return
         }
         player?.stop()
-        guard let data = memo.audio else { return }
+        guard let data = audioData(for: memo) else { return }
         let p = try? AVAudioPlayer(data: data)
         coordinator.onFinish = { isPlaying = false; playingMemoID = nil }
         p?.delegate = coordinator; p?.play()
         player = p; isPlaying = true; playingMemoID = memo.id
     }
 
+    /// 从独立的 VoiceAudio 库按 audioID 取出音频本体。
+    private func audioData(for memo: VoiceMemo) -> Data? {
+        guard let aid = memo.audioID else { return nil }
+        let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
+        return (try? context.fetch(desc))?.first?.data
+    }
+
     private func deleteEntry() {
         player?.stop()
+        // 跨库音频无 SwiftData 级联，删日记前手动清理对应 VoiceAudio。
+        for memo in entry.memos {
+            guard let aid = memo.audioID else { continue }
+            let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
+            for a in (try? context.fetch(desc)) ?? [] { context.delete(a) }
+        }
         context.delete(entry)
         try? context.save()
         navigator.goToList()
     }
 
-    private var timeString: String {
+    private func dateString(_ format: String) -> String {
         let f = DateFormatter()
-        f.dateFormat = "yyyy/MM/dd HH:mm"
+        f.locale = Locale(identifier: "zh_CN")
+        f.dateFormat = format
         return f.string(from: entry.date)
     }
+
+    private var yearString: String? {
+        let y = dateString("yyyy")
+        let currentYear = DateFormatter()
+        currentYear.dateFormat = "yyyy"
+        return y == currentYear.string(from: Date()) ? nil : y
+    }
+    private var monthDayString: String { dateString("MM.dd") }
+    private var weekdayTimeString: String { dateString("EEE  HH:mm") }
 
     private func durString(_ d: Double) -> String {
         String(format: "%d:%02d", Int(d) / 60, Int(d) % 60)
@@ -229,12 +304,13 @@ struct DiaryDetailView: View {
 private struct SelectableTextView: UIViewRepresentable {
     let text: String
     let textColor: UIColor
+    let font: UIFont
 
     func makeUIView(context: Context) -> UITextView {
         let tv = UITextView()
         tv.isEditable      = false
         tv.isSelectable    = true
-        tv.isScrollEnabled = true   // 文本区内部自行滚动
+        tv.isScrollEnabled = false   // 关掉内部滚动 → 卡片自适应文字高度，外层 ScrollView 负责滚动
         tv.backgroundColor = .clear
         tv.textContainerInset = .zero
         tv.textContainer.lineFragmentPadding = 0
@@ -243,19 +319,34 @@ private struct SelectableTextView: UIViewRepresentable {
 
     func updateUIView(_ uiView: UITextView, context: Context) {
         let style = NSMutableParagraphStyle()
-        style.lineSpacing = 8
+        style.lineSpacing = 6
         uiView.attributedText = NSAttributedString(string: text, attributes: [
-            .font: UIFont.systemFont(ofSize: 16),
+            .font: font,
             .foregroundColor: textColor,
             .paragraphStyle: style
         ])
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
-        // 接受父级分配的尺寸，UITextView 内部处理超长内容的滚动
-        let w = proposal.width  ?? UIScreen.main.bounds.width
-        let h = proposal.height ?? 160
-        return CGSize(width: w, height: h)
+        let w = proposal.width ?? UIScreen.main.bounds.width
+        let fitted = uiView.sizeThatFits(CGSize(width: w, height: .greatestFiniteMagnitude))
+        return CGSize(width: w, height: ceil(fitted.height))
+    }
+}
+
+// MARK: - 落款分隔虚线
+
+private struct DashedRule: View {
+    let color: Color
+    var body: some View {
+        GeometryReader { g in
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: 0.5))
+                p.addLine(to: CGPoint(x: g.size.width, y: 0.5))
+            }
+            .stroke(color, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+        }
+        .frame(height: 1)
     }
 }
 

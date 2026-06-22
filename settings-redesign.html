@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设置页 · 重新布局方案</title>
+<style>
+  :root{
+    --paper:#ECE3D0;
+    --card:#F6EFDF; --ink:#322C20; --inkSoft:#9A8E76;
+    --accent:#A8843C; --leather:#6E5A34;
+    --line:rgba(120,100,70,0.14);
+    --serif:Georgia,"Songti SC","STSong",serif;
+    --sans:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#cfc4ab;font-family:var(--sans);color:var(--ink);
+       display:flex;flex-direction:column;align-items:center;gap:14px;
+       padding:48px 24px;min-height:100vh;}
+
+  .phone{width:390px;border-radius:44px;background:var(--paper);
+         box-shadow:0 22px 60px rgba(40,30,15,.32);overflow:hidden;
+         border:10px solid #1c1812;position:relative;}
+  .status{height:44px;display:flex;align-items:center;justify-content:space-between;
+          padding:0 28px;font-size:13px;font-weight:600;color:var(--ink);}
+  .screen{height:780px;overflow-y:auto;padding:6px 18px 40px;}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .pagetitle{font-family:var(--serif);font-size:30px;font-weight:700;
+             padding:14px 6px 6px;letter-spacing:.5px;}
+
+  .pro{margin:10px 0 6px;border-radius:16px;padding:18px;color:#fff;
+       background:linear-gradient(135deg,var(--accent),var(--leather));
+       display:flex;align-items:center;justify-content:space-between;
+       box-shadow:0 6px 16px rgba(110,90,52,.3);}
+  .pro h3{font-family:var(--serif);font-size:18px;font-weight:700;}
+  .pro p{font-size:12px;opacity:.85;margin-top:3px;}
+  .pro .chev{opacity:.6;font-size:18px;}
+
+  .group{margin-top:22px;}
+  .ghead{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--inkSoft);
+         text-transform:uppercase;padding:0 6px 8px;display:flex;align-items:center;gap:6px;}
+  .cardbox{background:var(--card);border:1px solid var(--line);border-radius:16px;
+           box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 4px 10px rgba(80,60,30,.05);
+           overflow:hidden;}
+  .row{display:flex;align-items:center;gap:12px;padding:15px 16px;}
+  .row + .row{border-top:1px solid var(--line);}
+  .row .ic{width:22px;text-align:center;font-size:16px;flex:none;}
+  .row .lbl{flex:1;font-size:16px;color:var(--ink);}
+  .row .lbl small{display:block;font-size:12px;color:var(--inkSoft);margin-top:2px;font-weight:400;}
+  .row .val{font-size:14px;color:var(--inkSoft);}
+  .row .chev{color:var(--inkSoft);font-size:18px;}
+  .row .lock{color:var(--inkSoft);font-size:13px;}
+
+  .tg{width:46px;height:28px;border-radius:16px;background:#cdbf9f;position:relative;flex:none;transition:.2s;}
+  .tg.on{background:var(--accent);}
+  .tg::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+             background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.2s;}
+  .tg.on::after{left:21px;}
+
+  .themes{display:flex;justify-content:space-between;padding:16px 14px;gap:6px;}
+  .chip{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;}
+  .swatch{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);position:relative;}
+  .swatch.sel{outline:2.5px solid var(--accent);outline-offset:2px;}
+  .chip span{font-size:10px;color:var(--inkSoft);}
+  .chip.sel span{color:var(--ink);font-weight:600;}
+  .swatch .lk{position:absolute;right:-4px;top:-4px;width:16px;height:16px;border-radius:50%;
+              background:var(--card);border:.5px solid var(--line);font-size:9px;display:flex;
+              align-items:center;justify-content:center;}
+
+  .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;letter-spacing:.5px;margin-left:6px;}
+  .b-new{background:rgba(168,132,60,.18);color:#8a6a26;}
+  .b-mv{background:rgba(90,120,90,.18);color:#4d6b4d;}
+
+  .note{margin-top:18px;padding:13px 14px;border:1px dashed var(--line);border-radius:12px;
+        background:rgba(255,255,255,.35);font-size:12px;color:#6a604c;line-height:1.55;}
+  .note b{color:var(--ink);}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+  .legend span{font-size:12px;color:#5b5240;display:flex;align-items:center;gap:5px;}
+  .dot{width:10px;height:10px;border-radius:3px;}
+  .caption{font-size:12px;color:#5b5240;max-width:390px;text-align:center;line-height:1.6;}
+</style>
+</head>
+<body>
+
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="screen">
+      <div class="pagetitle">设置</div>
+
+      <!-- Pro 横幅（未解锁时） -->
+      <div class="pro">
+        <div>
+          <h3>✨ 升级完整版</h3>
+          <p>无限转写 · 全部主题 · 全部字体</p>
+        </div>
+        <span class="chev">›</span>
+      </div>
+
+      <!-- 偏好 -->
+      <div class="group">
+        <div class="ghead">⚙️ 偏好</div>
+        <div class="cardbox">
+          <div class="row"><span class="ic">🔔</span><span class="lbl">提醒我写日记</span><span class="tg on"></span></div>
+          <div class="row"><span class="ic">🕘</span><span class="lbl">提醒时间</span><span class="val">21:00</span></div>
+          <div class="row"><span class="ic">📖</span><span class="lbl">翻页声音</span><span class="badge b-mv">移入</span><span class="tg on"></span></div>
+        </div>
+      </div>
+
+      <!-- 外观 -->
+      <div class="group">
+        <div class="ghead">🎨 外观</div>
+        <div class="cardbox">
+          <div class="themes">
+            <div class="chip sel"><div class="swatch sel" style="background:#A8843C"></div><span>暗金</span></div>
+            <div class="chip"><div class="swatch" style="background:#7B9E87"></div><span>青瓷</span></div>
+            <div class="chip"><div class="swatch" style="background:#9C6B5A"><div class="lk">🔒</div></div><span>赭红</span></div>
+            <div class="chip"><div class="swatch" style="background:#5B7C99"><div class="lk">🔒</div></div><span>黛蓝</span></div>
+            <div class="chip"><div class="swatch" style="background:#8A7CA8"><div class="lk">🔒</div></div><span>紫藤</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 隐私与安全 -->
+      <div class="group">
+        <div class="ghead">🔒 隐私与安全</div>
+        <div class="cardbox">
+          <div class="row"><span class="ic">🆔</span><span class="lbl">Face ID / 密码锁<small>打开 App 时需要验证</small></span><span class="tg"></span></div>
+        </div>
+      </div>
+
+      <!-- 数据 -->
+      <div class="group">
+        <div class="ghead">☁️ 数据</div>
+        <div class="cardbox">
+          <div class="row"><span class="ic">☁️</span><span class="lbl">iCloud 同步</span><span class="lock">🔒</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">📤</span><span class="lbl">导出为 PDF</span><span class="chev">›</span></div>
+        </div>
+      </div>
+
+      <!-- 订阅 -->
+      <div class="group">
+        <div class="ghead">👑 订阅</div>
+        <div class="cardbox">
+          <div class="row"><span class="ic">👑</span><span class="lbl">管理订阅</span><span class="badge b-new">新</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">🔄</span><span class="lbl">恢复购买</span><span class="badge b-mv">移入</span><span class="chev">›</span></div>
+        </div>
+      </div>
+
+      <!-- 支持 -->
+      <div class="group">
+        <div class="ghead">❤️ 支持我们</div>
+        <div class="cardbox">
+          <div class="row"><span class="ic">⭐️</span><span class="lbl">给我们评分</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">📤</span><span class="lbl">分享给朋友</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">✉️</span><span class="lbl">意见反馈</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">📱</span><span class="lbl">其他产品</span><span class="chev">›</span></div>
+        </div>
+      </div>
+
+      <!-- 关于 -->
+      <div class="group">
+        <div class="ghead">ℹ️ 关于</div>
+        <div class="cardbox">
+          <div class="row"><span class="ic">#️⃣</span><span class="lbl">版本</span><span class="val">1.2.0</span></div>
+          <div class="row"><span class="ic">📄</span><span class="lbl">隐私政策</span><span class="chev">›</span></div>
+          <div class="row"><span class="ic">📃</span><span class="lbl">使用条款</span><span class="badge b-new">新 · 必需</span><span class="chev">›</span></div>
+        </div>
+      </div>
+
+      <div class="note">
+        ⓘ <b>统计</b> 已移出设置 —— 它是内容回顾，建议挪到「目录页」顶部与
+        <b>AI 洞察</b> 并列（设置不该是内容功能的入口）。
+      </div>
+
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:rgba(168,132,60,.55)"></span>新增功能</span>
+    <span><span class="dot" style="background:rgba(90,120,90,.55)"></span>重新归类（移入 / 移出）</span>
+  </div>
+  <p class="caption">7 组重新分类：偏好 / 外观 / 隐私 / 数据 / 订阅 / 支持 / 关于。
+  「翻页声音」提醒→偏好；「恢复购买」关于→订阅；新增「管理订阅」「使用条款」；「统计」移出设置。
+  Debug 组仅 DEBUG 构建可见，未画。</p>
+
+</body>
+</html>
