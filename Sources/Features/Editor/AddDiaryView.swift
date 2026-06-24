@@ -32,6 +32,8 @@ struct AddDiaryView: View {
     @State private var isFetchingLocation = false
     @State private var showDiscardConfirm = false
     @State private var detent: PresentationDetent
+    // 录音 sheet 的高度：随转写文字增多自动从 medium 升到 large
+    @State private var recorderDetent: PresentationDetent = .medium
     @FocusState private var writing: Bool
 
     // 初始快照：用于「有改动才提示未保存」的比对（编辑已有日记时尤其需要）。
@@ -132,9 +134,10 @@ struct AddDiaryView: View {
             }
             .readableColumn()
         }
-        .sheet(isPresented: $showRecorder) {
+        .dimmedSheet(isPresented: $showRecorder) {
             RecordingView(
-                hasExistingContent: !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                hasExistingContent: !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                detent: $recorderDetent
             ) { result in
                 showRecorder = false
                 guard let r = result else { return }
@@ -151,11 +154,11 @@ struct AddDiaryView: View {
             // 方案C：底部半屏浮层，日记页在上方露出（不离开编辑页）。带抓手、
             // 可在 半屏↔大 之间拖动（编辑文字时系统自动顶到大）。禁用下滑误关，
             // 录音进行中只能经顶部 ✕（会停录音、释放资源）退出。
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.medium, .large], selection: $recorderDetent)
             .presentationDragIndicator(.visible)
             .interactiveDismissDisabled()
         }
-        .sheet(isPresented: $showFontPanel) {
+        .dimmedSheet(isPresented: $showFontPanel) {
             FontPickerPanel(
                 font: $fontFamily,
                 size: $fontSize,
@@ -170,7 +173,7 @@ struct AddDiaryView: View {
             )
             .presentationDetents([.fraction(0.65), .large])
         }
-        .sheet(isPresented: $showPaywall) {
+        .dimmedSheet(isPresented: $showPaywall) {
             PaywallView(feature: paywallFeature)
         }
         .onChange(of: photoItems) { _, items in
@@ -462,8 +465,19 @@ struct AddDiaryView: View {
         AppSettings.lastFontSize = fontSize
         AppSettings.lastFontColorHex = fontColor.rawValue
         AppSettings.lastAutoLocation = showLocation
-        // 今天写完了，撤掉今晚那条提醒，别再催。
-        NotificationManager().cancelTodayReminder()
+        // 今天写完了：撤掉今晚那条提醒别再催，并以本次保存为锚点重排 3/7/30 天挽回。
+        let nm = NotificationManager()
+        nm.cancelTodayReminder()
+        nm.rescheduleWinback()
+        // 兜住 Skip 掉 onboarding 的用户：首篇保存后请求通知权限（已请求过则幂等跳过）。
+        if !UserDefaults.standard.bool(forKey: "hasRequestedNotification") {
+            UserDefaults.standard.set(true, forKey: "hasRequestedNotification")
+            Task { @MainActor in
+                let granted = await nm.requestPermission()
+                // 授权则开启每日提问提醒；isEnabled 的 didSet 会自动撤掉挽回、避免叠加。
+                if granted { nm.isEnabled = true }
+            }
+        }
         dismiss()
     }
 
@@ -486,28 +500,32 @@ struct AddDiaryView: View {
 
     // MARK: 免费额度
 
-    private static let maxFreeTranscriptionsPerDay = 3
+    /// 免费转写按自然周计数（每周一重置）。3 条/周对偶尔写日记的用户够用，
+    /// 又比旧的 3 条/天更易触达付费墙——核心语音转写是高频卖点，不能让免费档无限白用。
+    private static let maxFreeTranscriptionsPerWeek = 3
 
-    private var dailyTranscriptionKey: String {
-        let f = DateFormatter(); f.dateFormat = "yyyyMMdd"
-        return "transcriptionCount_\(f.string(from: Date()))"
+    private var weeklyTranscriptionKey: String {
+        var c = Calendar.current
+        let comps = c.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+        return "transcriptionCount_\(comps.yearForWeekOfYear ?? 0)_\(comps.weekOfYear ?? 0)"
     }
 
-    private var dailyTranscriptionCount: Int {
-        UserDefaults.standard.integer(forKey: dailyTranscriptionKey)
+    private var weeklyTranscriptionCount: Int {
+        UserDefaults.standard.integer(forKey: weeklyTranscriptionKey)
     }
 
-    private func canTranscribeToday() -> Bool {
-        PurchaseManager.shared.isUnlocked || dailyTranscriptionCount < Self.maxFreeTranscriptionsPerDay
+    private func canTranscribeThisWeek() -> Bool {
+        PurchaseManager.shared.isUnlocked || weeklyTranscriptionCount < Self.maxFreeTranscriptionsPerWeek
     }
 
     private func incrementTranscriptionCount() {
-        let key = dailyTranscriptionKey
-        UserDefaults.standard.set(dailyTranscriptionCount + 1, forKey: key)
+        let key = weeklyTranscriptionKey
+        UserDefaults.standard.set(weeklyTranscriptionCount + 1, forKey: key)
     }
 
     private func tryStartRecording() {
-        if canTranscribeToday() {
+        if canTranscribeThisWeek() {
+            recorderDetent = .medium   // 每次打开从半屏起步，随转写文字再升高
             showRecorder = true
         } else {
             paywallFeature = .voice

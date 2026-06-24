@@ -3,7 +3,6 @@ import StoreKit
 // MARK: - Product Tier
 
 enum ProductTier: String, CaseIterable, Identifiable {
-    case weekly  = "com.chunqingliao.VoiceDiary.weekly"
     case monthly = "com.chunqingliao.VoiceDiary.monthly"
     case annual  = "com.chunqingliao.VoiceDiary.annual"
     case lifetime = "com.chunqingliao.VoiceDiary.fullunlock"
@@ -13,10 +12,9 @@ enum ProductTier: String, CaseIterable, Identifiable {
     /// 订阅级别（用于排序），non-consumable 排最后。
     var level: Int {
         switch self {
-        case .weekly:   return 0
-        case .monthly:  return 1
-        case .annual:   return 2
-        case .lifetime: return 3
+        case .monthly:  return 0
+        case .annual:   return 1
+        case .lifetime: return 2
         }
     }
 
@@ -76,7 +74,10 @@ final class PurchaseManager {
             products = fetched.sorted { a, b in
                 (ProductTier(rawValue: a.id)?.level ?? 0) < (ProductTier(rawValue: b.id)?.level ?? 0)
             }
-        } catch {}
+            purchaseError = nil
+        } catch {
+            purchaseError = error.localizedDescription
+        }
         await checkEntitlements()
     }
 
@@ -136,7 +137,7 @@ final class PurchaseManager {
         await tx.finish()
     }
 
-    private func checkEntitlements() async {
+    func checkEntitlements() async {
         #if DEBUG
         // debug 强制会员：跳过 StoreKit 验证，保持本地标记
         if UserDefaults.standard.bool(forKey: "debugForceUnlocked") {
@@ -144,6 +145,9 @@ final class PurchaseManager {
             return
         }
         #endif
+        // 先置 false：若没有任何有效权益（订阅过期/退款/从未购买）就保持未解锁。
+        // 旧代码这里不重置，导致订阅过期后 isUnlocked 残留 true、用户白嫖。
+        isUnlocked = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let tx) = result,
                ProductTier(rawValue: tx.productID) != nil,
@@ -174,21 +178,15 @@ final class PurchaseManager {
     func trialText(for product: Product) -> String? {
         guard let intro = product.subscription?.introductoryOffer,
               intro.paymentMode == .freeTrial else { return nil }
-        let period = intro.period
-        return String(localized: "\(period.value) \(period.unit.displayName) free trial")
-    }
-}
-
-// MARK: - SubscriptionPeriod.Unit display
-
-private extension Product.SubscriptionPeriod.Unit {
-    var displayName: String {
-        switch self {
-        case .day:   return String(localized: "days")
-        case .week:  return String(localized: "weeks")
-        case .month: return String(localized: "months")
-        case .year:  return String(localized: "years")
-        @unknown default: return ""
+        let p = intro.period
+        let days: Int
+        switch p.unit {
+        case .day:   days = p.value
+        case .week:  days = p.value * 7
+        case .month: days = p.value * 30
+        case .year:  days = p.value * 365
+        @unknown default: days = p.value
         }
+        return String(localized: "\(days)-day free trial")
     }
 }

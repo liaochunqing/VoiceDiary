@@ -18,6 +18,15 @@ struct DiaryDetailView: View {
     @State private var showEditor = false
     @State private var photoViewerIndex: Int? = nil
 
+    // 自适应布局测量：正文自然高度、日期头高度、附件卡高度
+    @State private var textContentH: CGFloat = 0
+    @State private var headerH: CGFloat = 0
+    @State private var attachH: CGFloat = 0
+
+    private var sortedMemos: [VoiceMemo] {
+        (entry.voiceMemos ?? []).sorted { $0.createdAt < $1.createdAt }
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             PaperBackground()
@@ -28,21 +37,28 @@ struct DiaryDetailView: View {
                     .padding(.top, Metric.m)
                     .padding(.bottom, Metric.m)
 
-                // 正文信纸自适应内容（落款在卡内底部）；语音/照片分区列于其下
-                ScrollView(showsIndicators: false) {
-                    let sorted = (entry.voiceMemos ?? []).sorted { $0.createdAt < $1.createdAt }
+                // 日期头 + 正文 + 附件卡顺次排布：附件卡紧跟正文下方（不再 pin 到屏幕底）。
+                // 正文卡按内容自适应高度但封顶——文字过长时只在卡内上下滚动，
+                // 附件卡始终留在正文正下方、不会被顶出屏幕。
+                GeometryReader { geo in
+                    let hasAttach = !sortedMemos.isEmpty || !entry.photos.isEmpty
+                    let gaps = (hasAttach ? Metric.m * 3 : Metric.m * 2)
+                    let chrome = headerH + attachH + gaps + Metric.xs + Metric.xl
+                    let textMax = max(140, geo.size.height - chrome)
+
                     VStack(alignment: .leading, spacing: Metric.m) {
                         dateHeader
-                        textCard
-
-                        // 语音 + 照片合进一张「附件」卡，整页只剩正文卡 + 附件卡两块
-                        if !sorted.isEmpty || !entry.photos.isEmpty {
-                            attachmentCard(memos: sorted)
+                            .measureHeight { headerH = $0 }
+                        textCard(maxHeight: textMax)
+                        if hasAttach {
+                            attachmentCard(memos: sortedMemos)
+                                .measureHeight { attachH = $0 }
                         }
+                        Spacer(minLength: 0)
                     }
                     .padding(.horizontal, Metric.l)
                     .padding(.top, Metric.xs)
-                    .padding(.bottom, 88)
+                    .padding(.bottom, Metric.xl)
                 }
             }
             .readableColumn()
@@ -53,7 +69,7 @@ struct DiaryDetailView: View {
         } message: {
             Text("This can't be undone")
         }
-        .sheet(isPresented: $showEditor) {
+        .dimmedSheet(isPresented: $showEditor) {
             AddDiaryView(editingEntry: entry)
         }
         .overlay {
@@ -93,42 +109,49 @@ struct DiaryDetailView: View {
                 .foregroundStyle(pal.inkSoft)
             Spacer()
             HStack(spacing: Metric.s) {
-                emojiBtn("🗑️") { showDeleteAlert = true }
-                emojiBtn("✏️") { showEditor = true }
+                iconBtn("trash", tint: pal.inkSoft) { showDeleteAlert = true }
+                iconBtn("square.and.pencil", tint: pal.inkSoft) { showEditor = true }
             }
         }
     }
 
-    private func emojiBtn(_ emoji: String, action: @escaping () -> Void) -> some View {
+    private func iconBtn(_ systemName: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(emoji)
-                .font(.system(size: 17))
+            Image(systemName: systemName)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(tint)
                 .frame(width: 36, height: 36)
-                .background(pal.card, in: Circle())
-                .softEdge(Circle())
         }
     }
 
     // MARK: 正文卡片（UITextView 支持 Select/Select All → Copy）
 
-    private var textCard: some View {
-        VStack(alignment: .leading, spacing: Metric.m) {
-            if entry.content.isEmpty {
-                Text("(empty)")
-                    .font(.dSerifReading).foregroundStyle(pal.inkSoft)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                // 原生 Text + textSelection：保留长按选择/拷贝，又不引入嵌套 UITextView
-                // 的滚动/选择手势冲突——长正文时外层 ScrollView 才能正常滚到附件。
-                Text(entry.content)
-                    .font(entry.bodyFont(palette: pal))
-                    .foregroundStyle(entry.bodyColor(palette: pal))
-                    .lineSpacing(6)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+    /// 正文卡：高度随内容自适应，但封顶为 maxHeight；超出即在卡内上下滚动，
+    /// 从而把附件卡留在正文正下方、不被长文顶出屏幕。
+    private func textCard(maxHeight: CGFloat) -> some View {
+        // 首帧 textContentH 尚未测得（0）时先用满高，量到后再收紧到内容高度。
+        let boxH = textContentH > 0 ? min(textContentH, maxHeight) : maxHeight
+        return ScrollView(showsIndicators: textContentH > maxHeight) {
+            Group {
+                if entry.content.isEmpty {
+                    Text("(empty)")
+                        .font(.dSerifReading).foregroundStyle(pal.inkSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    // 原生 Text + textSelection：保留长按选择/拷贝，又不引入嵌套 UITextView
+                    // 的滚动/选择手势冲突。
+                    Text(entry.content)
+                        .font(entry.bodyFont(palette: pal))
+                        .foregroundStyle(entry.bodyColor(palette: pal))
+                        .lineSpacing(6)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
+            .padding(Metric.l)
+            .measureHeight { textContentH = $0 }
         }
-        .padding(Metric.l)
+        .frame(height: boxH)
         .paperLinedCard()
     }
 
@@ -172,7 +195,7 @@ struct DiaryDetailView: View {
     private var photoStrip: some View {
         HStack(spacing: Metric.s) {
             ForEach(entry.photos.indices, id: \.self) { i in
-                if let ui = UIImage(data: entry.photos[i]) {
+                if let ui = Thumbnailer.thumbnail(entry.photos[i], side: 60) {
                     Button { withAnimation { photoViewerIndex = i } } label: {
                         Image(uiImage: ui).resizable().scaledToFill()
                             .frame(width: 60, height: 60)
@@ -280,7 +303,8 @@ struct DiaryDetailView: View {
 
     private func dateString(_ format: String) -> String {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "zh_CN")
+        // 跟随用户当前 locale，避免海外英语用户看到中文式日期排列。
+        f.locale = Locale.current
         f.dateFormat = format
         return f.string(from: entry.date)
     }
@@ -292,10 +316,31 @@ struct DiaryDetailView: View {
         return y == currentYear.string(from: Date()) ? nil : y
     }
     private var monthDayString: String { dateString("MM.dd") }
-    private var weekdayTimeString: String { dateString("EEE  HH:mm") }
+    private var weekdayTimeString: String { dateString("HH:mm") }
 
     private func durString(_ d: Double) -> String {
         String(format: "%d:%02d", Int(d) / 60, Int(d) % 60)
+    }
+}
+
+// MARK: - 高度测量（自适应布局用）
+
+private struct DetailHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private extension View {
+    /// 测量自身高度并回调（按调用点各自取值，互不干扰）。
+    func measureHeight(_ onChange: @escaping (CGFloat) -> Void) -> some View {
+        background(
+            GeometryReader { g in
+                Color.clear.preference(key: DetailHeightKey.self, value: g.size.height)
+            }
+        )
+        .onPreferenceChange(DetailHeightKey.self) { onChange($0) }
     }
 }
 

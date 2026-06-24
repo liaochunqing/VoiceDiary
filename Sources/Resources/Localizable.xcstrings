@@ -98,6 +98,7 @@
 
     },
     "✨ Upgrade to Full" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -261,6 +262,7 @@
       }
     },
     "AI Weekly Summary" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -303,12 +305,12 @@
         }
       }
     },
-    "Allow Voice Diary to use the microphone in Settings › Privacy › Microphone. Recordings stay on your device and your own iCloud." : {
+    "Allow VoicePaper to use the microphone in Settings › Privacy › Microphone. Recordings stay on your device and your own iCloud." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请在「设置 › 隐私 › 麦克风」中允许翻页日记使用麦克风。录音只存在本机和你自己的 iCloud。"
+            "value" : "请在「设置 › 隐私 › 麦克风」中允许絮语日记使用麦克风。录音只存在本机和你自己的 iCloud。"
           }
         }
       }
@@ -420,6 +422,9 @@
         }
       }
     },
+    "Automatic" : {
+
+    },
     "Back to Contents" : {
       "localizations" : {
         "zh-Hans" : {
@@ -431,6 +436,7 @@
       }
     },
     "Best Value" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -450,6 +456,9 @@
           }
         }
       }
+    },
+    "Built from your entries, on device — your words never leave your phone" : {
+
     },
     "Buy Lifetime" : {
       "extractionState" : "stale",
@@ -517,6 +526,9 @@
         }
       }
     },
+    "Choose your plan" : {
+
+    },
     "Close" : {
       "localizations" : {
         "zh-Hans" : {
@@ -569,6 +581,9 @@
           }
         }
       }
+    },
+    "Couldn't check for updates. Check your connection and try again." : {
+
     },
     "Current location" : {
       "extractionState" : "stale",
@@ -799,6 +814,7 @@
       }
     },
     "Face ID / Passcode Lock" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -852,7 +868,11 @@
         }
       }
     },
+    "Full unlocked" : {
+
+    },
     "Generated on device, offline — your words never leave your phone" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -917,13 +937,13 @@
         }
       }
     },
-    "I use Voice Diary to journal every day — just open the book and talk to it. Try it:" : {
+    "I use VoicePaper to journal every day — just open the book and talk to it. Try it:" : {
       "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "我在用「翻页日记」记录每天，翻开本子对它说话就行，很安心。推荐给你："
+            "value" : "我在用「絮语日记」记录每天，翻开本子对它说话就行，很安心。推荐给你："
           }
         }
       }
@@ -1060,6 +1080,7 @@
       }
     },
     "Let AI make sense of your week" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1241,6 +1262,9 @@
         }
       }
     },
+    "New Entry" : {
+
+    },
     "Night Blue" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1403,6 +1427,9 @@
         }
       }
     },
+    "One-time · yours forever" : {
+
+    },
     "Open Settings" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1439,6 +1466,7 @@
       }
     },
     "Page-turn sound" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1643,6 +1671,9 @@
         }
       }
     },
+    "Recap your week at a glance" : {
+
+    },
     "Recent activity" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1674,7 +1705,11 @@
         }
       }
     },
+    "Recording was interrupted — what you said so far is saved." : {
+
+    },
     "Remind me to write" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1685,6 +1720,7 @@
       }
     },
     "Reminder time" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1717,6 +1753,7 @@
       }
     },
     "Require authentication when opening the app" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1735,6 +1772,9 @@
           }
         }
       }
+    },
+    "Retry" : {
+
     },
     "Right now, what does your body want most?" : {
       "extractionState" : "stale",
@@ -2050,6 +2090,9 @@
         }
       }
     },
+    "Thanks for your support — every feature is on." : {
+
+    },
     "The basic set — free, forever" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2147,6 +2190,9 @@
         }
       }
     },
+    "This will permanently delete all %@ entries and their recordings. This can't be undone." : {
+
+    },
     "Tired today? What took the most out of you?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2158,12 +2204,12 @@
         }
       }
     },
-    "To get writing reminders, enable notifications in Settings › Voice Diary › Notifications." : {
+    "To get writing reminders, enable notifications in Settings › VoicePaper › Notifications." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "想收到写日记提醒，请到「设置 › 翻页日记 › 通知」里打开通知权限。"
+            "value" : "想收到写日记提醒，请到「设置 › 絮语日记 › 通知」里打开通知权限。"
           }
         }
       }
@@ -2328,13 +2374,13 @@
         }
       }
     },
-    "Unlock Voice Diary" : {
+    "Unlock VoicePaper" : {
       "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "解锁翻页日记"
+            "value" : "解锁絮语日记"
           }
         }
       }
@@ -2361,7 +2407,6 @@
       }
     },
     "Upgrade to Full" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2392,6 +2437,9 @@
         }
       }
     },
+    "v%@" : {
+
+    },
     "Vermilion" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2413,6 +2461,9 @@
           }
         }
       }
+    },
+    "Version %@ is available on the App Store." : {
+
     },
     "Voice" : {
       "extractionState" : "stale",
@@ -2439,19 +2490,6 @@
         }
       }
     },
-    "VOICE DIARY" : {
-
-    },
-    "Voice Diary is locked" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "翻页日记已锁定"
-          }
-        }
-      }
-    },
     "Voice entries" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2463,12 +2501,28 @@
         }
       }
     },
+    "Voice journaling, on-device mood insight, and a private book that's yours forever." : {
+
+    },
     "Voice vs. Text" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "语音 vs 纯文字"
+          }
+        }
+      }
+    },
+    "VOICEPAPER" : {
+
+    },
+    "VoicePaper is locked" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "絮语日记已锁定"
           }
         }
       }
@@ -2494,6 +2548,9 @@
           }
         }
       }
+    },
+    "Weekly Recap" : {
+
     },
     "Weekly Review" : {
       "extractionState" : "stale",
@@ -2835,6 +2892,9 @@
         }
       }
     },
+    "Write" : {
+
+    },
     "Write a few entries and your recent mood will show up here." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2887,6 +2947,9 @@
           }
         }
       }
+    },
+    "You already have the latest version." : {
+
     },
     "You often mentioned %@." : {
       "extractionState" : "stale",

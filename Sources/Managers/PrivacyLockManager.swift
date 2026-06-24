@@ -37,7 +37,7 @@ final class PrivacyLockManager {
         do {
             let ok = try await ctx.evaluatePolicy(
                 .deviceOwnerAuthentication,
-                localizedReason: String(localized: "Unlock Voice Diary")
+                localizedReason: String(localized: "Unlock VoicePaper")
             )
             if ok { isLocked = false }
         } catch {

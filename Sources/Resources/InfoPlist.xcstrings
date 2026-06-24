@@ -7,13 +7,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voice Diary"
+            "value" : "VoicePaper"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "翻页日记"
+            "value" : "絮语日记"
           }
         }
       }

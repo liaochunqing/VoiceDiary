@@ -22,7 +22,7 @@ struct CoverFace: View {
                     .tracking(4)
                     .foregroundStyle(pal.gold)
                     .shadow(color: .black.opacity(0.3), radius: 1, y: 1)
-                Text("VOICE DIARY")
+                Text("VOICEPAPER")
                     .font(.system(size: 22, weight: .semibold))
                     .tracking(3)
                     .foregroundStyle(pal.gold.opacity(0.65))

@@ -2,6 +2,13 @@ import SwiftUI
 import SwiftData
 import UIKit
 
+/// 「检查更新」结果：查 App Store 最新版本与本地比对。
+private enum UpdateCheckResult {
+    case available(version: String, url: URL)
+    case upToDate
+    case failed
+}
+
 struct SettingsView: View {
     @Environment(\.palette) private var pal
     @Environment(\.bookNavigator) private var navigator
@@ -21,7 +28,17 @@ struct SettingsView: View {
     @State private var audioSyncEnabled = UserDefaults.standard.object(forKey: "audioSyncEnabled") as? Bool ?? true
     @State private var showICloudSheet = false
     @State private var showNotifDeniedAlert = false
+    @State private var isCheckingUpdate = false
+    @State private var updateResult: UpdateCheckResult?
     @AppStorage("isSoundEnabled") private var isSoundEnabled: Bool = true
+    @AppStorage("transcriptionLanguage") private var transcriptionLanguage: String = ""
+    @State private var availableLocales: [Locale] = []
+    @Environment(\.modelContext) private var context
+    @State private var showDeleteAllAlert = false
+    @State private var storageSize: String = "Calculating…"
+
+    // 隐私锁图标用安全绿，呼应「音频不出本机」红线卖点；其余图标统一 accent。
+    private let safeGreen = Color(lightHex: 0x4E8C5A, darkHex: 0x6FBF7E)
 
     var body: some View {
         ZStack {
@@ -34,14 +51,15 @@ struct SettingsView: View {
                         .foregroundStyle(pal.ink)
                         .padding(.top, Metric.m)
 
-                    if !purchaseManager.isUnlocked {
+                    if purchaseManager.isUnlocked {
+                        unlockedCard
+                    } else {
                         paywallCard
                     }
                     preferencesSection
                     themeSection
                     privacySection
                     dataSection
-                    subscriptionSection
                     supportSection
                     aboutSection
                     #if DEBUG
@@ -54,15 +72,19 @@ struct SettingsView: View {
             }
             .scrollIndicators(.hidden)
         }
-        .sheet(isPresented: $showPDFPreview) { PDFPreviewView(entries: entries) }
-        .sheet(isPresented: $showPaywall) {
+        .dimmedSheet(isPresented: $showPDFPreview) { PDFPreviewView(entries: entries) }
+        .dimmedSheet(isPresented: $showPaywall) {
             PaywallView(feature: paywallFeature)
         }
-        .sheet(isPresented: $showICloudSheet) {
+        .dimmedSheet(isPresented: $showICloudSheet) {
             ICloudSyncSheet(iCloudEnabled: $iCloudEnabled, audioSyncEnabled: $audioSyncEnabled)
         }
         // 打开设置页 / 从系统设置返回时，同步真实授权状态，保证开关不撒谎。
-        .task { await notifManager.refreshAuthorizationStatus() }
+        .task {
+            await notifManager.refreshAuthorizationStatus()
+            calculateStorageSize()
+            availableLocales = SpeechTranscriber.availableOnDeviceLocales()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 Task { await notifManager.refreshAuthorizationStatus() }
@@ -74,7 +96,33 @@ struct SettingsView: View {
             }
             Button("Not now", role: .cancel) {}
         } message: {
-            Text("To get writing reminders, enable notifications in Settings › Voice Diary › Notifications.")
+            Text("To get writing reminders, enable notifications in Settings › VoicePaper › Notifications.")
+        }
+        .alert("Delete All Entries?", isPresented: $showDeleteAllAlert) {
+            Button("Delete All", role: .destructive) { deleteAllEntries() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete all \(entries.count) entries and their recordings. This can't be undone.")
+        }
+        .alert("Check for Updates", isPresented: Binding(
+            get: { updateResult != nil },
+            set: { if !$0 { updateResult = nil } }
+        ), presenting: updateResult) { result in
+            if case let .available(_, url) = result {
+                Button("Update") { UIApplication.shared.open(url) }
+                Button("Later", role: .cancel) {}
+            } else {
+                Button("OK", role: .cancel) {}
+            }
+        } message: { result in
+            switch result {
+            case let .available(version, _):
+                Text("Version \(version) is available on the App Store.")
+            case .upToDate:
+                Text("You already have the latest version.")
+            case .failed:
+                Text("Couldn't check for updates. Check your connection and try again.")
+            }
         }
     }
 
@@ -85,9 +133,14 @@ struct SettingsView: View {
             paywallFeature = .general
             showPaywall = true
         } label: {
-            HStack(spacing: Metric.m) {
+            HStack(spacing: Metric.l) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(.white.opacity(0.18), in: Circle())
                 VStack(alignment: .leading, spacing: Metric.xs) {
-                    Text("✨ Upgrade to Full")
+                    Text("Upgrade to Full")
                         .font(.dTitle)
                         .foregroundStyle(.white)
                     Text("Unlimited transcription · All themes · All fonts")
@@ -112,13 +165,44 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: 已解锁状态卡（成为会员后替代升级卡——给正向反馈，而非直接消失留空）
+
+    private var unlockedCard: some View {
+        HStack(spacing: Metric.l) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 52, height: 52)
+                .background(.white.opacity(0.18), in: Circle())
+            VStack(alignment: .leading, spacing: Metric.xs) {
+                Text("Full unlocked")
+                    .font(.dTitle)
+                    .foregroundStyle(.white)
+                Text("Thanks for your support — every feature is on.")
+                    .font(.dCaption)
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            Spacer()
+        }
+        .padding(.horizontal, Metric.l)
+        .padding(.vertical, Metric.xl)
+        .background(
+            LinearGradient(
+                colors: [pal.accent, pal.leather],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: Metric.cardRadius)
+        )
+    }
+
     // MARK: 偏好（提醒 + 翻页声音）
 
     private var preferencesSection: some View {
-        settingCard(title: "Preferences", icon: "slider.horizontal.3") {
+        settingCard(title: "Preferences") {
             VStack(spacing: 0) {
-                HStack {
-                    Text("Remind me to write").font(.dSubhead).foregroundStyle(pal.ink)
+                HStack(spacing: Metric.m) {
+                    IconRowLabel(icon: "bell", label: "Remind me to write")
                     Spacer()
                     Toggle("", isOn: Binding(
                         get: { notifManager.isEnabled },
@@ -143,9 +227,9 @@ struct SettingsView: View {
                 .padding(.vertical, Metric.m)
 
                 if notifManager.isEnabled {
-                    Divider().background(pal.line)
-                    HStack {
-                        Text("Reminder time").font(.dSubhead).foregroundStyle(pal.ink)
+                    RowDivider()
+                    HStack(spacing: Metric.m) {
+                        IconRowLabel(icon: "clock", label: "Reminder time")
                         Spacer()
                         DatePicker("", selection: Binding(
                             get: { notifManager.reminderTime },
@@ -156,10 +240,34 @@ struct SettingsView: View {
                     .padding(.vertical, Metric.m)
                 }
 
-                Divider().background(pal.line)
+                RowDivider()
 
-                HStack {
-                    Text("Page-turn sound").font(.dSubhead).foregroundStyle(pal.ink)
+                HStack(spacing: Metric.m) {
+                    IconRowLabel(icon: "character.bubble", label: "Transcription language")
+                    Spacer()
+                    Menu {
+                        Picker("", selection: $transcriptionLanguage) {
+                            Text("Automatic").tag("")
+                            ForEach(availableLocales, id: \.identifier) { loc in
+                                Text(localeDisplayName(loc.identifier)).tag(loc.identifier)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(localeDisplayName(transcriptionLanguage))
+                                .font(.dSubhead)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 11))
+                        }
+                        .foregroundStyle(pal.inkSoft)
+                    }
+                }
+                .padding(.vertical, Metric.m)
+
+                RowDivider()
+
+                HStack(spacing: Metric.m) {
+                    IconRowLabel(icon: "speaker.wave.2", label: "Page-turn sound")
                     Spacer()
                     Toggle("", isOn: $isSoundEnabled).tint(pal.accent).labelsHidden()
                 }
@@ -168,15 +276,20 @@ struct SettingsView: View {
         }
     }
 
+    /// 语言标识符 → 本地化显示名；空串显示「自动」。
+    private func localeDisplayName(_ id: String) -> String {
+        guard !id.isEmpty else { return String(localized: "Automatic") }
+        return Locale.current.localizedString(forIdentifier: id) ?? id
+    }
+
     // MARK: 隐私与安全
 
     private var privacySection: some View {
-        settingCard(title: "Privacy & Security", icon: "lock") {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Face ID / Passcode Lock").font(.dSubhead).foregroundStyle(pal.ink)
-                    Text("Require authentication when opening the app").font(.dCaption).foregroundStyle(pal.inkSoft)
-                }
+        settingCard(title: "Privacy & Security") {
+            HStack(spacing: Metric.m) {
+                IconRowLabel(icon: "faceid", tint: safeGreen,
+                           label: "Face ID / Passcode Lock",
+                           subtitle: "Require authentication when opening the app")
                 Spacer()
                 // 隐私锁免费：私密日记的信任底座，不做付费项。
                 Toggle("", isOn: Binding(
@@ -192,7 +305,7 @@ struct SettingsView: View {
     // MARK: 数据（统计已移到目录页，与 AI 洞察 / 今日引导并列）
 
     private var dataSection: some View {
-        settingCard(title: "Data", icon: "externaldrive") {
+        settingCard(title: "Data") {
             VStack(spacing: 0) {
                 // iCloud 同步：Pro 功能。云端备份+跨设备是会员特权，本机存储免费。
                 Button {
@@ -207,10 +320,29 @@ struct SettingsView: View {
                                locked: !purchaseManager.isUnlocked)
                 }
 
-                Divider().background(pal.line).padding(.leading, 36)
+                RowDivider()
 
                 Button { showPDFPreview = true } label: {
                     settingRow(icon: "arrow.up.doc", label: "Export as PDF")
+                }
+
+                RowDivider()
+
+                HStack(spacing: Metric.m) {
+                    IconRowLabel(icon: "internaldrive", label: "Storage Usage")
+                    Spacer()
+                    Text(storageSize).font(.dSubhead).foregroundStyle(pal.inkSoft)
+                }
+                .padding(.vertical, Metric.m)
+
+                RowDivider()
+
+                Button { showDeleteAllAlert = true } label: {
+                    HStack(spacing: Metric.m) {
+                        IconRowLabel(icon: "trash", tint: Color.red, label: "Delete All Entries")
+                        Spacer()
+                    }
+                    .padding(.vertical, Metric.m)
                 }
             }
         }
@@ -219,14 +351,14 @@ struct SettingsView: View {
     // MARK: 主题
 
     private var themeSection: some View {
-        settingCard(title: "Appearance", icon: "paintpalette") {
+        settingCard(title: "Appearance") {
             // 等宽 5 列：色环 + 名称在下 + 锁角标。避免单行硬塞导致名称换行变形。
             HStack(alignment: .top, spacing: Metric.xs) {
                 ForEach(AppTheme.allCases) { theme in
                     themeChip(
                         theme,
                         selected: themeManager.current == theme,
-                        locked: theme != .darkGold && theme != .celadon && !purchaseManager.isUnlocked
+                        locked: theme != .darkGold && theme != .celadon && theme != .rose && !purchaseManager.isUnlocked
                     ) { selectTheme(theme) }
                 }
             }
@@ -235,7 +367,7 @@ struct SettingsView: View {
     }
 
     private func selectTheme(_ theme: AppTheme) {
-        if theme != .darkGold, theme != .celadon, !purchaseManager.isUnlocked {
+        if theme != .darkGold, theme != .celadon, theme != .rose, !purchaseManager.isUnlocked {
             paywallFeature = .themes
             showPaywall = true
             return
@@ -283,12 +415,10 @@ struct SettingsView: View {
     // MARK: 调试（仅 DEBUG）
 
     private var debugSection: some View {
-        settingCard(title: "🛠 Debug", icon: "wrench") {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Simulate Pro").font(.dSubhead).foregroundStyle(pal.ink)
-                    Text("Toggles isUnlocked · DEBUG only").font(.dCaption).foregroundStyle(pal.inkSoft)
-                }
+        settingCard(title: "🛠 Debug") {
+            HStack(spacing: Metric.m) {
+                IconRowLabel(icon: "wrench.and.screwdriver", label: "Simulate Pro",
+                           subtitle: "Toggles isUnlocked · DEBUG only")
                 Spacer()
                 Toggle("", isOn: Binding(
                     get: { purchaseManager.isUnlocked },
@@ -304,47 +434,26 @@ struct SettingsView: View {
     }
     #endif
 
-    // MARK: 订阅
-
-    private var subscriptionSection: some View {
-        settingCard(title: "Subscription", icon: "crown") {
-            VStack(spacing: 0) {
-                // 管理订阅：直达系统「账户 › 订阅」页，可升降级 / 取消（App Review 也要求可达）。
-                Button {
-                    if let url = URL(string: "itms-apps://apps.apple.com/account/subscriptions") {
-                        UIApplication.shared.open(url)
-                    }
-                } label: { settingRow(icon: "creditcard", label: "Manage Subscription") }
-
-                Divider().background(pal.line).padding(.leading, 36)
-
-                Button { Task { await purchaseManager.restore() } } label: {
-                    settingRow(icon: "arrow.clockwise", label: "Restore Purchases")
-                }
-            }
-        }
-    }
-
     // MARK: 支持我们
 
     private var supportSection: some View {
-        settingCard(title: "Support Us", icon: "heart") {
+        settingCard(title: "Support Us") {
             VStack(spacing: 0) {
                 Button { rateApp() } label: { settingRow(icon: "star", label: "Rate Us") }
 
-                Divider().background(pal.line).padding(.leading, 36)
+                RowDivider()
                 Button { shareApp() } label: {
                     settingRow(icon: "square.and.arrow.up", label: "Share with Friends")
                 }
 
-                Divider().background(pal.line).padding(.leading, 36)
+                RowDivider()
                 Button {
-                    if let url = URL(string: "mailto:liaochunqing520@gmail.com?subject=Voice%20Diary%20Feedback") {
+                    if let url = URL(string: "mailto:support@windylabs.app?subject=Voice%20Diary%20Feedback") {
                         UIApplication.shared.open(url)
                     }
                 } label: { settingRow(icon: "envelope", label: "Feedback") }
 
-                Divider().background(pal.line).padding(.leading, 36)
+                RowDivider()
                 Button {
                     if let url = URL(string: "itms-apps://itunes.apple.com/developer/id\("8X79G5XCU6")") {
                         UIApplication.shared.open(url)
@@ -357,25 +466,48 @@ struct SettingsView: View {
     // MARK: 关于
 
     private var aboutSection: some View {
-        settingCard(title: "About", icon: "info.circle") {
+        settingCard(title: "About") {
             VStack(spacing: 0) {
-                settingRowValue(icon: "number", label: "Version", value: appVersion)
+                // 检查更新：查 App Store 最新版本与本地比对，有新版引导去更新。
+                Button { Task { await checkForUpdate() } } label: {
+                    HStack(spacing: Metric.m) {
+                        IconRowLabel(icon: "arrow.triangle.2.circlepath", label: "Check for Updates")
+                        Spacer()
+                        if isCheckingUpdate {
+                            ProgressView().tint(pal.accent)
+                        } else {
+                            Text("v\(appVersion)")
+                                .font(.dCaption)
+                                .foregroundStyle(pal.inkSoft)
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(pal.inkSoft.opacity(0.7))
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                    }
+                    .padding(.vertical, Metric.m)
+                }
+                .disabled(isCheckingUpdate)
 
-                Divider().background(pal.line).padding(.leading, 36)
+                RowDivider()
                 Button {
-                    if let url = URL(string: "https://www.apple.com/legal/privacy/") {
+                    if let url = URL(string: "https://windylabs.app/voicepaper/privacy.html") {
                         UIApplication.shared.open(url)
                     }
                 } label: { settingRow(icon: "doc.text", label: "Privacy Policy") }
 
-                Divider().background(pal.line).padding(.leading, 36)
-                // 使用条款（EULA）：有订阅必须与隐私政策并列，否则审核被拒。
-                // 暂用 Apple 标准 EULA，后续有自有条款页再替换。
+                RowDivider()
+                Button { Task { await purchaseManager.restore() } } label: {
+                    settingRow(icon: "arrow.clockwise", label: "Restore Purchases")
+                }
+
+                RowDivider()
                 Button {
-                    if let url = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
+                    if let url = URL(string: "itms-apps://apps.apple.com/account/subscriptions") {
                         UIApplication.shared.open(url)
                     }
-                } label: { settingRow(icon: "doc.plaintext", label: "Terms of Use") }
+                } label: {
+                    settingRow(icon: "creditcard", label: "Manage Subscription")
+                }
             }
         }
     }
@@ -397,7 +529,7 @@ struct SettingsView: View {
     /// 「分享给朋友」：带一句邀请语 + App Store 链接，从最顶层 VC 弹分享面板（iPad 需 popover 锚点，否则崩）。
     private func shareApp() {
         guard let url = URL(string: "https://apps.apple.com/app/id\(Self.appStoreID)") else { return }
-        let invite = String(localized: "I use Voice Diary to journal every day — just open the book and talk to it. Try it:")
+        let invite = String(localized: "I use VoicePaper to journal every day — just open the book and talk to it. Try it:")
         presentShareSheet(items: [invite, url])
     }
 
@@ -417,40 +549,31 @@ struct SettingsView: View {
         top.present(vc, animated: true)
     }
 
-    // MARK: 共用组件
+    // MARK: 共用组件（骨架已抽到 DesignSystem：SectionCard / IconRowLabel / RowDivider，全 app 共用）
 
-    private func settingCard<C: View>(title: LocalizedStringKey, icon: String, @ViewBuilder content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: Metric.s) {
-            Label(title, systemImage: icon)
-                .font(.dCaption.weight(.semibold))
-                .foregroundStyle(pal.inkSoft)
-                .textCase(.uppercase)
-
-            content()
-                .padding(.horizontal, Metric.m)
-                .diaryCard()
-        }
+    private func settingCard<C: View>(title: LocalizedStringKey, @ViewBuilder content: @escaping () -> C) -> some View {
+        SectionCard(title: title) { content() }
     }
 
     private func settingRow(icon: String, label: LocalizedStringKey, locked: Bool = false) -> some View {
-        HStack {
-            Label(label, systemImage: icon)
-                .font(.dSubhead).foregroundStyle(pal.ink)
+        HStack(spacing: Metric.m) {
+            IconRowLabel(icon: icon, label: label)
             Spacer()
             if locked {
                 Image(systemName: "lock.fill").foregroundStyle(pal.inkSoft).font(.dCaption)
             }
-            Image(systemName: "chevron.right").foregroundStyle(pal.inkSoft).font(.dCaption)
+            Image(systemName: "chevron.right")
+                .foregroundStyle(pal.inkSoft.opacity(0.7))
+                .font(.system(size: 13, weight: .semibold))
         }
         .padding(.vertical, Metric.m)
     }
 
     private func settingRowValue(icon: String, label: LocalizedStringKey, value: String) -> some View {
-        HStack {
-            Label(label, systemImage: icon)
-                .font(.dSubhead).foregroundStyle(pal.ink)
+        HStack(spacing: Metric.m) {
+            IconRowLabel(icon: icon, label: label)
             Spacer()
-            Text(value).font(.dCaption).foregroundStyle(pal.inkSoft)
+            Text(value).font(.dSubhead).foregroundStyle(pal.inkSoft)
         }
         .padding(.vertical, Metric.m)
     }
@@ -459,6 +582,84 @@ struct SettingsView: View {
 
     private var appVersion: String {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.2.0"
+    }
+
+    private func calculateStorageSize() {
+        Task.detached(priority: .utility) {
+            let formatted = Self.appDataSize()
+            await MainActor.run { self.storageSize = formatted }
+        }
+    }
+
+    /// 统计本 App 实际占用的磁盘。SwiftData 的库（Main.store / Audio.store）和
+    /// `@Attribute(.externalStorage)` 的照片/音频大块都落在 Application Support
+    /// （不在 Documents——旧实现只扫 Documents，所以永远显示 0）。这里把
+    /// Application Support 与 Documents 一起算上，覆盖所有真实数据。
+    private static nonisolated func appDataSize() -> String {
+        let fm = FileManager.default
+        let roots = [
+            fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+            fm.urls(for: .documentDirectory, in: .userDomainMask).first
+        ].compactMap { $0 }
+
+        var total: Int64 = 0
+        // 不跳过隐藏文件：external storage 在 `.Main.store_SUPPORT` 这类点开头目录里。
+        for root in roots {
+            guard let enumerator = fm.enumerator(at: root,
+                                                 includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .fileSizeKey, .isRegularFileKey]) else { continue }
+            for case let url as URL in enumerator {
+                let attrs = try? url.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey, .isRegularFileKey])
+                guard attrs?.isRegularFile == true else { continue }
+                total += Int64(attrs?.totalFileAllocatedSize ?? attrs?.fileSize ?? 0)
+            }
+        }
+        return ByteCountFormatter.string(fromByteCount: total, countStyle: .file)
+    }
+
+    private func deleteAllEntries() {
+        for entry in entries {
+            for memo in entry.memos {
+                guard let aid = memo.audioID else { continue }
+                let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
+                for a in (try? context.fetch(desc)) ?? [] { context.delete(a) }
+            }
+            context.delete(entry)
+        }
+        try? context.save()
+    }
+
+    /// 查 App Store 最新版本（iTunes Lookup API），与本地版本号数值比对。
+    /// 有新版 → 弹更新提示并可直达 App Store；否则提示已最新 / 检查失败。
+    @MainActor
+    private func checkForUpdate() async {
+        isCheckingUpdate = true
+        defer { isCheckingUpdate = false }
+
+        struct Lookup: Decodable {
+            struct Item: Decodable { let version: String; let trackViewUrl: String }
+            let results: [Item]
+        }
+        guard var comps = URLComponents(string: "https://itunes.apple.com/lookup") else {
+            updateResult = .failed; return
+        }
+        comps.queryItems = [URLQueryItem(name: "id", value: Self.appStoreID)]
+        guard let url = comps.url else { updateResult = .failed; return }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let lookup = try JSONDecoder().decode(Lookup.self, from: data)
+            // results 为空 = App Store 暂查不到该版本，按「已最新」处理，不打扰用户。
+            guard let item = lookup.results.first, let storeURL = URL(string: item.trackViewUrl) else {
+                updateResult = .upToDate; return
+            }
+            if appVersion.compare(item.version, options: .numeric) == .orderedAscending {
+                updateResult = .available(version: item.version, url: storeURL)
+            } else {
+                updateResult = .upToDate
+            }
+        } catch {
+            updateResult = .failed
+        }
     }
 }
 
@@ -599,7 +800,7 @@ struct PDFPreviewView: View {
                 }
             }
         }
-        .sheet(isPresented: $showPaywall) { PaywallView(feature: .pdf) }
+        .dimmedSheet(isPresented: $showPaywall) { PaywallView(feature: .pdf) }
     }
 
     private func handleExport() {

@@ -68,7 +68,13 @@ struct RootView: View {
         // 即使开了隐私锁也不上锁（日记直接可见），只有切后台再回来才锁。
         .onChange(of: scenePhase, initial: true) { _, phase in
             if phase == .background { lockManager.lockIfNeeded() }
-            if phase == .active && !coverRemoved { lockManager.lockIfNeeded() }
+            if phase == .active {
+                if !coverRemoved { lockManager.lockIfNeeded() }
+                // 回前台时结算连续记录保护：昨天漏写且前天在轨，就自动兜底，避免单日中断归零。
+                DataManager.reconcileSaver(entries)
+                // 回前台重算订阅权益，防止订阅过期后 isUnlocked 残留 true（白嫖）。
+                Task { await PurchaseManager.shared.checkEntitlements() }
+            }
         }
     }
 
@@ -99,7 +105,7 @@ struct RootView: View {
                 Image(systemName: lockManager.biometryIconName)
                     .font(.system(size: 48))
                     .foregroundStyle(pal.gold)
-                Text("Voice Diary is locked")
+                Text("VoicePaper is locked")
                     .font(.dTitle)
                     .foregroundStyle(pal.gold)
                 Button {

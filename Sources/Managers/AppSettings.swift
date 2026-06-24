@@ -32,4 +32,9 @@ enum AppSettings {
 
     @AppStorage("lastAutoLocation")
     static var lastAutoLocation: Bool = false
+
+    // MARK: - 转写语言（空串 = 自动跟随系统首选语言）
+
+    @AppStorage("transcriptionLanguage")
+    static var transcriptionLanguage: String = ""
 }

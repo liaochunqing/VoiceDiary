@@ -127,7 +127,7 @@ struct PromptsView: View {
                 .scrollIndicators(.hidden)
                 // 付费墙挂在内层视图：避免和外层的 fullScreenCover 同挂一个 view
                 // 导致第二个 presentation 修饰器被 SwiftUI 静默吞掉。
-                .sheet(isPresented: $showPaywall) {
+                .dimmedSheet(isPresented: $showPaywall) {
                     PaywallView(feature: .prompts)
                 }
             }
@@ -146,7 +146,7 @@ struct PromptsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showEditor) {
+        .dimmedSheet(isPresented: $showEditor) {
             AddDiaryView(initialPrompt: pickedPrompt)
         }
     }

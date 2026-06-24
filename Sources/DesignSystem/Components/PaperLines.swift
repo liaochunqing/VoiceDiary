@@ -193,3 +193,82 @@ struct LocationPin: View {
         .frame(width: size, height: size)
     }
 }
+
+// MARK: - 分组卡 / 图标行（设置·入口·数据类界面的统一骨架）
+//
+// 「圆形图标徽章 + 舒展行高 + 卡外纯文字组标签」这套空间语言，用于设置 / 入口 / 数据这类
+// 「一项一行」或「带图标的卡」界面。阅读（详情）/ 输入（编辑、录音）界面**不套**——它们走
+// paperLinedCard 信纸 + 大留白阅读版式，强行加图标行只会变乱。
+// 图标默认 accent 单色随主题变化，守「5 主题共用一套材质」；个别强语义可传专色（如隐私绿）。
+
+/// 圆形图标徽章：撑起行高 + 做每行 / 每张卡的视觉锚点。
+struct IconBadge: View {
+    @Environment(\.palette) private var pal
+    let systemName: String
+    var tint: Color? = nil
+    var diameter: CGFloat = 38
+    var glyphSize: CGFloat = 15
+
+    var body: some View {
+        let c = tint ?? pal.accent
+        return Image(systemName: systemName)
+            .font(.system(size: glyphSize, weight: .semibold))
+            .foregroundStyle(c)
+            .frame(width: diameter, height: diameter)
+            .background(c.opacity(0.14), in: Circle())
+    }
+}
+
+/// 分组卡：组标题在卡外（纯文字小标签）+ 内容套纸感卡（圆角放大一档 = 分组容器层级）。
+struct SectionCard<Content: View>: View {
+    @Environment(\.palette) private var pal
+    var title: LocalizedStringKey? = nil
+    var radius: CGFloat = 18
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Metric.s) {
+            if let title {
+                Text(title)
+                    .font(.dCaption.weight(.semibold))
+                    .foregroundStyle(pal.inkSoft)
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                    .padding(.leading, Metric.xs)
+            }
+            content()
+                .padding(.horizontal, Metric.m)
+                .diaryCard(radius: radius)
+        }
+    }
+}
+
+/// 行左半：圆形图标徽章 + 标题（+可选副标题）。开关 / 箭头 / 取值各类行共用。
+struct IconRowLabel: View {
+    @Environment(\.palette) private var pal
+    let icon: String
+    var tint: Color? = nil
+    let label: LocalizedStringKey
+    var subtitle: LocalizedStringKey? = nil
+
+    var body: some View {
+        HStack(spacing: Metric.m) {
+            IconBadge(systemName: icon, tint: tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label).font(.dSubhead).foregroundStyle(pal.ink)
+                if let subtitle {
+                    Text(subtitle).font(.dCaption).foregroundStyle(pal.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+}
+
+/// 行内分隔线：左缩进对齐图标右缘（图标 38 + 间距 12），不切到图标列。
+struct RowDivider: View {
+    @Environment(\.palette) private var pal
+    var body: some View {
+        Divider().background(pal.line).padding(.leading, 38 + Metric.m)
+    }
+}

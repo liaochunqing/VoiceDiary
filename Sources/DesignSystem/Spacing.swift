@@ -9,7 +9,7 @@ enum Metric {
     static let xl: CGFloat = 24
     static let xxl: CGFloat = 32
 
-    static let cardRadius: CGFloat = 14
+    static let cardRadius: CGFloat = 16
     static let pillRadius: CGFloat = 20
     static let buttonRadius: CGFloat = 14
     static let thumbRadius: CGFloat = 8

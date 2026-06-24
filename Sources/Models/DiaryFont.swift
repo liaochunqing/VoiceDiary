@@ -111,35 +111,66 @@ enum DiaryFont: String, CaseIterable {
 // MARK: - DiaryFontColor
 
 /// 预设字体颜色。rawValue 为浅色模式 hex（也是存库标识）。
+/// 色相分布（顺时针）：yellow→orange→red→rose→fuchsia→purple→indigo→blue→teal→green→lime→olive + 无彩色三档。
 enum DiaryFontColor: String, CaseIterable {
 
-    case theme  = ""
-    case yellow = "#C8960C"
-    case red    = "#C0392B"
-    case blue   = "#2472A4"
-    case green  = "#2E6B4F"
-    case purple = "#6B3FA0"
+    case theme   = ""           // 跟随主题墨色（特殊）
+    case yellow  = "#C8960C"   // H≈44° 金黄
+    case orange  = "#C75000"   // H≈21° 橙红（与金黄明显不同）
+    case red     = "#C0392B"   // H≈ 5° 朱红
+    case rose    = "#B5245B"   // H≈336° 玫红
+    case fuchsia = "#9C1282"   // H≈313° 洋红（紫红之间）
+    case purple  = "#6B3FA0"   // H≈275° 紫
+    case indigo  = "#2E3FA0"   // H≈234° 靛（蓝紫，比 purple 更蓝）
+    case blue    = "#2472A4"   // H≈209° 蓝
+    case teal    = "#1A7A6E"   // H≈174° 青绿
+    case green   = "#2E6B4F"   // H≈153° 森林绿
+    case lime    = "#4D7A1A"   // H≈ 96° 草木绿（绿与橄榄间）
+    case olive   = "#6B7520"   // H≈ 65° 橄榄（偏黄绿）
+    case coffee  = "#7A4F38"   // 暖棕（中等深度，有别于 black）
+    case slate   = "#546E7A"   // 蓝灰（中性冷调）
+    case black   = "#1C1C1C"   // 近黑
 
     var displayName: String {
         switch self {
-        case .theme:  return String(localized: "Theme Ink")
-        case .yellow: return String(localized: "Ginger")
-        case .red:    return String(localized: "Vermilion")
-        case .blue:   return String(localized: "Cobalt")
-        case .green:  return String(localized: "Pine")
-        case .purple: return String(localized: "Wisteria")
+        case .theme:   return String(localized: "Theme Ink")
+        case .yellow:  return String(localized: "Ginger")
+        case .orange:  return String(localized: "Ember")
+        case .red:     return String(localized: "Vermilion")
+        case .rose:    return String(localized: "Rose")
+        case .fuchsia: return String(localized: "Fuchsia")
+        case .purple:  return String(localized: "Wisteria")
+        case .indigo:  return String(localized: "Indigo")
+        case .blue:    return String(localized: "Cobalt")
+        case .teal:    return String(localized: "Teal")
+        case .green:   return String(localized: "Pine")
+        case .lime:    return String(localized: "Fern")
+        case .olive:   return String(localized: "Olive")
+        case .coffee:  return String(localized: "Coffee")
+        case .slate:   return String(localized: "Steel")
+        case .black:   return String(localized: "Jet")
         }
     }
 
-    /// 深色模式下使用的更明亮版本，保证在深色纸面仍清晰可读。
+    /// 深色模式下使用更亮的版本，保证在深色纸面仍清晰可读。
     private var darkHex: String {
         switch self {
-        case .theme:  return ""
-        case .yellow: return "#FFD54F"
-        case .red:    return "#EF9A9A"
-        case .blue:   return "#7FB0E0"
-        case .green:  return "#84C9A3"
-        case .purple: return "#CE93D8"
+        case .theme:   return ""
+        case .yellow:  return "#FFD54F"
+        case .orange:  return "#FFAB76"
+        case .red:     return "#EF9A9A"
+        case .rose:    return "#F48FB1"
+        case .fuchsia: return "#F06292"
+        case .purple:  return "#CE93D8"
+        case .indigo:  return "#9FA8DA"
+        case .blue:    return "#7FB0E0"
+        case .teal:    return "#4DB6AC"
+        case .green:   return "#A5D6A7"
+        case .lime:    return "#C5E1A5"
+        case .olive:   return "#C6CA53"
+        case .coffee:  return "#BCAAA4"
+        case .slate:   return "#90A4AE"
+        case .black:   return "#D0D0D0"
         }
     }
 

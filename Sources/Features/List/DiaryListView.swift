@@ -6,7 +6,11 @@ struct DiaryListView: View {
     @Environment(\.bookNavigator) private var navigator
     @Query(sort: \DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
     @State private var search = ""
+    @State private var showSearch = false
+    @FocusState private var searchFocused: Bool
     @State private var showEditor = false
+    /// 从「今日状态条」进编辑器时携带的 prompt；FAB 进则置 nil。
+    @State private var pendingPrompt: String? = nil
     @State private var showInsights = false
     @State private var showPrompts = false
     @State private var showStats = false
@@ -31,7 +35,10 @@ struct DiaryListView: View {
 
             VStack(spacing: Metric.m) {
                 header
-                searchBar
+                if showSearch {
+                    searchBar
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
                 if entries.isEmpty || filtered.isEmpty {
                     Spacer(minLength: 0)
                 } else {
@@ -71,35 +78,46 @@ struct DiaryListView: View {
 
             fab
         }
-        .sheet(isPresented: $showEditor) { AddDiaryView() }
-        .sheet(isPresented: $showInsights) { InsightsView() }
-        .sheet(isPresented: $showPrompts) { PromptsView() }
-        .sheet(isPresented: $showStats) { StatsView() }
+        .dimmedSheet(isPresented: $showEditor) { AddDiaryView(initialPrompt: pendingPrompt) }
+        .dimmedSheet(isPresented: $showInsights) { InsightsView() }
+        .dimmedSheet(isPresented: $showPrompts) { PromptsView() }
+        .dimmedSheet(isPresented: $showStats) { StatsView() }
     }
 
     // MARK: 顶部栏（标题行 + 三入口）
 
     private var header: some View {
         VStack(spacing: Metric.m) {
-            // 标题行：目录 + 设置齿轮
-            HStack(alignment: .center) {
+            // 标题行：目录 + 搜索图标 + 设置齿轮
+            HStack(alignment: .center, spacing: Metric.l) {
                 Text("Contents").font(.dSerifTitle).foregroundStyle(pal.ink)
                 Spacer()
+                // 搜索：点一下展开/收起下方搜索条（放齿轮左边）。收起时清空关键词。
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        showSearch.toggle()
+                    }
+                    if showSearch {
+                        searchFocused = true
+                    } else {
+                        search = ""
+                        searchFocused = false
+                    }
+                } label: {
+                    Image(systemName: showSearch ? "xmark" : "magnifyingglass")
+                        .font(.system(size: 19, weight: .regular))
+                        .foregroundStyle(showSearch ? pal.accent : pal.inkSoft)
+                }
                 Button { navigator.goToSettings() } label: {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(pal.ink)
-                        .frame(width: 36, height: 36)
-                        .background(pal.card, in: Circle())
-                        .overlay(
-                            Circle().strokeBorder(
-                                LinearGradient(colors: [Color.white.opacity(0.35), pal.line.opacity(0.45)],
-                                               startPoint: .top, endPoint: .bottom),
-                                lineWidth: 1)
-                        )
-                        .shadow(color: .black.opacity(0.08), radius: 5, y: 2)
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundStyle(pal.inkSoft)
                 }
             }
+
+            // 今日状态条：streak + 今天是否已写 + 今日 prompt 预览，一键进编辑器。
+            // 第一屏的「写今天」紧迫感全靠它——没写时暖色高亮 + 今日提问 + Write 按钮。
+            todayStatusCard
 
             // 三入口：今日引导 · AI 洞察 · 统计（一排等宽特性卡，醒目可点）
             HStack(spacing: Metric.s) {
@@ -112,15 +130,95 @@ struct DiaryListView: View {
         .padding(.top, Metric.s)
     }
 
+    // MARK: 今日状态条
+
+    private var todayStatusCard: some View {
+        let written = stats.recordedToday
+        let streak = stats.current
+        let savers = stats.saversLeft
+        return Button {
+            pendingPrompt = written ? nil : DailyPrompt.today()
+            showEditor = true
+        } label: {
+            HStack(spacing: Metric.m) {
+                ZStack {
+                    Circle()
+                        .fill(written ? pal.accentSoft : pal.accent.opacity(0.16))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: written ? "checkmark" : "flame.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(written ? pal.accent : pal.leatherDark)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(statusTitle(written: written, streak: streak))
+                        .font(.dSubhead.weight(.semibold))
+                        .foregroundStyle(pal.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    if written {
+                        Text(savers > 0
+                             ? String(localized: "❄︎ \(savers) streak-savers left this month")
+                             : DailyPrompt.today())
+                            .font(.dCaption)
+                            .foregroundStyle(pal.inkSoft)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    } else {
+                        Text(DailyPrompt.today())
+                            .font(.dCaption)
+                            .foregroundStyle(pal.inkSoft)
+                            .lineLimit(2)
+                            .italic()
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                if !written {
+                    Text("Write")
+                        .font(.dCaption.weight(.bold))
+                        .foregroundStyle(pal.onAccent)
+                        .padding(.horizontal, Metric.s + 2)
+                        .padding(.vertical, 5)
+                        .background(pal.accent, in: Capsule())
+                }
+            }
+            .padding(Metric.m)
+            .background(
+                RoundedRectangle(cornerRadius: Metric.cardRadius)
+                    .fill(written ? pal.card : pal.accentSoft.opacity(0.45))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Metric.cardRadius)
+                    .stroke(written ? pal.line : pal.accent.opacity(0.22), lineWidth: 1)
+            )
+            .softEdge(RoundedRectangle(cornerRadius: Metric.cardRadius))
+            .contentShape(RoundedRectangle(cornerRadius: Metric.cardRadius))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func statusTitle(written: Bool, streak: Int) -> String {
+        if written {
+            return streak > 0
+                ? String(localized: "Day \(streak) streak · written today")
+                : String(localized: "Written today")
+        }
+        return streak > 0
+            ? String(localized: "Day \(streak) streak — keep it alive")
+            : String(localized: "Write your first page today")
+    }
+
     // MARK: 特性入口卡（图标徽章 + 名称，暗金点缀引导点击）
 
     private func featureButton(icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 7) {
+            HStack(spacing: Metric.s) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(pal.accent)
-                    .frame(width: 42, height: 42)
+                    .frame(width: 28, height: 28)
                     .background(
                         Circle().fill(
                             LinearGradient(colors: [pal.accentSoft, pal.accentSoft.opacity(0.5)],
@@ -131,10 +229,11 @@ struct DiaryListView: View {
                     .font(.dCaption.weight(.semibold))
                     .foregroundStyle(pal.ink)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.75)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Metric.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, Metric.s)
+            .padding(.horizontal, Metric.s)
             .background(
                 RoundedRectangle(cornerRadius: Metric.cardRadius).fill(pal.card)
             )
@@ -149,7 +248,17 @@ struct DiaryListView: View {
     private var searchBar: some View {
         HStack(spacing: Metric.s) {
             Image(systemName: "magnifyingglass").font(.system(size: 15)).foregroundStyle(pal.inkSoft)
-            TextField("Search text, transcripts, places, dates…", text: $search).font(.dSubhead)
+            TextField("Search text, transcripts, places, dates…", text: $search)
+                .font(.dSubhead)
+                .focused($searchFocused)
+                .submitLabel(.search)
+            if !search.isEmpty {
+                Button { search = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(pal.inkSoft.opacity(0.6))
+                }
+            }
         }
         .padding(.horizontal, Metric.m)
         .padding(.vertical, Metric.s + 2)
@@ -219,10 +328,10 @@ struct DiaryListView: View {
         .foregroundStyle(pal.accent.opacity(0.7))
     }
 
-    // MARK: 新建按钮（可拖拽）
+    // MARK: 新建按钮（传统圆形 FAB）
 
     private var fab: some View {
-        DraggableFAB { showEditor = true }
+        AddEntryFAB { pendingPrompt = nil; showEditor = true }
             .padding(Metric.xl)
     }
 }
@@ -236,7 +345,7 @@ private struct DiaryRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metric.xs) {
-            // meta：日期 · 语音 在左，页码极淡放右上角（不再是悬浮胶囊）
+            // meta：日期 · 语音 · 地址 并排在第一行
             HStack(spacing: Metric.xs) {
                 Text(dateStr).font(.dCaption).foregroundStyle(pal.inkSoft)
                 if let m = entry.memos.first {
@@ -248,29 +357,27 @@ private struct DiaryRow: View {
                     .font(.dCaption.weight(.semibold))
                     .foregroundStyle(pal.accent)
                 }
-                Spacer()
-                Text("Page \(page)")
-                    .font(.dLabel)
-                    .tracking(1)
-                    .foregroundStyle(pal.inkSoft.opacity(0.5))
+                if entry.showLocation, !entry.location.isEmpty {
+                    dot
+                    HStack(spacing: 3) {
+                        LocationPin(size: 12, color: pal.accent)
+                        Text(entry.location)
+                            .lineLimit(1).truncationMode(.tail)
+                    }
+                    .font(.dCaption)
+                    .foregroundStyle(pal.inkSoft)
+                }
+                Spacer(minLength: 0)
             }
             Text(entry.content)
                 .font(entry.resolvedFont.swiftUIFont(size: 17))
                 .foregroundStyle(entry.bodyColor(palette: pal))
                 .lineLimit(2).multilineTextAlignment(.leading)
                 .lineSpacing(2)
-            if entry.showLocation, !entry.location.isEmpty {
-                HStack(spacing: 4) {
-                    LocationPin(size: 13, color: pal.accent)
-                    Text(entry.location)
-                        .font(.dCaption).foregroundStyle(pal.inkSoft)
-                        .lineLimit(1).truncationMode(.tail)
-                }
-            }
             if !entry.photos.isEmpty {
                 HStack(spacing: Metric.xs) {
                     ForEach(entry.photos.prefix(3).indices, id: \.self) { i in
-                        if let ui = UIImage(data: entry.photos[i]) {
+                        if let ui = Thumbnailer.thumbnail(entry.photos[i], side: 38) {
                             Image(uiImage: ui).resizable().scaledToFill()
                                 .frame(width: 38, height: 38)
                                 .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
@@ -284,6 +391,14 @@ private struct DiaryRow: View {
                     }
                 }
                 .padding(.top, 2)
+            }
+            // 页码放右下角
+            HStack {
+                Spacer()
+                Text("Page \(page)")
+                    .font(.dLabel)
+                    .tracking(1)
+                    .foregroundStyle(pal.inkSoft.opacity(0.5))
             }
         }
         .padding(Metric.l)

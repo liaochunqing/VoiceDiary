@@ -29,7 +29,7 @@ struct InsightsView: View {
                 }
                 .scrollIndicators(.hidden)
             }
-            .navigationTitle("AI Insights")
+            .navigationTitle("Insights")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -37,7 +37,7 @@ struct InsightsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showPaywall) {
+        .dimmedSheet(isPresented: $showPaywall) {
             PaywallView(feature: .insights)
         }
         .task(id: entries.count) { recomputeAnalysis() }
@@ -155,13 +155,13 @@ struct InsightsView: View {
         Double(c) / Double(maxKeywordCount) > 0.55 ? pal.accent : pal.inkSoft
     }
 
-    // MARK: AI 周小结（Pro · 端侧 Foundation Models / 当前为本地模板）
+    // MARK: 每周回顾（Pro · 端侧模板，未来可升级 Foundation Models）
 
     private var aiSummaryCard: some View {
         VStack(alignment: .leading, spacing: Metric.s) {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles").foregroundStyle(pal.accent)
-                Text("AI Weekly Summary").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
+                Text("Weekly Recap").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
                 Text("PRO")
                     .font(.system(size: 10.5, weight: .bold)).foregroundStyle(pal.accent)
                     .padding(.horizontal, 7).padding(.vertical, 2)
@@ -191,9 +191,9 @@ struct InsightsView: View {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 20)).foregroundStyle(pal.accent)
                     .frame(width: 44, height: 44).background(pal.accentSoft, in: Circle())
-                Text("Let AI make sense of your week")
+                Text("Recap your week at a glance")
                     .font(.dSubhead.weight(.semibold)).foregroundStyle(pal.ink)
-                Text("Generated on device, offline — your words never leave your phone")
+                Text("Built from your entries, on device — your words never leave your phone")
                     .font(.dCaption).foregroundStyle(pal.inkSoft)
                     .multilineTextAlignment(.center)
                 Button { showPaywall = true } label: {
@@ -207,7 +207,8 @@ struct InsightsView: View {
         }
     }
 
-    /// 本地模板小结（无 AI 也能交付；端侧 Foundation Models 可后续替换为生成式）。
+    /// 每周回顾：基于端侧情绪分 + 关键词的模板小结（非生成式 AI，但全部离线计算）。
+    /// 未来可用 iOS 18+ Foundation Models 替换为真生成式小结，此处保持接口不变。
     private var localSummary: String {
         let n = analysis.weekCount
         guard n > 0 else { return String(localized: "No entries this week yet. Open the book and tell it about your day.") }

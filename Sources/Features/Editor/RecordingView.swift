@@ -37,9 +37,12 @@ struct VoiceResult {
 /// 录音面板：录音中 / 停止后共用一个骨架，状态驱动行为切换。
 struct RecordingView: View {
     @Environment(\.palette) private var pal
+    @Environment(\.scenePhase) private var scenePhase
     /// 编辑页是否已有正文：为 true 时停止后才出现「追加 / 覆盖」小分段，
     /// 否则默认追加、不打扰。
     var hasExistingContent: Bool = false
+    /// 录音 sheet 的高度档位：转写文字塞不下时自动从 medium 升到 large。
+    var detent: Binding<PresentationDetent>? = nil
     let onDone: (VoiceResult?) -> Void
 
     private enum Stage { case prep, recording, stopped, denied }
@@ -50,10 +53,15 @@ struct RecordingView: View {
     @State private var duration: TimeInterval = 0
     @State private var audioData: Data?
     @State private var player: AVAudioPlayer?
+    /// 录音被中断后自动落盘，置 true 让停止页提示用户「这段已保存」。
+    @State private var showInterruptedNotice = false
 
     // 停止后的决策状态（初始值从设置读取）
     @State private var textAction: TextAction = .append
     @State private var keepAudio = true
+
+    // 录音中转写文字的自然高度（用于让文字框随内容长高）
+    @State private var liveContentHeight: CGFloat = 0
 
     // MARK: - Body
 
@@ -74,6 +82,24 @@ struct RecordingView: View {
                 transcript = newVal
             }
         }
+        // 切后台保命：正在录音时立即落盘，避免回前台发现录音断了、内容没了。
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background, stage == .recording { handleInterrupt() }
+        }
+        // 来电/闹钟/其他 App 抢音频 → 中断开始时落盘保住已录内容。
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { note in
+            guard stage == .recording else { return }
+            if let info = note.userInfo,
+               let raw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+               let type = AVAudioSession.InterruptionType(rawValue: raw),
+               type == .began {
+                handleInterrupt()
+            }
+        }
+        // 音频服务被重置（罕见但致命）→ 同样落盘。
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.mediaServicesWereResetNotification)) { _ in
+            if stage == .recording { handleInterrupt() }
+        }
     }
 
     // MARK: - 准备中 / 拒绝
@@ -89,7 +115,7 @@ struct RecordingView: View {
         VStack(spacing: Metric.l) {
             Image(systemName: "mic.slash").font(.system(size: 40)).foregroundStyle(pal.inkSoft)
             Text("Microphone access needed").font(.dSerifPageTitle).foregroundStyle(pal.ink)
-            Text("Allow Voice Diary to use the microphone in Settings › Privacy › Microphone. Recordings stay on your device and your own iCloud.")
+            Text("Allow VoicePaper to use the microphone in Settings › Privacy › Microphone. Recordings stay on your device and your own iCloud.")
                 .font(.dSubhead).foregroundStyle(pal.inkSoft)
                 .multilineTextAlignment(.center).padding(.horizontal, Metric.xl)
             Button("OK") { onDone(nil) }.tint(pal.accent)
@@ -99,6 +125,7 @@ struct RecordingView: View {
     // MARK: - 统一界面（录音中 / 停止后共用骨架）
 
     private var unifiedView: some View {
+      GeometryReader { geo in
         VStack(spacing: 0) {
             sharedTopBar(
                 title: stage == .recording ? "Recording" : "This recording"
@@ -111,12 +138,24 @@ struct RecordingView: View {
                 // 波形 — 录音中实时跳动，停止后变暗
                 waveformSection
 
-                // 转写文字 — 录音中只读滚动，停止后可编辑
-                transcriptSection
+                // 转写文字 — 录音中只读滚动（随内容长高），停止后可编辑
+                transcriptSection(availableHeight: geo.size.height)
 
                 // 停止后：语音条紧贴文字下方，可选「追加 / 覆盖」分段
                 if stage == .stopped {
                     stoppedAttachments
+                }
+
+                // 被中断自动落盘后的提示
+                if stage == .stopped, showInterruptedNotice {
+                    HStack(spacing: Metric.xs) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("Recording was interrupted — what you said so far is saved.")
+                            .font(.dCaption)
+                            .foregroundStyle(pal.inkSoft)
+                    }
+                    .padding(.horizontal, Metric.l)
                 }
 
                 Spacer(minLength: Metric.m)
@@ -129,7 +168,9 @@ struct RecordingView: View {
                 }
             }
             .padding(.top, Metric.s)
+            .frame(maxHeight: .infinity, alignment: .top)
         }
+      }
     }
 
     // MARK: - 计时器
@@ -157,11 +198,11 @@ struct RecordingView: View {
 
     // MARK: - 转写文字区
 
-    private var transcriptSection: some View {
+    private func transcriptSection(availableHeight: CGFloat) -> some View {
         Group {
             if stage == .recording {
-                // 录音中：只读滚动卡片
-                liveTranscriptView
+                // 录音中：只读滚动卡片，随内容长高
+                liveTranscriptView(availableHeight: availableHeight)
             } else {
                 // 停止后：可编辑 TextEditor
                 editableTranscriptView
@@ -170,18 +211,40 @@ struct RecordingView: View {
         .padding(.horizontal, Metric.l)
     }
 
-    private var liveTranscriptView: some View {
-        ScrollViewReader { proxy in
+    // 文字框最小高度（少量文字时保持紧凑）
+    private let liveBoxMin: CGFloat = 72
+    // 文字框之外的固定元素（顶栏/计时/波形/停止键/留白）预留高度，
+    // 用 availableHeight 减去它得到文字框可占用的上限。
+    private let liveChromeReserve: CGFloat = 360
+
+    private func liveTranscriptView(availableHeight: CGFloat) -> some View {
+        let pad = Metric.m * 2
+        let maxBox = max(liveBoxMin, availableHeight - liveChromeReserve)
+        let desired = liveContentHeight + pad
+        let boxHeight = min(max(desired, liveBoxMin), maxBox)
+
+        return ScrollViewReader { proxy in
             ScrollView {
                 Text(recorder.liveTranscript.isEmpty ? String(localized: "Start speaking…") : recorder.liveTranscript)
                     .font(.dBody)
                     .foregroundStyle(recorder.liveTranscript.isEmpty ? pal.inkSoft : pal.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(Metric.m)
+                    .background(GeometryReader { g in
+                        Color.clear.preference(key: TranscriptHeightKey.self, value: g.size.height)
+                    })
                     .id("txt")
             }
-            .frame(height: 72)
+            .frame(height: boxHeight)
             .diaryCard()
+            .animation(.easeInOut(duration: 0.22), value: boxHeight)
+            .onPreferenceChange(TranscriptHeightKey.self) { h in
+                liveContentHeight = h
+                // 半屏装不下 → 自动升到大屏；大屏仍装不下则由 ScrollView 滚动
+                if desired > maxBox, detent?.wrappedValue == .medium {
+                    withAnimation(.easeInOut(duration: 0.28)) { detent?.wrappedValue = .large }
+                }
+            }
             .onChange(of: recorder.liveTranscript) { _, _ in
                 withAnimation { proxy.scrollTo("txt", anchor: .bottom) }
             }
@@ -386,6 +449,18 @@ struct RecordingView: View {
 
     // MARK: - 逻辑
 
+    /// 录音被中断时保命：让 recorder 落盘，再把停止态铺好，提示用户这段已保存。
+    private func handleInterrupt() {
+        recorder.interruptAndSave()
+        duration = recorder.elapsed
+        transcript = recorder.liveTranscript
+        textAction = .append
+        keepAudio = true
+        stage = .stopped
+        showInterruptedNotice = true
+        Task { if let url = recorder.audioURL { audioData = try? Data(contentsOf: url) } }
+    }
+
     private func begin() async {
         guard stage == .prep else { return }
         let mic = await recorder.requestMicPermission()
@@ -427,9 +502,11 @@ struct RecordingView: View {
     private func redo() {
         player?.stop(); player = nil
         recorder.discard()
+        recorder.wasInterrupted = false
         transcript = ""; duration = 0; audioData = nil
         textAction = .append
         keepAudio = true
+        showInterruptedNotice = false
         stage = .prep
         Task { await begin() }
     }
@@ -450,6 +527,15 @@ struct RecordingView: View {
 
     private func durString(_ d: TimeInterval) -> String {
         String(format: "%d:%02d", Int(d) / 60, Int(d) % 60)
+    }
+}
+
+// MARK: - 转写文字自然高度测量
+
+private struct TranscriptHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

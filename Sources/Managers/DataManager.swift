@@ -34,8 +34,52 @@ enum DailyPrompt {
     }
 }
 
+/// 连续记录保护（streak saver）：漏写一天不归零，每月最多兜底 2 天。
+/// 漏写的那天会被「记一笔」进 UserDefaults，currentStreak 计数时把它视同在轨，
+/// 从而跨过单日中断。每月配额独立计算（按年-月键），自然重置。
+enum StreakSaver {
+    static let monthlyAllowance = 2
+
+    private static let datesKey = "streakSaverDates"
+    private static let fmt: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
+    static func savedDates() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: datesKey) ?? [])
+    }
+    static func isSaved(_ date: Date) -> Bool {
+        savedDates().contains(fmt.string(from: date))
+    }
+    /// 本月已用保护次数（按当前日历的年-月比对）。
+    static func usedThisMonth() -> Int {
+        let cal = Calendar.current
+        let now = cal.dateComponents([.year, .month], from: Date())
+        return savedDates().reduce(0) { count, s in
+            guard let d = fmt.date(from: s) else { return count }
+            let c = cal.dateComponents([.year, .month], from: d)
+            return (c.year == now.year && c.month == now.month) ? count + 1 : count
+        }
+    }
+    static func leftThisMonth() -> Int {
+        max(0, monthlyAllowance - usedThisMonth())
+    }
+    /// 记一个兜底日。幂等：已存在则不重复扣减。
+    static func save(_ date: Date) {
+        let key = fmt.string(from: date)
+        var set = savedDates()
+        guard !set.contains(key) else { return }
+        set.insert(key)
+        UserDefaults.standard.set(Array(set), forKey: datesKey)
+    }
+}
+
 enum DataManager {
-    /// 连续记录天数：从今天（或昨天）起向前数有日记的连续天数。
+    /// 连续记录天数：从今天（或昨天）起向前数有日记的连续天数；
+    /// 途中的「保护日」（StreakSaver）视同在轨，跨过单日中断不归零。
     static func currentStreak(_ entries: [DiaryEntry]) -> Int {
         let cal = Calendar.current
         let daySet = Set(entries.map { cal.startOfDay(for: $0.date) })
@@ -46,11 +90,14 @@ enum DataManager {
             cursor = today
         } else if let y = cal.date(byAdding: .day, value: -1, to: today), daySet.contains(y) {
             cursor = y
+        } else if let y = cal.date(byAdding: .day, value: -1, to: today), StreakSaver.isSaved(y) {
+            // 今天还没写、昨天也没写但昨天被兜底了 → 从昨天接着数。
+            cursor = y
         } else {
             return 0
         }
         var streak = 0
-        while daySet.contains(cursor) {
+        while daySet.contains(cursor) || StreakSaver.isSaved(cursor) {
             streak += 1
             guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }
             cursor = prev
@@ -58,12 +105,29 @@ enum DataManager {
         return streak
     }
 
-    /// 温柔版 streak 的一组数字：当前连续、历史最长、今天是否已记录。
+    /// 进入前台时调用：若昨天漏写、前天在轨（写了或已被兜底），且本月还有保护次数，
+    /// 就自动为昨天补一个「连续记录保护」，避免单日中断归零。幂等，可重复调用。
+    static func reconcileSaver(_ entries: [DiaryEntry]) {
+        let cal = Calendar.current
+        let daySet = Set(entries.map { cal.startOfDay(for: $0.date) })
+        let today = cal.startOfDay(for: Date())
+        guard let yesterday = cal.date(byAdding: .day, value: -1, to: today),
+              let dayBefore = cal.date(byAdding: .day, value: -2, to: today) else { return }
+        guard !daySet.contains(yesterday) else { return }      // 昨天写了 → 不用兜
+        guard !StreakSaver.isSaved(yesterday) else { return }  // 已兜过 → 不重复
+        // 前天在轨（写了或已被兜底）→ 这是可补救的单日中断；否则 streak 早已断，兜底无意义。
+        guard daySet.contains(dayBefore) || StreakSaver.isSaved(dayBefore) else { return }
+        guard StreakSaver.leftThisMonth() > 0 else { return }
+        StreakSaver.save(yesterday)
+    }
+
+    /// 温柔版 streak 的一组数字：当前连续、历史最长、今天是否已记录、本月剩余保护次数。
     /// 「最长」即使当前连续断了也保留——努力不清零，不羞辱用户。
     struct StreakStats {
         var current: Int
         var longest: Int
         var recordedToday: Bool
+        var saversLeft: Int
     }
 
     static func streakStats(_ entries: [DiaryEntry]) -> StreakStats {
@@ -84,7 +148,8 @@ enum DataManager {
         let today = cal.startOfDay(for: Date())
         return StreakStats(current: currentStreak(entries),
                            longest: longest,
-                           recordedToday: days.contains(today))
+                           recordedToday: days.contains(today),
+                           saversLeft: StreakSaver.leftThisMonth())
     }
 
 #if DEBUG
@@ -213,7 +278,7 @@ enum DataManager {
         <div class="page cover">
           <hr>
           <div class="cover-title">我 的 日 记</div>
-          <div class="cover-sub">VOICE DIARY</div>
+          <div class="cover-sub">VOICEPAPER</div>
           <div class="cover-slogan">翻开本子，对它说话</div>
           <hr>
           <div class="cover-meta">\(esc(dates))<br>共 \(total) 篇</div>
@@ -231,7 +296,7 @@ enum DataManager {
             </tr></thead>
             <tbody>\(rows)</tbody>
           </table>
-          <div class="footer">由 Voice Diary 导出 · 翻开本子，对它说话</div>
+          <div class="footer">由 VoicePaper 导出 · 翻开本子，对它说话</div>
         </div>
         </body></html>
         """

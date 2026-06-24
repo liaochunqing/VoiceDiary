@@ -1,7 +1,7 @@
 # VoiceDiary 视觉语言 · redesign-v2「精装纸本」
 
 > 目标：从「系统默认工具」升级到「精装日记本」的高级感。
-> 核心手法 = **纸张材质（新拟物）** + **衬线书卷标题** + **更大留白**。
+> 核心手法 = **纸张材质（新拟物）** + **衬线书卷标题** + **更大留白** + **圆形图标语言**。
 > 一套材质语言，5 套配色主题共用——换主题只换色板，质感恒定。
 
 ---
@@ -43,7 +43,42 @@ ZStack { PaperBackground(); … }
 
 ---
 
-## 3. 衬线字号体系（`Sources/DesignSystem/Typography.swift`）
+## 3. 圆形图标语言 / 分组卡（设置 · 入口 · 数据类界面）
+
+材质之上的一层**空间骨架**，让设置 / 入口 / 数据这类「一项一行」或「带图标的卡」界面统一精致。组件都在 `PaperLines.swift`，全 app 共用——别再各页手搓裸 `Image(systemName:)` 行。
+
+| 组件 | 用途 | 规格 |
+|---|---|---|
+| `IconBadge` | 圆形图标徽章（撑行高 + 视觉锚点） | 默认 38pt 圆 + `accent.opacity(0.14)` 底 + 15pt semibold 图标；可配 `diameter / glyphSize / tint` |
+| `SectionCard` | 分组卡 | 组标题在卡外（纯文字 uppercase 小标签 + tracking 0.6）+ 内容套 `diaryCard(radius:18)` |
+| `IconRowLabel` | 行左半 | `IconBadge` + 标题（`.dSubhead`）+ 可选副标题（`.dCaption`）；开关 / 箭头 / 取值行共用 |
+| `RowDivider` | 行内分隔线 | 左缩进 50（38 图标 + 12 间距），不切到图标列 |
+
+**适用边界（重要）**
+- ✅ 用：设置页、付费墙功能行、统计数字卡、列表入口卡——凡是「图标 + 文字」成行 / 成卡的。
+- ❌ 不用：阅读（详情）与输入（编辑、录音、字体选择）界面。它们走 `paperLinedCard` 信纸 + 大留白阅读版式，硬塞圆形图标只会变乱。
+
+**图标颜色**：默认 `accent` 单色，随 5 主题变化（守材质统一，别做成多彩图标）。仅两种强语义破例——隐私 / 安全 = 绿（呼应「音频不出本机」红线卖点），危险操作 = 红。
+
+**圆角两档**：内容卡 / 数据卡 = `Metric.cardRadius`（16）；分组容器 = `SectionCard`（18）。容器比内容略大一档，拉开层级。
+
+**行高**：图标 38 + 上下 `Metric.m`(12) ≈ 62pt，舒展不挤。
+
+```swift
+SectionCard(title: "Preferences") {
+    VStack(spacing: 0) {
+        HStack { IconRowLabel(icon: "bell", label: "Remind me"); Spacer(); Toggle(…) }
+            .padding(.vertical, Metric.m)
+        RowDivider()
+        HStack { IconRowLabel(icon: "clock", label: "Time"); Spacer(); DatePicker(…) }
+            .padding(.vertical, Metric.m)
+    }
+}
+```
+
+---
+
+## 4. 衬线字号体系（`Sources/DesignSystem/Typography.swift`）
 
 中文落到宋体（`design: .serif`），并放大一档拉开层级。
 
@@ -64,15 +99,16 @@ ZStack { PaperBackground(); … }
 
 ---
 
-## 4. 留白与间距
+## 5. 留白与间距
 
 - 主滚动栈分组间距：`Metric.m(12) → Metric.l(16)`。
 - 卡片内边距：`Metric.m(12) → Metric.l(16)`（列表行、详情卡、附件卡）。
+- 卡片圆角：内容卡 `Metric.cardRadius(16)`、分组容器 `SectionCard(18)`（见第 3 节两档规则）。
 - 列表正文加 `.lineSpacing(2)`，详情正文 UITextView `lineSpacing 6`。
 
 ---
 
-## 5. 刻意保留的硬边框（别误删）
+## 6. 刻意保留的硬边框（别误删）
 
 以下边框**传达「选中」状态**，靠实心描边表达，换成柔投影会丢状态感，故保留：
 - 字体卡选中（`FontPickerPanel.fontCard`）、配色圆点选中。
@@ -82,14 +118,16 @@ ZStack { PaperBackground(); … }
 
 ---
 
-## 6. 封面 / 引导 = 皮质，不是纸
+## 7. 封面 / 引导 = 皮质，不是纸
 
 `CoverView` / `OnboardingView` 用 `leatherGradient` 皮革底 + 烫金宋体书名，**不套 `PaperBackground`**——这是「合上的精装本封面」，与翻开后的纸面形成材质对比。封面书名「我 的 日 记」用 60pt serif bold 烫金，是品牌识别核心。
 
 ---
 
-## 7. 改造覆盖清单（redesign-v2 已完成）
+## 8. 改造覆盖清单（redesign-v2 已完成）
 
-List · Detail · Settings(含 iCloud 弹窗) · Stats · Paywall · Editor · Recording · FontPicker · Onboarding · Cover 全部落地。EmojiBubble / PhotoFullScreen 无卡片无需改。`BUILD SUCCEEDED`。
+List · Detail · Settings(含 iCloud 弹窗) · Stats · Paywall · Editor · Recording · FontPicker · Onboarding · Cover 全部落地。EmojiBubble / PhotoFullScreen 无卡片无需改。
 
-新增页面 / 改字号时：**优先用上面的修饰器与 `.dSerif*` token，不要再手写 `.background(pal.card)+.overlay(stroke)`。**
+**圆形图标语言统一（2026-06-23）**：第 3 节组件抽到 `PaperLines.swift` 全 app 共用；设置页改用 `SectionCard / IconRowLabel / RowDivider`；统计数字卡、付费墙功能行的裸图标换成 `IconBadge`；`Metric.cardRadius` 14→16 统一柔和度。阅读 / 输入类界面按第 3 节边界规则**不加**图标行（详情 / 编辑 / 录音 / 字体只享受圆角统一）。`BUILD SUCCEEDED`。
+
+新增页面 / 改字号时：**优先用上面的修饰器、`IconBadge / SectionCard / IconRowLabel` 组件与 `.dSerif*` token，不要再手写 `.background(pal.card)+.overlay(stroke)` 或裸 `Image(systemName:)` 行。**

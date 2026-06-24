@@ -142,26 +142,27 @@ struct FontPickerPanel: View {
     // MARK: - 颜色
 
     private var colorRow: some View {
-        HStack(spacing: 14) {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 8),
+            spacing: 10
+        ) {
             ForEach(DiaryFontColor.allCases, id: \.self) { c in
-                Button {
-                    color = c
-                } label: {
+                Button { color = c } label: {
                     ZStack {
                         Circle()
                             .fill(c.resolved(palette: pal))
-                            .frame(width: 30, height: 30)
+                            .frame(width: 32, height: 32)
                         Circle()
                             .strokeBorder(
                                 color == c ? pal.accent : pal.line,
                                 lineWidth: color == c ? 2.5 : 1
                             )
-                            .frame(width: 30, height: 30)
+                            .frame(width: 32, height: 32)
                         if color == c {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.35), radius: 1)
+                                .shadow(color: .black.opacity(0.4), radius: 1)
                         }
                     }
                 }

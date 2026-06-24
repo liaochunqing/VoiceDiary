@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0787E58D438D57A47B6DBB7B /* Thumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D83BC586AEF42A6073ABDAC7 /* Thumbnailer.swift */; };
 		105AA767C94FED907F0266AA /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4041AC328A428F032A6DEA32 /* Theme.swift */; };
 		16B1F2EDC17CD159C88E9B95 /* DiaryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAF46BD7E57C1805C313012 /* DiaryDetailView.swift */; };
 		215BA26D7E99600B0B3264C6 /* PurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 795BECD32926790DCDB8E444 /* PurchaseManager.swift */; };
@@ -23,6 +24,7 @@
 		56B968D6297BA307BECC8606 /* FontPickerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC40491749971D5EBED3271 /* FontPickerPanel.swift */; };
 		5E7D19C257A98B8439A62FCB /* PaperLines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8ED5C18C84778C1F1E0FDE /* PaperLines.swift */; };
 		5EC17C0513A9BB3E60D845BA /* DiaryPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5860D35E25B45942E35CCA9F /* DiaryPalette.swift */; };
+		5FECFEF6DEF3E6925C84857E /* DimmedSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5A489003061A6443B9F70F /* DimmedSheet.swift */; };
 		61FAB8E43B52D68A3D725DDD /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8BE40BE7D50541B46696C2 /* Spacing.swift */; };
 		6938124632DFEB0B451E6E46 /* 小可奶酪体.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 210E0D7E2CBA71BD3EF21111 /* 小可奶酪体.ttf */; };
 		6D3472382CBC9EF1D986132C /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC167C493898994EF4A3CB8 /* RecordingView.swift */; };
@@ -52,6 +54,7 @@
 		DC6CAA4061DCBE8FF0165AEA /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D0DA937D925CB5F377DE4E /* InsightsView.swift */; };
 		DEB749B16BF6E0EB3A6A8969 /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D82951BF0E45C8A15D4E09 /* VoiceRecorder.swift */; };
 		F6E7675E4B8497379C029B4B /* DiaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E89CD6EF5398B74987B8E /* DiaryListView.swift */; };
+		FBB6726A32CB49CF3D6DEB14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 88B806901A7927C89A96A80C /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +75,7 @@
 		387F81EB6595240D8830BD28 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4041AC328A428F032A6DEA32 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		44BFC6227EFBDBF590EDFC68 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		4C5A489003061A6443B9F70F /* DimmedSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimmedSheet.swift; sourceTree = "<group>"; };
 		57944CDD43799094BE2FA885 /* AddDiaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDiaryView.swift; sourceTree = "<group>"; };
 		5860D35E25B45942E35CCA9F /* DiaryPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryPalette.swift; sourceTree = "<group>"; };
 		636060BD84D5C7955E7590AD /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
@@ -82,6 +86,7 @@
 		7B8ED5C18C84778C1F1E0FDE /* PaperLines.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperLines.swift; sourceTree = "<group>"; };
 		8102154847CAA9032CD7ED54 /* SpriteKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SpriteKit.framework; path = System/Library/Frameworks/SpriteKit.framework; sourceTree = SDKROOT; };
 		818105303A993B6FF12D3D78 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		88B806901A7927C89A96A80C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		89FD967772E1150F0F2ABD59 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		8B0526507D0402E407D332B7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		8EC3A2B6E7742FC39EA2E410 /* Slidexiaxing-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Slidexiaxing-Regular.ttf"; sourceTree = "<group>"; };
@@ -95,6 +100,7 @@
 		CCBF83F07A3120A007EF7754 /* BookPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPageView.swift; sourceTree = "<group>"; };
 		CFACC5D532628433B4006A89 /* ReadableColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadableColumn.swift; sourceTree = "<group>"; };
 		D343B002A2CF86B2EFEAE10F /* PhotoFullScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoFullScreenView.swift; sourceTree = "<group>"; };
+		D83BC586AEF42A6073ABDAC7 /* Thumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbnailer.swift; sourceTree = "<group>"; };
 		DF5E9FDFD1A8C59494E0506A /* CoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverView.swift; sourceTree = "<group>"; };
 		E2C509DE88BD06AE7FADDCFA /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		E8E08DF7CB2A3F8349F5D5CC /* DiaryFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryFont.swift; sourceTree = "<group>"; };
@@ -157,6 +163,7 @@
 			isa = PBXGroup;
 			children = (
 				5860D35E25B45942E35CCA9F /* DiaryPalette.swift */,
+				4C5A489003061A6443B9F70F /* DimmedSheet.swift */,
 				CFACC5D532628433B4006A89 /* ReadableColumn.swift */,
 				1C8BE40BE7D50541B46696C2 /* Spacing.swift */,
 				4041AC328A428F032A6DEA32 /* Theme.swift */,
@@ -225,8 +232,17 @@
 				5F5B744CC13251867202C682 /* Managers */,
 				BCD09BA269F239019A8F8C00 /* Models */,
 				DAA590935C2C7D78924AA397 /* Resources */,
+				9BED9F6879A1B9082FCAD3F3 /* Utilities */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		9BED9F6879A1B9082FCAD3F3 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				D83BC586AEF42A6073ABDAC7 /* Thumbnailer.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 		B6017A097C1AAAAF6ABAFDF4 /* Cover */ = {
@@ -281,6 +297,7 @@
 				F25A56B7AB6B3D643189D7A2 /* fp3.m4a */,
 				A96D95575AC5DB787EDE1A6C /* InfoPlist.xcstrings */,
 				AF355B94184388F6244E908D /* Localizable.xcstrings */,
+				88B806901A7927C89A96A80C /* PrivacyInfo.xcprivacy */,
 				D450F003F9E8AC4C598C45FC /* Fonts */,
 			);
 			path = Resources;
@@ -385,6 +402,7 @@
 				2DFDF43B940A5E9F0A5DAAB7 /* InfoPlist.xcstrings in Resources */,
 				CB47DA206EACA30B6064DA15 /* Localizable.xcstrings in Resources */,
 				55A8F8138E3E72A7380C55D0 /* LongCang-Regular.ttf in Resources */,
+				FBB6726A32CB49CF3D6DEB14 /* PrivacyInfo.xcprivacy in Resources */,
 				C08C7D665C5FE5790FB32510 /* Slidexiaxing-Regular.ttf in Resources */,
 				94335A0B208DC1CEB1373BA0 /* YSHaoShenTi.ttf in Resources */,
 				54C7E7CB1209CAEB8BC9C780 /* fp3.m4a in Resources */,
@@ -409,6 +427,7 @@
 				8EDEF59364E493DD5EFD3764 /* DiaryFont.swift in Sources */,
 				F6E7675E4B8497379C029B4B /* DiaryListView.swift in Sources */,
 				5EC17C0513A9BB3E60D845BA /* DiaryPalette.swift in Sources */,
+				5FECFEF6DEF3E6925C84857E /* DimmedSheet.swift in Sources */,
 				3133AC9DA3F376E0ABE4D059 /* DraggableFAB.swift in Sources */,
 				55C6C66B8681A3BE3EC1EBA7 /* EmojiBubbleView.swift in Sources */,
 				76D00FBCDF7546049B495DD9 /* EmotionAnalyzer.swift in Sources */,
@@ -432,6 +451,7 @@
 				BCD3546A0814C41E6C32528C /* StatsView.swift in Sources */,
 				105AA767C94FED907F0266AA /* Theme.swift in Sources */,
 				8FC779E3A0050B848B54DE49 /* ThemeManager.swift in Sources */,
+				0787E58D438D57A47B6DBB7B /* Thumbnailer.swift in Sources */,
 				2DBAD8ACF10F2F907BC3A24D /* Typography.swift in Sources */,
 				9337A22672680313CE70CFF8 /* VoiceDiaryApp.swift in Sources */,
 				DEB749B16BF6E0EB3A6A8969 /* VoiceRecorder.swift in Sources */,
@@ -450,7 +470,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDevelopmentRegion = en;
-				INFOPLIST_KEY_CFBundleDisplayName = "Voice Diary";
+				INFOPLIST_KEY_CFBundleDisplayName = VoicePaper;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a diary entry was written. Used once while writing — never tracked continuously.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Recording a voice diary needs the microphone. Audio stays on your device and your own iCloud — never uploaded to us or any third party.";
@@ -538,7 +558,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDevelopmentRegion = en;
-				INFOPLIST_KEY_CFBundleDisplayName = "Voice Diary";
+				INFOPLIST_KEY_CFBundleDisplayName = VoicePaper;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a diary entry was written. Used once while writing — never tracked continuously.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Recording a voice diary needs the microphone. Audio stays on your device and your own iCloud — never uploaded to us or any third party.";

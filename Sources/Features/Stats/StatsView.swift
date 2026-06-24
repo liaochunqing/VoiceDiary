@@ -94,7 +94,7 @@ struct StatsView: View {
 
     private func statCard(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {
         VStack(spacing: Metric.s) {
-            Image(systemName: icon).font(.system(size: 20)).foregroundStyle(color)
+            IconBadge(systemName: icon, tint: color, diameter: 44, glyphSize: 19)
             Text(value).font(.system(size: 32, weight: .bold)).foregroundStyle(pal.ink)
             Text(label).font(.dCaption).foregroundStyle(pal.inkSoft)
         }

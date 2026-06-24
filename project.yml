@@ -28,7 +28,7 @@ targets:
         GENERATE_INFOPLIST_FILE: "YES"
         CODE_SIGN_ENTITLEMENTS: "Support/VoiceDiary.entitlements"
         CODE_SIGN_STYLE: "Automatic"
-        INFOPLIST_KEY_CFBundleDisplayName: "Voice Diary"
+        INFOPLIST_KEY_CFBundleDisplayName: "VoicePaper"
         INFOPLIST_KEY_CFBundleDevelopmentRegion: "en"
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"

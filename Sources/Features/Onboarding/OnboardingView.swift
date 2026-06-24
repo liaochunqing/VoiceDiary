@@ -5,6 +5,7 @@ struct OnboardingView: View {
     let onFinish: () -> Void
 
     @State private var page = 0
+    @State private var showEditor = false
 
     private let pages: [PageData] = [
         PageData(icon: "book.closed.fill",
@@ -72,7 +73,7 @@ struct OnboardingView: View {
                         if page < pages.count - 1 {
                             withAnimation(.easeInOut(duration: 0.3)) { page += 1 }
                         } else {
-                            onFinish()
+                            startWriting()
                         }
                     } label: {
                         Text(page < pages.count - 1 ? "Next" : "Start writing")
@@ -95,6 +96,22 @@ struct OnboardingView: View {
             .readableColumn()
         }
         .animation(.easeInOut, value: page)
+        // 末页「Start writing」：先请求通知权限（授权则顺势开启每日提问提醒），
+        // 再弹出编辑器并预填今日提问，让用户当场录/写第一篇；关掉编辑器即结束 onboarding。
+        .dimmedSheet(isPresented: $showEditor, onDismiss: { onFinish() }) {
+            AddDiaryView(initialPrompt: DailyPrompt.today())
+        }
+    }
+
+    /// 末页按钮：请求通知权限 → 开启每日提醒（若授权）→ 打开编辑器写第一篇。
+    private func startWriting() {
+        Task { @MainActor in
+            let nm = NotificationManager()
+            let granted = await nm.requestPermission()
+            if granted { nm.isEnabled = true }   // 授权了就开启每日提问提醒，权限不浪费
+            UserDefaults.standard.set(true, forKey: "hasRequestedNotification")
+            showEditor = true
+        }
     }
 }
 
