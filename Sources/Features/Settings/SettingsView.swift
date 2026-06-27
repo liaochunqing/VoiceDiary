@@ -34,8 +34,9 @@ struct SettingsView: View {
     @AppStorage("transcriptionLanguage") private var transcriptionLanguage: String = ""
     @State private var availableLocales: [Locale] = []
     @Environment(\.modelContext) private var context
+    @Environment(DeletionCoordinator.self) private var deletionCoordinator
     @State private var showDeleteAllAlert = false
-    @State private var storageSize: String = "Calculating…"
+    @State private var storageSize: String = String(localized: "Calculating…")
 
     // 隐私锁图标用安全绿，呼应「音频不出本机」红线卖点；其余图标统一 accent。
     private let safeGreen = Color(lightHex: 0x4E8C5A, darkHex: 0x6FBF7E)
@@ -416,6 +417,7 @@ struct SettingsView: View {
 
     private var debugSection: some View {
         settingCard(title: "🛠 Debug") {
+            // Simulate Pro
             HStack(spacing: Metric.m) {
                 IconRowLabel(icon: "wrench.and.screwdriver", label: "Simulate Pro",
                            subtitle: "Toggles isUnlocked · DEBUG only")
@@ -430,6 +432,44 @@ struct SettingsView: View {
                 .tint(pal.accent).labelsHidden()
             }
             .padding(.vertical, Metric.m)
+
+            Divider().background(pal.line)
+
+            // Screenshot data seeder（英文）
+            Button {
+                UserDefaults.standard.set(true, forKey: "screenshotData")
+                Task { @MainActor in
+                    ScreenshotSeeder.seedIfRequested(context)
+                    UserDefaults.standard.set(false, forKey: "screenshotData")
+                }
+            } label: {
+                HStack(spacing: Metric.m) {
+                    IconRowLabel(icon: "photo.artframe", label: "Reset with Screenshot Data",
+                               subtitle: "English sample entries for App Store screenshots")
+                    Spacer()
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundStyle(pal.accent)
+                }
+                .padding(.vertical, Metric.m)
+            }
+
+            Divider().background(pal.line)
+
+            // Screenshot data seeder（中文）
+            Button {
+                Task { @MainActor in
+                    ScreenshotSeeder.seedChinese(context)
+                }
+            } label: {
+                HStack(spacing: Metric.m) {
+                    IconRowLabel(icon: "photo.artframe", label: "用中文数据重置",
+                               subtitle: "中文区上架截图用的示例日记")
+                    Spacer()
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundStyle(pal.accent)
+                }
+                .padding(.vertical, Metric.m)
+            }
         }
     }
     #endif
@@ -617,15 +657,45 @@ struct SettingsView: View {
     }
 
     private func deleteAllEntries() {
-        for entry in entries {
-            for memo in entry.memos {
-                guard let aid = memo.audioID else { continue }
+        // 先拿到 ID 列表（值类型，不持有 managed object）。
+        let ids = entries.map(\.id)
+        // 立刻通知列表页清空 ForEach：必须在动 context 之前让所有 DiaryRow 从视图层级
+        // 移除，否则 delete + save 后 backing data detach，DiaryRow.body 再访问
+        // entry.photos(@Attribute.externalStorage) 会触发 fatal error 崩溃。
+        deletionCoordinator.isBulkDeleting = true
+        Task { @MainActor in
+            // 等 alert 关闭动画彻底完成（~0.4s），避免 pageCurl + alert dismiss
+            // 两组动画同时操作视图层级产生 singular matrix → 崩溃；
+            // 同时给列表页一拍完成清空渲染。
+            try? await Task.sleep(nanoseconds: 450_000_000)
+
+            // 一次性收集跨库音频 id 并删除所有 entry（VoiceMemo 由 cascade 随 DiaryEntry 删除）。
+            // 先 collect memos（delete 后 relationship 仍可访问），再逐条 context.delete。
+            var audioIDs: [UUID] = []
+            for id in ids {
+                guard let entry = (try? context.fetch(FetchDescriptor<DiaryEntry>(
+                    predicate: #Predicate { $0.id == id })))?.first else { continue }
+                audioIDs.append(contentsOf: entry.memos.compactMap(\.audioID))
+                // 标记 isDeleted=true；backing data 在 save 前不会 detach，
+                // 此时任何 DiaryRow 的 guard 已经生效，且极端访问 photos 仍安全。
+                context.delete(entry)
+            }
+            for aid in audioIDs {
                 let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
                 for a in (try? context.fetch(desc)) ?? [] { context.delete(a) }
             }
-            context.delete(entry)
+
+            // ★ 与单条删除同一原则：delete 和 save 之间必须留出间隙，
+            // 让视图层消化 isDeleted 标记、彻底移除所有行引用，再 detach backing data。
+            // 防止 save 后 LazyVStack 缓存的残影行求值 entry.photos（externalStorage）崩溃。
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            try? context.save()
+
+            // 等列表页基于 @Query 的刷新落地（entries 已为空）后再解除清空状态，
+            // 避免短暂窗口里残影行重新访问已删对象。
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            deletionCoordinator.isBulkDeleting = false
         }
-        try? context.save()
     }
 
     /// 查 App Store 最新版本（iTunes Lookup API），与本地版本号数值比对。
@@ -677,45 +747,42 @@ private struct ICloudSyncSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Metric.l) {
+            VStack(alignment: .leading, spacing: Metric.xl) {
                 Text("iCloud Sync")
                     .font(.dSerifPageTitle)
                     .foregroundStyle(pal.ink)
-                    .padding(.top, Metric.s)
+                    .padding(.top, Metric.m)
 
                 Text("Entries stay on your device by default. Turn this on to sync to your personal iCloud for backup and across devices — never through our servers.")
-                    .font(.dSubhead).foregroundStyle(pal.inkSoft)
-                    .lineSpacing(3)
+                    .font(.dSerifBody).foregroundStyle(pal.inkSoft)
+                    .lineSpacing(5)
                     .fixedSize(horizontal: false, vertical: true)
 
-                VStack(alignment: .leading, spacing: Metric.s) {
+                VStack(alignment: .leading, spacing: Metric.l) {
                     // 自动同步（总开关）
-                    HStack {
-                        Text("Auto Sync").font(.dSubhead).foregroundStyle(pal.ink)
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { iCloudEnabled },
-                            set: { v in
-                                iCloudEnabled = v
-                                UserDefaults.standard.set(v, forKey: "iCloudEnabled")
-                            }
-                        ))
-                        .tint(pal.accent).labelsHidden()
+                    VStack(alignment: .leading, spacing: Metric.xs) {
+                        HStack {
+                            Text("Auto Sync").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { iCloudEnabled },
+                                set: { v in
+                                    iCloudEnabled = v
+                                    UserDefaults.standard.set(v, forKey: "iCloudEnabled")
+                                }
+                            ))
+                            .tint(pal.accent).labelsHidden()
+                        }
+                        Text("Changes take effect after the app restarts.")
+                            .font(.dCaption).foregroundStyle(pal.inkSoft)
                     }
-                    .padding(Metric.m)
+                    .padding(Metric.l)
                     .diaryCard()
-
-                    if iCloudEnabled {
-                        Label("Sync is on — scheduled automatically by iCloud",
-                              systemImage: "checkmark.circle.fill")
-                            .font(.dCaption).foregroundStyle(okGreen)
-                            .padding(.horizontal, Metric.xs)
-                    }
 
                     // 同步录音原声（开了自动同步才可用）
                     VStack(alignment: .leading, spacing: Metric.xs) {
                         HStack {
-                            Text("Sync original audio").font(.dSubhead).foregroundStyle(pal.ink)
+                            Text("Sync original audio").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
                             Spacer()
                             Toggle("", isOn: Binding(
                                 get: { audioSyncEnabled },
@@ -731,20 +798,10 @@ private struct ICloudSyncSheet: View {
                             .font(.dCaption).foregroundStyle(pal.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(Metric.m)
+                    .padding(Metric.l)
                     .diaryCard()
                     .opacity(iCloudEnabled ? 1 : 0.45)
                 }
-
-                Button { dismiss() } label: {
-                    Text("Done")
-                        .font(.dSubhead.weight(.semibold))
-                        .foregroundStyle(pal.accent)
-                        .frame(maxWidth: .infinity)
-                        .padding(Metric.m)
-                        .diaryCard(elevation: 0.5)
-                }
-                .padding(.top, Metric.xs)
             }
             .padding(Metric.l)
         }
@@ -885,3 +942,30 @@ private struct DiaryWebView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish _: WKNavigation!) { onLoaded() }
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        let container = PreviewHelper.container()
+        Group {
+            PreviewWrapper(container: container) { SettingsView() }
+                .previewDevice("iPhone SE (3rd generation)")
+                .previewDisplayName("SE")
+
+            PreviewWrapper(container: container) { SettingsView() }
+                .previewDevice("iPhone 16 Pro")
+                .previewDisplayName("16 Pro")
+
+            PreviewWrapper(container: container) { SettingsView() }
+                .previewDevice("iPhone 16 Pro Max")
+                .previewDisplayName("Pro Max")
+
+            PreviewWrapper(container: container) { SettingsView() }
+                .previewDevice("iPad (10th generation)")
+                .previewDisplayName("iPad 10")
+        }
+    }
+}
+#endif

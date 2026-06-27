@@ -94,6 +94,38 @@
         }
       }
     },
+    "%lld entries total" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %lld 篇"
+          }
+        }
+      }
+    },
+    "← → Swipe left or right to flip between pages, like a real notebook." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "← → 左右滑动，像翻纸书一样翻到上一篇或下一篇。"
+          }
+        }
+      }
+    },
+    "← → Swipe to flip pages · Long-press to edit" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "← → 左右滑翻页 · 长按可编辑删除"
+          }
+        }
+      }
+    },
     "+%@" : {
 
     },
@@ -108,6 +140,17 @@
         }
       }
     },
+    "❄︎ %lld streak-savers left this month" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "❄︎ 本月还有 %lld 次补签机会"
+          }
+        }
+      }
+    },
     "1 photo only" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -115,6 +158,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "仅限 1 张照片"
+          }
+        }
+      }
+    },
+    "1 theme · 1 font" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 种主题 · 1 种字体"
+          }
+        }
+      }
+    },
+    "3 per week" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每周 3 次"
           }
         }
       }
@@ -136,6 +201,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "5 大主题 · 数十条引导 · 随心情切换"
+          }
+        }
+      }
+    },
+    "5 themes · many fonts" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 种主题 · 多种字体"
           }
         }
       }
@@ -423,7 +499,14 @@
       }
     },
     "Automatic" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动"
+          }
+        }
+      }
     },
     "Back to Contents" : {
       "localizations" : {
@@ -458,7 +541,14 @@
       }
     },
     "Built from your entries, on device — your words never leave your phone" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从你的日记中生成，在设备本地完成——你的文字永不离开手机"
+          }
+        }
+      }
     },
     "Buy Lifetime" : {
       "extractionState" : "stale",
@@ -467,6 +557,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "永久买断"
+          }
+        }
+      }
+    },
+    "Calculating…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "计算中…"
           }
         }
       }
@@ -515,6 +616,27 @@
         }
       }
     },
+    "Changes take effect after the app restarts." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改将在 App 重启后生效"
+          }
+        }
+      }
+    },
+    "Check for Updates" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查更新"
+          }
+        }
+      }
+    },
     "Choose a plan" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -527,7 +649,14 @@
       }
     },
     "Choose your plan" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择你的方案"
+          }
+        }
+      }
     },
     "Close" : {
       "localizations" : {
@@ -535,6 +664,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关闭"
+          }
+        }
+      }
+    },
+    "Cloud backup + across devices" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "云端备份 + 跨设备"
           }
         }
       }
@@ -583,7 +723,25 @@
       }
     },
     "Couldn't check for updates. Check your connection and try again." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查更新失败，请确认网络连接后重试"
+          }
+        }
+      }
+    },
+    "Couldn't load plans. Check your connection and try again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载方案，请检查网络后重试"
+          }
+        }
+      }
     },
     "Current location" : {
       "extractionState" : "stale",
@@ -629,6 +787,28 @@
         }
       }
     },
+    "Day %lld streak — keep it alive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %lld 天连续——保持下去"
+          }
+        }
+      }
+    },
+    "Day %lld streak · written today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %lld 天连续 · 今日已写"
+          }
+        }
+      }
+    },
     "days" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -662,6 +842,39 @@
         }
       }
     },
+    "Delete All" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部删除"
+          }
+        }
+      }
+    },
+    "Delete All Entries" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除全部日记"
+          }
+        }
+      }
+    },
+    "Delete All Entries?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除全部日记？"
+          }
+        }
+      }
+    },
     "Delete this entry?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -669,6 +882,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除这篇日记？"
+          }
+        }
+      }
+    },
+    "Diary List" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日记列表"
           }
         }
       }
@@ -728,11 +952,23 @@
       }
     },
     "Done" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "完成"
+          }
+        }
+      }
+    },
+    "Edit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑"
           }
         }
       }
@@ -759,12 +995,37 @@
         }
       }
     },
+    "Entries and recordings sync to your own private iCloud. We can't see any of it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日记和录音都同步到你自己的私人 iCloud。我们看不到其中任何内容。"
+          }
+        }
+      }
+    },
     "Entries stay on your device by default. Turn this on to sync to your personal iCloud for backup and across devices — never through our servers." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "日记默认只存本机。开启后会同步到你的个人 iCloud，用于备份与跨设备——不经我们的服务器。"
+          }
+        }
+      }
+    },
+    "Entry %@" : {
+
+    },
+    "Entry %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %lld 篇"
           }
         }
       }
@@ -813,6 +1074,28 @@
         }
       }
     },
+    "Export whole book" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出整本日记"
+          }
+        }
+      }
+    },
+    "Exported by VoicePaper · Open the book, talk to it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由 VoicePaper 导出 · 翻开本子，对它说话"
+          }
+        }
+      }
+    },
     "Face ID / Passcode Lock" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -846,6 +1129,28 @@
         }
       }
     },
+    "Flip back to Contents and write your first page." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻回目录，写下属于你的第一页吧。"
+          }
+        }
+      }
+    },
+    "Flip through it like a real journal. Every page is your story — and yours alone." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "像翻一本真正的日记本那样翻阅它。每一页都是你的故事——只属于你。"
+          }
+        }
+      }
+    },
     "Font" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -869,7 +1174,14 @@
       }
     },
     "Full unlocked" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已完全解锁"
+          }
+        }
+      }
     },
     "Generated on device, offline — your words never leave your phone" : {
       "extractionState" : "stale",
@@ -1046,6 +1358,17 @@
         }
       }
     },
+    "Just speak, and it turns into text for you. Transcription runs entirely on your device — never through a server." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开口说就行，它会替你变成文字。转写全程在你的设备上完成——绝不经过任何服务器。"
+          }
+        }
+      }
+    },
     "Keep the voice clip only, don't save the transcript" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1064,6 +1387,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保持记录，下周也给自己留一点喘息的空间。"
+          }
+        }
+      }
+    },
+    "Later" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后"
           }
         }
       }
@@ -1108,6 +1442,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "永久买断"
+          }
+        }
+      }
+    },
+    "Loading plans…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载方案中…"
           }
         }
       }
@@ -1183,6 +1528,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "情绪"
+          }
+        }
+      }
+    },
+    "Mood + keywords" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "情绪 + 关键词"
           }
         }
       }
@@ -1263,7 +1619,25 @@
       }
     },
     "New Entry" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建日记"
+          }
+        }
+      }
+    },
+    "Next" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一步"
+          }
+        }
+      }
     },
     "Night Blue" : {
       "extractionState" : "stale",
@@ -1303,6 +1677,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有匹配的日记"
+          }
+        }
+      }
+    },
+    "No purchases found for this Apple ID." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Apple ID 没有找到购买记录"
+          }
+        }
+      }
+    },
+    "None" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无"
           }
         }
       }
@@ -1405,6 +1801,28 @@
         }
       }
     },
+    "On device only" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅限本机"
+          }
+        }
+      }
+    },
+    "On-device weekly recap" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端侧每周回顾"
+          }
+        }
+      }
+    },
     "Once a week — look back on wins and growth" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1428,7 +1846,14 @@
       }
     },
     "One-time · yours forever" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一次购买 · 永久拥有"
+          }
+        }
+      }
     },
     "Open Settings" : {
       "extractionState" : "stale",
@@ -1437,6 +1862,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "去设置"
+          }
+        }
+      }
+    },
+    "Open the book, talk to it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻开本子，对它说话"
           }
         }
       }
@@ -1451,8 +1887,16 @@
         }
       }
     },
-    "Page %@" : {
-
+    "Page" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "页码"
+          }
+        }
+      }
     },
     "Page %lld" : {
       "extractionState" : "stale",
@@ -1584,6 +2028,17 @@
         }
       }
     },
+    "Press and hold an entry in Contents to edit or delete it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长按目录里的任意一篇，就能编辑或删除它。"
+          }
+        }
+      }
+    },
     "Preview" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1616,8 +2071,30 @@
         }
       }
     },
+    "Pro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro"
+          }
+        }
+      }
+    },
     "PRO" : {
 
+    },
+    "Pro restored. Thanks for your support!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro 已恢复，感谢支持！"
+          }
+        }
+      }
     },
     "Prompt Packs" : {
       "localizations" : {
@@ -1672,7 +2149,14 @@
       }
     },
     "Recap your week at a glance" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一眼看遍本周"
+          }
+        }
+      }
     },
     "Recent activity" : {
       "localizations" : {
@@ -1705,8 +2189,29 @@
         }
       }
     },
-    "Recording was interrupted — what you said so far is saved." : {
+    "Record a voice entry" : {
 
+    },
+    "Recording" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录音中"
+          }
+        }
+      }
+    },
+    "Recording was interrupted — what you said so far is saved." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录音被中断——已保存你说过的内容"
+          }
+        }
+      }
     },
     "Remind me to write" : {
       "extractionState" : "stale",
@@ -1774,7 +2279,14 @@
       }
     },
     "Retry" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重试"
+          }
+        }
+      }
     },
     "Right now, what does your body want most?" : {
       "extractionState" : "stale",
@@ -1831,6 +2343,17 @@
         }
       }
     },
+    "Save %lld%%" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "省 %lld%%"
+          }
+        }
+      }
+    },
     "Script" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1838,6 +2361,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "手写体"
+          }
+        }
+      }
+    },
+    "Search text, transcripts, places, dates…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索文字、转写、地点、日期…"
           }
         }
       }
@@ -1859,6 +2393,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "分享给朋友"
+          }
+        }
+      }
+    },
+    "Show all features" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看全部功能"
+          }
+        }
+      }
+    },
+    "Show less" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起"
           }
         }
       }
@@ -1902,6 +2458,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "跳过引导"
+          }
+        }
+      }
+    },
+    "Start Free Trial" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始免费试用"
           }
         }
       }
@@ -1960,6 +2527,17 @@
         }
       }
     },
+    "Storage Usage" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储用量"
+          }
+        }
+      }
+    },
     "Subscription" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1977,6 +2555,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "订阅会自动续期，除非在当前周期结束前至少 24 小时取消。可随时在 App Store 设置中管理或取消。永久买断为一次性付费，不会自动续期。"
+          }
+        }
+      }
+    },
+    "Summary" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内容摘要"
           }
         }
       }
@@ -2045,7 +2634,29 @@
         }
       }
     },
+    "Talk" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说"
+          }
+        }
+      }
+    },
+    "Tap “Talk” and your words turn into text in real time." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点一下「说」，你讲的话会实时变成文字。"
+          }
+        }
+      }
+    },
     "Tap ＋ in the corner\nto write today — or record your voice." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2065,6 +2676,9 @@
         }
       }
     },
+    "Tap Write to start typing,\nor Talk to speak your mind." : {
+
+    },
     "Terms of Use" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2077,7 +2691,14 @@
       }
     },
     "Text %@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字 %@"
+          }
+        }
+      }
     },
     "Text %lld" : {
       "extractionState" : "stale",
@@ -2091,7 +2712,14 @@
       }
     },
     "Thanks for your support — every feature is on." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "感谢支持——所有功能已全部开启"
+          }
+        }
+      }
     },
     "The basic set — free, forever" : {
       "extractionState" : "stale",
@@ -2168,6 +2796,17 @@
         }
       }
     },
+    "This recording" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这段录音"
+          }
+        }
+      }
+    },
     "This thing that hurts — what's the worst case? Is it really that bad?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2192,6 +2831,17 @@
     },
     "This will permanently delete all %@ entries and their recordings. This can't be undone." : {
 
+    },
+    "This will permanently delete all %lld entries and their recordings. This can't be undone." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将永久删除全部 %lld 条日记及录音，此操作无法撤销"
+          }
+        }
+      }
     },
     "Tired today? What took the most out of you?" : {
       "extractionState" : "stale",
@@ -2301,6 +2951,17 @@
         }
       }
     },
+    "Transcription language" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转写语言"
+          }
+        }
+      }
+    },
     "Try Again" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2317,6 +2978,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "撤销"
+          }
+        }
+      }
+    },
+    "Unlimited" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无限"
           }
         }
       }
@@ -2406,6 +3078,28 @@
         }
       }
     },
+    "Up to 4" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最多 4 张"
+          }
+        }
+      }
+    },
+    "Update" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
+        }
+      }
+    },
     "Upgrade to Full" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2463,7 +3157,14 @@
       }
     },
     "Version %@ is available on the App Store." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store 有新版本 %@，立即更新"
+          }
+        }
+      }
     },
     "Voice" : {
       "extractionState" : "stale",
@@ -2477,7 +3178,14 @@
       }
     },
     "Voice %@" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音 %@"
+          }
+        }
+      }
     },
     "Voice %lld" : {
       "extractionState" : "stale",
@@ -2502,7 +3210,14 @@
       }
     },
     "Voice journaling, on-device mood insight, and a private book that's yours forever." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音日记、端侧情绪洞察，以及永属于你的私密本子"
+          }
+        }
+      }
     },
     "Voice vs. Text" : {
       "localizations" : {
@@ -2549,8 +3264,26 @@
         }
       }
     },
+    "Weekly recap" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每周回顾"
+          }
+        }
+      }
+    },
     "Weekly Recap" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每周回顾"
+          }
+        }
+      }
     },
     "Weekly Review" : {
       "extractionState" : "stale",
@@ -2570,6 +3303,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "周"
+          }
+        }
+      }
+    },
+    "Welcome to your voice diary ☺" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎翻开你的语音日记 ☺"
           }
         }
       }
@@ -2669,6 +3413,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "有什么话，想对一年后的自己说？"
+          }
+        }
+      }
+    },
+    "What you get" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你将获得"
           }
         }
       }
@@ -2893,7 +3648,14 @@
       }
     },
     "Write" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "去写"
+          }
+        }
+      }
     },
     "Write a few entries and your recent mood will show up here." : {
       "extractionState" : "stale",
@@ -2905,6 +3667,9 @@
           }
         }
       }
+    },
+    "Write a new entry" : {
+
     },
     "Write something today" : {
       "localizations" : {
@@ -2937,6 +3702,28 @@
         }
       }
     },
+    "Write your first page today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天写下第一页"
+          }
+        }
+      }
+    },
+    "Written today" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日已写"
+          }
+        }
+      }
+    },
     "years" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2949,7 +3736,14 @@
       }
     },
     "You already have the latest version." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已是最新版本"
+          }
+        }
+      }
     },
     "You often mentioned %@." : {
       "extractionState" : "stale",
@@ -2958,6 +3752,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你常提到 %@。"
+          }
+        }
+      }
+    },
+    "第 %@ 篇" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %@ 篇"
           }
         }
       }

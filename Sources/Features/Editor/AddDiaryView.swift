@@ -11,6 +11,10 @@ struct AddDiaryView: View {
     var editingEntry: DiaryEntry? = nil
     /// 从「今日引导」进入时携带的 prompt，作为正文占位提示展示（不预填内容）。
     var initialPrompt: String? = nil
+    /// 「Write」按钮直达：自动聚焦正文区，弹出键盘。
+    var autoFocusText = false
+    /// 「Talk」按钮直达：进编辑器后自动拉起录音界面。
+    var autoStartRecording = false
 
     @State private var content: String
     @State private var showLocation: Bool
@@ -45,9 +49,12 @@ struct AddDiaryView: View {
     private let initialFontColor: DiaryFontColor
     private let initialPhotos: [Data]
 
-    init(editingEntry: DiaryEntry? = nil, initialPrompt: String? = nil) {
+    init(editingEntry: DiaryEntry? = nil, initialPrompt: String? = nil,
+         autoFocusText: Bool = false, autoStartRecording: Bool = false) {
         self.editingEntry = editingEntry
         self.initialPrompt = initialPrompt
+        self.autoFocusText = autoFocusText
+        self.autoStartRecording = autoStartRecording
         let content0      = editingEntry?.content ?? ""
         let showLocation0 = editingEntry?.showLocation ?? AppSettings.lastAutoLocation
         let location0     = editingEntry?.location ?? ""
@@ -205,6 +212,16 @@ struct AddDiaryView: View {
         .task {
             // 定位默认已开时 onChange 不会触发，手动补一次初始抓取。
             if showLocation && location.isEmpty { fetchLocation() }
+            // 「Write」直达：等 sheet 展示完再聚焦，键盘自然弹出。
+            if autoFocusText {
+                try? await Task.sleep(for: .milliseconds(420))
+                writing = true
+            }
+            // 「Talk」直达：编辑器就位后自动拉起录音。
+            if autoStartRecording {
+                try? await Task.sleep(for: .milliseconds(480))
+                tryStartRecording()
+            }
         }
         .onChange(of: showLocation) { _, show in
             if show && location.isEmpty { fetchLocation() }
@@ -240,7 +257,7 @@ struct AddDiaryView: View {
                     .softEdge(Circle())
             }
             Spacer()
-            Text(isEditing ? String(localized: "Edit Entry") : dateString)
+            Text(isEditing ? String(localized: "Edit") : String(localized: "New Entry"))
                 .font(.dCallout).foregroundStyle(pal.inkSoft)
             Spacer()
             Button { save() } label: {
@@ -258,7 +275,14 @@ struct AddDiaryView: View {
     // MARK: 正文（自适应高度，用隐形 Text 驱动）
 
     private var contentEditor: some View {
-        ZStack(alignment: .topLeading) {
+        // 从 UIFont 精确计算横线位置：
+        //   第一条线 = 外层 padding(Metric.m) + UITextView默认内边距(8) + 字体ascender
+        //   行间距   = 字体 lineHeight（UITextView 不额外加行距）
+        let uiFont = fontFamily.uiFont(size: CGFloat(fontSize))
+        let lineH  = uiFont.lineHeight
+        let firstY = Metric.m + 8 + uiFont.ascender
+
+        return ZStack(alignment: .topLeading) {
             if content.isEmpty {
                 VStack(alignment: .leading, spacing: Metric.s) {
                     if let prompt = initialPrompt {
@@ -287,7 +311,7 @@ struct AddDiaryView: View {
                 .focused($writing)
                 .id(fontColor)
         }
-        .paperLinedCard()
+        .paperLinedCard(linesSpacing: lineH, linesFirstY: firstY)
     }
 
     // MARK: 附件胶囊条（语音 / 照片 / 地点，只在存在时横向排列）
@@ -304,14 +328,14 @@ struct AddDiaryView: View {
                             deletedMemoIDs.insert(m.id)
                         }
                     }
-                    ForEach(newMemos.indices, id: \.self) { i in
-                        voiceChip(durStr(newMemos[i].duration), isNew: true) {
-                            newMemos.remove(at: i)
+                    ForEach(Array(newMemos.enumerated()), id: \.offset) { i, memo in
+                        voiceChip(durStr(memo.duration), isNew: true) {
+                            if i < newMemos.count { newMemos.remove(at: i) }
                         }
                     }
-                    ForEach(photos.indices, id: \.self) { i in
-                        if let ui = UIImage(data: photos[i]) {
-                            photoChip(ui) { photos.remove(at: i) }
+                    ForEach(Array(photos.enumerated()), id: \.offset) { i, photo in
+                        if let ui = UIImage(data: photo) {
+                            photoChip(ui) { if i < photos.count { photos.remove(at: i) } }
                         }
                     }
                     if showLocation { locationChip }
@@ -478,6 +502,8 @@ struct AddDiaryView: View {
                 if granted { nm.isEnabled = true }
             }
         }
+        // 评分：第 5/20 篇或连续 7 天时请求（系统自动限频，不打扰）。
+        tryRequestReviewIfNeeded()
         dismiss()
     }
 
@@ -550,6 +576,15 @@ struct AddDiaryView: View {
 
     private func durStr(_ d: TimeInterval) -> String {
         String(format: "%d:%02d", Int(d) / 60, Int(d) % 60)
+    }
+
+    /// 保存后请求评分（系统限频，不打扰）。
+    private func tryRequestReviewIfNeeded() {
+        let desc = FetchDescriptor<DiaryEntry>()
+        let total = (try? context.fetchCount(desc)) ?? 0
+        let entries = (try? context.fetch(desc)) ?? []
+        let streak = DataManager.currentStreak(entries)
+        RatingManager.tryRequestReview(entryCount: total, streak: streak)
     }
 }
 
@@ -636,3 +671,30 @@ extension LocationFetcher: CLLocationManagerDelegate {
         Task { @MainActor [weak self] in self?.onResult?(String(localized: "Current location")) }
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+struct AddDiaryView_Previews: PreviewProvider {
+    static var previews: some View {
+        let container = PreviewHelper.container()
+        Group {
+            PreviewWrapper(container: container) { AddDiaryView() }
+                .previewDevice("iPhone SE (3rd generation)")
+                .previewDisplayName("SE")
+
+            PreviewWrapper(container: container) { AddDiaryView() }
+                .previewDevice("iPhone 16 Pro")
+                .previewDisplayName("16 Pro")
+
+            PreviewWrapper(container: container) { AddDiaryView() }
+                .previewDevice("iPhone 16 Pro Max")
+                .previewDisplayName("Pro Max")
+
+            PreviewWrapper(container: container) { AddDiaryView() }
+                .previewDevice("iPad (10th generation)")
+                .previewDisplayName("iPad 10")
+        }
+    }
+}
+#endif

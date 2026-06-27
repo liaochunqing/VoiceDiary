@@ -261,3 +261,30 @@ struct InsightsView: View {
         analysis = Analysis(weekMood: weekMood, weekCount: weekCount, trend: points, keywords: kws)
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+struct InsightsView_Previews: PreviewProvider {
+    static var previews: some View {
+        let container = PreviewHelper.container()
+        Group {
+            PreviewWrapper(container: container) { InsightsView() }
+                .previewDevice("iPhone SE (3rd generation)")
+                .previewDisplayName("SE")
+
+            PreviewWrapper(container: container) { InsightsView() }
+                .previewDevice("iPhone 16 Pro")
+                .previewDisplayName("16 Pro")
+
+            PreviewWrapper(container: container) { InsightsView() }
+                .previewDevice("iPhone 16 Pro Max")
+                .previewDisplayName("Pro Max")
+
+            PreviewWrapper(container: container) { InsightsView() }
+                .previewDevice("iPad (10th generation)")
+                .previewDisplayName("iPad 10")
+        }
+    }
+}
+#endif

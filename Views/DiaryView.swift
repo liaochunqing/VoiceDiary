@@ -148,10 +148,13 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
 
         pageViewController.dataSource = context.coordinator
         pageViewController.delegate = context.coordinator
-        // 移除用于翻页的单击手势，但保留其他点击手势
         for recognizer in pageViewController.gestureRecognizers {
             if let tapGesture = recognizer as? UITapGestureRecognizer, tapGesture.numberOfTapsRequired == 1 {
                 pageViewController.view.removeGestureRecognizer(tapGesture)
+            }
+            // 只允许水平方向分量更大时才触发翻页
+            if let panGesture = recognizer as? UIPanGestureRecognizer {
+                panGesture.delegate = context.coordinator
             }
         }
         
@@ -213,10 +216,9 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
                     direction: .forward,
                     animated: false
                 )
-            } else {
-                // 默认显示第一页
+            } else if let first = context.coordinator.controllers.first {
                 pageViewController.setViewControllers(
-                    [context.coordinator.controllers[0]],
+                    [first],
                     direction: .forward,
                     animated: false
                 )
@@ -225,7 +227,7 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
     }
 
 
-    class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+    class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate, UIGestureRecognizerDelegate {
         var parent: DiaryPageViewController
         var currentIndex: Int = 0
         var globalData: GlobalData // ✅ 通过属性持有
@@ -251,31 +253,46 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             }
         }
         
-        func animateMoveToPage(pageViewController: UIPageViewController,targetIndex:Int,completion: (() -> Void)? = nil)
-        {
-            let currentIndex = self.currentIndex
-            guard currentIndex != targetIndex else { return }
-            
+        func animateMoveToPage(pageViewController: UIPageViewController, targetIndex: Int, completion: (() -> Void)? = nil) {
+            guard currentIndex != targetIndex else {
+                completion?()
+                return
+            }
             let step = currentIndex > targetIndex ? -1 : 1
-            let direction: UIPageViewController.NavigationDirection = (step > 0) ? .forward : .reverse
+            let direction: UIPageViewController.NavigationDirection = step > 0 ? .forward : .reverse
+            animateNextStep(pageViewController: pageViewController, from: currentIndex, to: targetIndex, step: step, direction: direction, completion: completion)
+        }
 
-            for index in stride(from: currentIndex, through: targetIndex, by: step)
-            {
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(abs(currentIndex - index)) * 0.05)
-                {
-                    self.playPageSound()
-                    let vc = self.controllers[index]
-                    pageViewController.setViewControllers([vc], direction:direction, animated: true) { Bool in
-                        self.currentIndex = index
-                        if direction == .reverse, index == targetIndex{
-                            completion?()
-                        }
-                    }
+        private func animateNextStep(
+            pageViewController: UIPageViewController,
+            from: Int, to: Int, step: Int,
+            direction: UIPageViewController.NavigationDirection,
+            completion: (() -> Void)?
+        ) {
+            let nextIndex = from + step
+            guard nextIndex >= 0, nextIndex < controllers.count else {
+                completion?()
+                return
+            }
+            playPageSound()
+            let vc = controllers[nextIndex]
+            pageViewController.setViewControllers([vc], direction: direction, animated: true) { [weak self] finished in
+                guard let self else { return }
+                self.currentIndex = nextIndex
+                if nextIndex == to {
+                    completion?()
+                } else {
+                    self.animateNextStep(pageViewController: pageViewController, from: nextIndex, to: to, step: step, direction: direction, completion: completion)
                 }
             }
         }
         
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+            let velocity = pan.velocity(in: gestureRecognizer.view)
+            return abs(velocity.x) > abs(velocity.y)
+        }
+
         func moveToList() {
                 DispatchQueue.main.async {
                     withAnimation(.easeIn(duration: 0.5)) {
@@ -297,36 +314,32 @@ struct DiaryPageViewController: UIViewControllerRepresentable {
             _ pageViewController: UIPageViewController,
             viewControllerBefore viewController: UIViewController
         ) -> UIViewController? {
-            guard let currentIndex = controllers.firstIndex(of: viewController) else { return nil }
-            
-            //第一页往前翻是目录
-            let previousIndex = currentIndex - 1
-            if previousIndex < 0 {
+            // pageCurl 在边界时会传入内部临时 VC，firstIndex 会返回 nil，回退用 currentIndex
+            let idx = controllers.firstIndex(of: viewController) ?? currentIndex
+
+            let previousIndex = idx - 1
+            guard previousIndex >= 0 else {
                 withAnimation(.easeIn(duration: 1)) {
                     parent.globalData.listRotationAngle = 0
                 }
-                    return nil
+                return nil
             }
-            
-            playPageSound()
 
-            return currentIndex == 0 ? nil : controllers[currentIndex - 1]
+            playPageSound()
+            return controllers[previousIndex]
         }
 
         func pageViewController(
             _ pageViewController: UIPageViewController,
             viewControllerAfter viewController: UIViewController
         ) -> UIViewController? {
-            guard let currentIndex = controllers.firstIndex(of: viewController) else {
-                    return nil
-                }
-                let nextIndex = currentIndex + 1
-                guard nextIndex < controllers.count else {
-                    return nil
-                }
+            let idx = controllers.firstIndex(of: viewController) ?? currentIndex
+            let nextIndex = idx + 1
+            guard nextIndex < controllers.count else {
+                return nil
+            }
             playPageSound()
-
-                return controllers[nextIndex]
+            return controllers[nextIndex]
         }
 
         // 当翻页动画完成时，更新 currentPage

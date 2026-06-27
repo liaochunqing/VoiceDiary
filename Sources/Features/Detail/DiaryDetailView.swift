@@ -6,6 +6,7 @@ struct DiaryDetailView: View {
     @Environment(\.palette) private var pal
     @Environment(\.modelContext) private var context
     @Environment(\.bookNavigator) private var navigator
+    @Environment(DeletionCoordinator.self) private var deletionCoordinator
 
     let entry: DiaryEntry
     let page: Int
@@ -69,7 +70,7 @@ struct DiaryDetailView: View {
         } message: {
             Text("This can't be undone")
         }
-        .dimmedSheet(isPresented: $showEditor) {
+        .dimmedSheet(isPresented: $showEditor, detents: [.fraction(2/3), .large]) {
             AddDiaryView(editingEntry: entry)
         }
         .overlay {
@@ -104,7 +105,7 @@ struct DiaryDetailView: View {
                 .softEdge(Capsule())
             }
             Spacer()
-            Text("Page \(page)")
+            Text("Entry \(page)")
                 .font(.dCallout)
                 .foregroundStyle(pal.inkSoft)
             Spacer()
@@ -129,6 +130,13 @@ struct DiaryDetailView: View {
     /// 正文卡：高度随内容自适应，但封顶为 maxHeight；超出即在卡内上下滚动，
     /// 从而把附件卡留在正文正下方、不被长文顶出屏幕。
     private func textCard(maxHeight: CGFloat) -> some View {
+        // 从 UIFont 精确计算横线位置：
+        //   第一条线 = 外层 padding(Metric.l) + 字体 ascender（SwiftUI Text 无额外内边距）
+        //   行间距   = 字体 lineHeight + lineSpacing(6)（与 Text 上 .lineSpacing(6) 保持一致）
+        let uiFont  = entry.resolvedFont.uiFont(size: CGFloat(entry.fontSize))
+        let lineH   = uiFont.lineHeight + 6
+        let firstY  = Metric.l + uiFont.ascender
+
         // 首帧 textContentH 尚未测得（0）时先用满高，量到后再收紧到内容高度。
         let boxH = textContentH > 0 ? min(textContentH, maxHeight) : maxHeight
         return ScrollView(showsIndicators: textContentH > maxHeight) {
@@ -138,21 +146,22 @@ struct DiaryDetailView: View {
                         .font(.dSerifReading).foregroundStyle(pal.inkSoft)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    // 原生 Text + textSelection：保留长按选择/拷贝，又不引入嵌套 UITextView
-                    // 的滚动/选择手势冲突。
-                    Text(entry.content)
-                        .font(entry.bodyFont(palette: pal))
-                        .foregroundStyle(entry.bodyColor(palette: pal))
-                        .lineSpacing(6)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    // SelectableTextView（UITextView isEditable=false, isSelectable=true）
+                    // 支持长按拖选任意区间后拷贝；isScrollEnabled=false 让高度随内容自适应，
+                    // 外层 ScrollView 负责超长时滚动。
+                    SelectableTextView(
+                        text: entry.content,
+                        textColor: UIColor(entry.bodyColor(palette: pal)),
+                        font: uiFont
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(Metric.l)
             .measureHeight { textContentH = $0 }
         }
         .frame(height: boxH)
-        .paperLinedCard()
+        .paperLinedCard(linesSpacing: lineH, linesFirstY: firstY)
     }
 
     // MARK: 日期页眉（正文卡上方，左日期右地点 + 一条底线）
@@ -194,8 +203,8 @@ struct DiaryDetailView: View {
 
     private var photoStrip: some View {
         HStack(spacing: Metric.s) {
-            ForEach(entry.photos.indices, id: \.self) { i in
-                if let ui = Thumbnailer.thumbnail(entry.photos[i], side: 60) {
+            ForEach(Array(entry.photos.enumerated()), id: \.offset) { i, photo in
+                if let ui = Thumbnailer.thumbnail(photo, side: 60) {
                     Button { withAnimation { photoViewerIndex = i } } label: {
                         Image(uiImage: ui).resizable().scaledToFill()
                             .frame(width: 60, height: 60)
@@ -290,15 +299,22 @@ struct DiaryDetailView: View {
 
     private func deleteEntry() {
         player?.stop()
-        // 跨库音频无 SwiftData 级联，删日记前手动清理对应 VoiceAudio。
-        for memo in entry.memos {
-            guard let aid = memo.audioID else { continue }
-            let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
-            for a in (try? context.fetch(desc)) ?? [] { context.delete(a) }
-        }
+        deletionCoordinator.hiddenIDs.insert(entry.id)
+        // 立刻标记删除：isDeleted=true，切到列表后任何 DiaryRow 的 guard 都会拦住；
+        // 此时未 save，backing data（photos externalStorage）仍完整，访问不崩。
         context.delete(entry)
-        try? context.save()
         navigator.goToList()
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            // 跨库音频无 SwiftData 级联，删日记前手动清理对应 VoiceAudio。
+            for memo in entry.memos {
+                guard let aid = memo.audioID else { continue }
+                let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
+                for a in (try? context.fetch(desc)) ?? [] { context.delete(a) }
+            }
+            try? context.save()
+            deletionCoordinator.hiddenIDs.remove(entry.id)
+        }
     }
 
     private func dateString(_ format: String) -> String {
@@ -403,8 +419,8 @@ private struct WaveformStatic: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 2.5) {
-            ForEach(heights.indices, id: \.self) { i in
-                Capsule().fill(color).frame(width: 2.5, height: heights[i])
+            ForEach(Array(heights.enumerated()), id: \.offset) { i, h in
+                Capsule().fill(color).frame(width: 2.5, height: h)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -423,3 +439,45 @@ extension AudioCoordinator: AVAudioPlayerDelegate {
         Task { @MainActor [weak self] in self?.onFinish?() }
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+struct DiaryDetailView_Previews: PreviewProvider {
+    @MainActor
+    static func makeEntry() -> DiaryEntry {
+        let e = DiaryEntry(
+            content: "今天是个好日子，阳光洒在窗台上，我泡了一杯热茶。\n\n最近在读一本关于创造力的书，里面说写日记是最好的思维整理方式。傍晚去跑了步，耳机里放着 lo-fi，整个世界都慢下来了。",
+            date: Date(),
+            location: "上海 · 武康路",
+            showLocation: true,
+            emoji: "😊"
+        )
+        return e
+    }
+
+    static var previews: some View {
+        let container = PreviewHelper.container()
+        let entry = makeEntry()
+        container.mainContext.insert(entry)
+
+        return Group {
+            PreviewWrapper(container: container) { DiaryDetailView(entry: entry, page: 1) }
+                .previewDevice("iPhone SE (3rd generation)")
+                .previewDisplayName("SE")
+
+            PreviewWrapper(container: container) { DiaryDetailView(entry: entry, page: 1) }
+                .previewDevice("iPhone 16 Pro")
+                .previewDisplayName("16 Pro")
+
+            PreviewWrapper(container: container) { DiaryDetailView(entry: entry, page: 1) }
+                .previewDevice("iPhone 16 Pro Max")
+                .previewDisplayName("Pro Max")
+
+            PreviewWrapper(container: container) { DiaryDetailView(entry: entry, page: 1) }
+                .previewDevice("iPad (10th generation)")
+                .previewDisplayName("iPad 10")
+        }
+    }
+}
+#endif

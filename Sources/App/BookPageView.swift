@@ -69,10 +69,26 @@ struct BookPageView: UIViewControllerRepresentable {
             recognizer.isEnabled = false
         }
 
+        // 让 pageCurl 的拖拽手势可被方向/边界裁决拒绝，防止首/末页越界崩溃。
+        context.coordinator.pageSwipeRecognizers =
+            pvc.gestureRecognizers.filter { !($0 is UITapGestureRecognizer) }
+        for r in context.coordinator.pageSwipeRecognizers {
+            r.delegate = context.coordinator
+            r.addTarget(context.coordinator, action: #selector(Coordinator.pageSwipeStateChanged(_:)))
+        }
+
         context.coordinator.pvc = pvc
         let startVC = context.coordinator.vc(for: 2)  // 列表页
-        pvc.setViewControllers([startVC], direction: .forward, animated: false)
+
+        // 同步预热设置页：在 pvc 挂上 window 之前，切到设置页再切回目录。
+        // 这就强制 SwiftUI 为设置页走完「body 求值 → 布局 → 挂入视图层级 → 渲染」，之后真
+        // 正翻页时页面已完全就绪，不会卡。两个 setViewControllers 都是 animated:false，
+        // 用户完全看不到这个瞬间切换。
+        let primeVC = context.coordinator.vc(for: 1)
+        pvc.setViewControllers([primeVC], direction: .forward, animated: false)
+        pvc.setViewControllers([startVC], direction: .reverse, animated: false)
         context.coordinator.currentIndex = 2
+
         return pvc
     }
 
@@ -86,6 +102,10 @@ struct BookPageView: UIViewControllerRepresentable {
     final class Coordinator: NSObject {
         var currentIndex = 2
         weak var pvc: UIPageViewController?
+        /// pageCurl 的拖拽手势（非单击）。我们当它们的 delegate，按落点决定是否放行翻页。
+        var pageSwipeRecognizers: [UIGestureRecognizer] = []
+        /// 翻页手势进行中时被临时禁滚的 ScrollView；手势结束后恢复。
+        private var suspendedScrollViews: Set<UIScrollView> = []
 
         private let themeManager: ThemeManager
         private let navigator: BookNavigator
@@ -93,6 +113,20 @@ struct BookPageView: UIViewControllerRepresentable {
         private var entries: [DiaryEntry]
 
         private var audioPlayer: AVAudioPlayer?
+
+        // pageCurl 结算到首/末页那一刻，会成对探测两侧邻页；若被探测的一侧返回 nil，UIKit 偶发以
+        // 0 个 VC 提交内部转场而崩溃（NSInvalidArgumentException: number of view controllers
+        // provided (0)…，正是「翻到末页/往回翻必崩」的根因）。对策：dataSource 在真实首/末页一律不返回
+        // nil，而是顶一张可回退的占位空白页，从根上消灭 0 个 VC 的转场；真正的边界改由翻页手势的
+        // shouldBegin 守卫拦住（末页禁前翻、首页禁后翻）。占位页只有外侧返回 nil，而外侧用户够不到。
+        private lazy var headPlaceholder = makeBlankPage()  // 顶在第一页之前
+        private lazy var tailPlaceholder = makeBlankPage()  // 顶在最后一页之后
+
+        private func makeBlankPage() -> UIViewController {
+            let vc = UIViewController()
+            vc.view.backgroundColor = UIColor(themeManager.palette.paper)
+            return vc
+        }
 
         // 懒加载页缓存：index → VC，以及反向 VC → index（dataSource 据此找邻页）。
         // 不再常驻全部日记页：内存与日记数量解耦，最多常驻 cacheCapacity 个日记页 + 3 个固定页。
@@ -130,7 +164,8 @@ struct BookPageView: UIViewControllerRepresentable {
             case 0:  return makeVC(CoverView())
             case 1:  return makeVC(SettingsView())
             case 2:  return makeVC(DiaryListView())
-            default: return makeVC(DiaryDetailView(entry: entries[index - 3], page: index - 2))
+            // entries 为新→旧；index-3 即在数组中的位置，+1 得篇号（第 1 篇 = 最新）。
+            default: return makeVC(DiaryDetailView(entry: entries[index - 3], page: (index - 3) + 1))
             }
         }
 
@@ -160,6 +195,37 @@ struct BookPageView: UIViewControllerRepresentable {
             }
         }
 
+        // MARK: 翻页时冻结 ScrollView，防止手势冲突导致「边翻页边滚动」
+
+        /// 递归遍历视图树，禁用所有 UIScrollView 的滚动，并记入 suspendedScrollViews。
+        private func suspendScrolling(in view: UIView) {
+            if let sv = view as? UIScrollView, sv.isScrollEnabled {
+                sv.isScrollEnabled = false
+                suspendedScrollViews.insert(sv)
+            }
+            for sub in view.subviews {
+                suspendScrolling(in: sub)
+            }
+        }
+
+        /// 恢复所有被 suspendScrolling 禁用的 ScrollView 滚动。
+        private func resumeScrolling() {
+            for sv in suspendedScrollViews {
+                sv.isScrollEnabled = true
+            }
+            suspendedScrollViews.removeAll()
+        }
+
+        /// pageCurl 拖拽手势状态变化回调：结束时恢复 ScrollView 滚动。
+        @objc fileprivate func pageSwipeStateChanged(_ gesture: UIGestureRecognizer) {
+            switch gesture.state {
+            case .ended, .cancelled, .failed:
+                resumeScrolling()
+            default:
+                break
+            }
+        }
+
         /// 日记数据变动后，作废所有日记页缓存（index→日记 的映射已变），固定页保留。
         private func evictAllEntryVCs() {
             for idx in vcCache.keys.filter({ $0 >= 3 }) {
@@ -180,16 +246,23 @@ struct BookPageView: UIViewControllerRepresentable {
             entries = newEntries
             evictAllEntryVCs()  // index→日记 映射已变，作废全部日记页缓存
 
-            if currentIndex >= 3 {
-                if let id = currentEntryID,
-                   let newIdx = newEntries.firstIndex(where: { $0.id == id }) {
-                    let target = newIdx + 3
-                    pvc.setViewControllers([vc(for: target)], direction: .forward, animated: false)
-                    currentIndex = target
-                } else {
-                    navigate(to: 2, animated: true)
-                }
+            // 关键：不论当前停在日记页还是固定页（封面/设置/目录），都必须重置 pvc 当前显示的 VC。
+            // UIPageViewController 会强引用「当前页的预取邻页」以备翻书动画；evictAllEntryVCs 只清了
+            // 我们自己的 indexByVC，pvc 仍攥着删除前预取的那个日记页 VC。若不重置：翻向它会显示已删
+            // 条目，且它在 indexByVC 里已无映射 → 前/后邻页都解析为 nil → 再翻一下 pageCurl 便以 0 个
+            // VC 提交转场，抛 NSInvalidArgumentException 崩溃（正是「删几篇日记后翻到末页再往回翻必崩」的根因）。
+            let target: Int
+            if currentIndex >= 3, let id = currentEntryID,
+               let newIdx = newEntries.firstIndex(where: { $0.id == id }) {
+                target = newIdx + 3      // 当前所看日记仍在：跟随到它的新位置
+            } else if currentIndex >= 3 {
+                target = 2               // 当前所看日记被删：回目录（避免用过期 currentIndex 走 navigate
+                                         // 的多页连翻，否则 vc(for:) 会按旧 index 取到越界 entries 下标）
+            } else {
+                target = currentIndex    // 停在固定页：原地重置，仅为强制刷新 pvc 的预取邻页缓冲
             }
+            pvc.setViewControllers([vc(for: target)], direction: .forward, animated: false)
+            currentIndex = target
         }
 
         // MARK: 程序化翻页（支持多页连翻）
@@ -272,7 +345,11 @@ extension BookPageView.Coordinator: UIPageViewControllerDataSource {
     nonisolated func pageViewController(_ pvc: UIPageViewController,
                                         viewControllerBefore vc: UIViewController) -> UIViewController? {
         MainActor.assumeIsolated {
-            guard let idx = indexByVC[ObjectIdentifier(vc)], idx > 0 else { return nil }
+            if vc === tailPlaceholder { return self.vc(for: max(0, pageCount - 1)) }  // 末页占位 → 退回真实末页
+            if vc === headPlaceholder { return headPlaceholder }                        // 首页占位自指，防止 pageCurl 以 0-VC 崩溃
+            guard let idx = indexByVC[ObjectIdentifier(vc)], idx > 0 else {
+                return headPlaceholder   // 真实第一页：顶占位而非 nil，避开 0 个 VC 转场崩溃
+            }
             return self.vc(for: idx - 1)
         }
     }
@@ -280,10 +357,43 @@ extension BookPageView.Coordinator: UIPageViewControllerDataSource {
     nonisolated func pageViewController(_ pvc: UIPageViewController,
                                         viewControllerAfter vc: UIViewController) -> UIViewController? {
         MainActor.assumeIsolated {
+            if vc === headPlaceholder { return self.vc(for: 0) }   // 首页占位 → 前进到真实首页
+            if vc === tailPlaceholder { return tailPlaceholder }     // 末页占位自指，防止 pageCurl 以 0-VC 崩溃
             guard let idx = indexByVC[ObjectIdentifier(vc)],
-                  idx + 1 < pageCount else { return nil }
+                  idx + 1 < pageCount else {
+                return tailPlaceholder   // 真实最后一页：顶占位而非 nil，避开 0 个 VC 转场崩溃
+            }
             return self.vc(for: idx + 1)
         }
+    }
+}
+
+// MARK: - 翻页手势的方向与边界裁决（防止首/末页越界崩溃）
+
+extension BookPageView.Coordinator: UIGestureRecognizerDelegate {
+    /// 翻页手势全时接收触摸；方向/边界裁决在 shouldBegin 里做。
+    nonisolated func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                                       shouldReceive touch: UITouch) -> Bool { true }
+
+    /// 竖向滑动不触发翻页；首/末页朝无邻页方向拖动时拦截，防止 pageCurl 以 0-VC 崩溃。
+    nonisolated func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        MainActor.assumeIsolated {
+            if let pan = gestureRecognizer as? UIPanGestureRecognizer {
+                let v = pan.velocity(in: pan.view)
+                if abs(v.y) > abs(v.x) { return false }
+                if v.x < 0, currentIndex >= pageCount - 1 { return false }
+                if v.x > 0, currentIndex <= 0 { return false }
+                // 水平翻页即将开始 → 冻结所有 ScrollView，防止手势同时驱动滚动
+                if let pvc { suspendScrolling(in: pvc.view) }
+            }
+            return true
+        }
+    }
+
+    /// 与其它手势并存，避免干扰 pageCurl 自身的内部手势协作。
+    nonisolated func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                                       shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
     }
 }
 
@@ -299,8 +409,21 @@ extension BookPageView.Coordinator: UIPageViewControllerDelegate {
                                         transitionCompleted completed: Bool) {
         guard completed else { return }
         MainActor.assumeIsolated {
-            if let vc = pvc.viewControllers?.first,
-               let idx = indexByVC[ObjectIdentifier(vc)] {
+            guard let vc = pvc.viewControllers?.first else { return }
+            // 占位页不该停留；手势守卫偶尔失效时补救：无动画跳回真实边界页。
+            if vc === tailPlaceholder {
+                self.pvc?.setViewControllers([self.vc(for: self.pageCount - 1)],
+                                              direction: .reverse, animated: false)
+                self.currentIndex = self.pageCount - 1
+                return
+            }
+            if vc === headPlaceholder {
+                self.pvc?.setViewControllers([self.vc(for: 0)],
+                                              direction: .forward, animated: false)
+                self.currentIndex = 0
+                return
+            }
+            if let idx = indexByVC[ObjectIdentifier(vc)] {
                 currentIndex = idx
             }
         }

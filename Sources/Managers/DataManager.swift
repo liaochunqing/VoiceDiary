@@ -207,8 +207,8 @@ enum DataManager {
     static func exportHTML(entries: [DiaryEntry]) -> String {
         let cal = Calendar.current
         let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "zh_CN")
-        fmt.dateFormat = "yyyy/MM/dd  EEE"
+        fmt.locale = .autoupdatingCurrent
+        fmt.setLocalizedDateFormatFromTemplate("yyyyMMddEEE")
 
         let rows = entries.enumerated().map { idx, e -> String in
             let dateStr   = fmt.string(from: e.date)
@@ -237,26 +237,35 @@ enum DataManager {
             return "\(f.string(from: first)) — \(f.string(from: last))"
         }()
 
+        let lang = Locale.autoupdatingCurrent.identifier
+        let coverTitle  = String(localized: "My Diary")
+        let coverSub    = "VOICEPAPER"
+        let coverSlogan = String(localized: "Open the book, talk to it.")
+        let coverMeta   = "\(esc(dates))<br>\(String(localized: "\(total) entries total"))"
+        let listTitle   = String(localized: "Diary List")
+        let listCount   = String(localized: "\(total) entries total")
+        let thDate      = String(localized: "Date")
+        let thSummary   = String(localized: "Summary")
+        let thPage      = String(localized: "Page")
+        let footer      = String(localized: "Exported by VoicePaper · Open the book, talk to it.")
+
         return """
-        <!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+        <!DOCTYPE html><html lang="\(lang)"><head><meta charset="UTF-8">
         <style>
         *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         @page{size:A4;margin:0}
         body{font-family:-apple-system,"PingFang SC",sans-serif;background:#D9CDB8;padding:32px 0 64px}
-        /* 导出 PDF 时去掉屏幕预览的灰底/页边距/阴影，让每页边到边、分页不被顶歪 */
         @media print{
           body{background:#fff;padding:0}
           .page{margin:0 auto;box-shadow:none}
         }
         .page{width:794px;min-height:1123px;margin:0 auto 28px;box-shadow:0 4px 20px rgba(0,0,0,.18);page-break-after:always}
-        /* 封面 */
         .cover{background:linear-gradient(135deg,#5C3D1E,#3A2210);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;min-height:1123px}
         .cover hr{width:100%;border:none;border-top:1px solid rgba(200,150,12,.3);margin:28px 0}
         .cover-title{font-size:52px;font-weight:700;color:#C8960C;letter-spacing:14px}
         .cover-sub{font-size:18px;font-weight:600;color:rgba(200,150,12,.6);letter-spacing:5px;margin-top:12px}
         .cover-slogan{font-size:13px;color:rgba(200,150,12,.4);letter-spacing:3px;margin-top:8px}
         .cover-meta{margin-top:40px;font-size:14px;color:rgba(200,150,12,.5);line-height:2.2;text-align:center;letter-spacing:1px}
-        /* 列表页 */
         .list-page{background:#F5EBD5;padding:64px 72px}
         .list-header{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:14px;border-bottom:1.5px solid #C8960C;margin-bottom:32px}
         .list-header-title{font-size:13px;font-weight:600;color:#7A6A55;letter-spacing:2px}
@@ -277,26 +286,26 @@ enum DataManager {
         </style></head><body>
         <div class="page cover">
           <hr>
-          <div class="cover-title">我 的 日 记</div>
-          <div class="cover-sub">VOICEPAPER</div>
-          <div class="cover-slogan">翻开本子，对它说话</div>
+          <div class="cover-title">\(coverTitle)</div>
+          <div class="cover-sub">\(coverSub)</div>
+          <div class="cover-slogan">\(coverSlogan)</div>
           <hr>
-          <div class="cover-meta">\(esc(dates))<br>共 \(total) 篇</div>
+          <div class="cover-meta">\(coverMeta)</div>
         </div>
         <div class="page list-page">
           <div class="list-header">
-            <span class="list-header-title">日 记 列 表</span>
-            <span class="list-header-count">共 \(total) 篇</span>
+            <span class="list-header-title">\(listTitle)</span>
+            <span class="list-header-count">\(listCount)</span>
           </div>
           <table>
             <thead><tr>
-              <th class="col-date">日期</th>
-              <th class="col-content">内容摘要</th>
-              <th class="col-page">页码</th>
+              <th class="col-date">\(thDate)</th>
+              <th class="col-content">\(thSummary)</th>
+              <th class="col-page">\(thPage)</th>
             </tr></thead>
             <tbody>\(rows)</tbody>
           </table>
-          <div class="footer">由 VoicePaper 导出 · 翻开本子，对它说话</div>
+          <div class="footer">\(footer)</div>
         </div>
         </body></html>
         """

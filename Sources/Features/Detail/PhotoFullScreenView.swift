@@ -24,8 +24,8 @@ struct PhotoFullScreenView: View {
                 .ignoresSafeArea()
 
             TabView(selection: $currentIndex) {
-                ForEach(photos.indices, id: \.self) { i in
-                    if let ui = UIImage(data: photos[i]) {
+                ForEach(Array(photos.enumerated()), id: \.offset) { i, photo in
+                    if let ui = UIImage(data: photo) {
                         Image(uiImage: ui)
                             .resizable()
                             .scaledToFit()

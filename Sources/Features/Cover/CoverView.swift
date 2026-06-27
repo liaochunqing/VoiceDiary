@@ -53,3 +53,37 @@ struct CoverView: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+struct CoverView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            CoverView()
+                .environment(ThemeManager())
+                .environment(\.palette, .darkGold)
+                .previewDevice("iPhone SE (3rd generation)")
+                .previewDisplayName("SE")
+
+            CoverView()
+                .environment(ThemeManager())
+                .environment(\.palette, .darkGold)
+                .previewDevice("iPhone 16 Pro")
+                .previewDisplayName("16 Pro")
+
+            CoverView()
+                .environment(ThemeManager())
+                .environment(\.palette, .darkGold)
+                .previewDevice("iPhone 16 Pro Max")
+                .previewDisplayName("Pro Max")
+
+            CoverView()
+                .environment(ThemeManager())
+                .environment(\.palette, .darkGold)
+                .previewDevice("iPad (10th generation)")
+                .previewDisplayName("iPad 10")
+        }
+    }
+}
+#endif

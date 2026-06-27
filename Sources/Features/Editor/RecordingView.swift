@@ -548,10 +548,10 @@ struct WaveformView: View {
     var body: some View {
         GeometryReader { geo in
             HStack(alignment: .center, spacing: 3) {
-                ForEach(levels.indices, id: \.self) { i in
+                ForEach(Array(levels.enumerated()), id: \.offset) { i, level in
                     Capsule().fill(color)
                         .frame(maxWidth: .infinity)
-                        .frame(height: max(3, levels[i] * geo.size.height))
+                        .frame(height: max(3, level * geo.size.height))
                 }
             }
             .frame(maxHeight: .infinity, alignment: .center)

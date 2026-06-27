@@ -5,7 +5,6 @@ struct OnboardingView: View {
     let onFinish: () -> Void
 
     @State private var page = 0
-    @State private var showEditor = false
 
     private let pages: [PageData] = [
         PageData(icon: "book.closed.fill",
@@ -91,32 +90,38 @@ struct OnboardingView: View {
                     }
                 }
                 .padding(.horizontal, Metric.xl)
+
+                // 法律链接（审核合规：首次启动即暴露隐私/条款入口）
+                HStack(spacing: 4) {
+                    Link("Terms of Use", destination: URL(string: "https://windylabs.app/voicepaper/terms.html")!)
+                    Text("·")
+                    Link("Privacy Policy", destination: URL(string: "https://windylabs.app/voicepaper/privacy.html")!)
+                }
+                .font(.system(size: 10))
+                .foregroundStyle(pal.gold.opacity(0.4))
+                .padding(.top, Metric.l)
                 .padding(.bottom, Metric.xxl)
             }
             .readableColumn()
         }
         .animation(.easeInOut, value: page)
-        // 末页「Start writing」：先请求通知权限（授权则顺势开启每日提问提醒），
-        // 再弹出编辑器并预填今日提问，让用户当场录/写第一篇；关掉编辑器即结束 onboarding。
-        .dimmedSheet(isPresented: $showEditor, onDismiss: { onFinish() }) {
-            AddDiaryView(initialPrompt: DailyPrompt.today())
-        }
     }
 
-    /// 末页按钮：请求通知权限 → 开启每日提醒（若授权）→ 打开编辑器写第一篇。
+    /// 末页按钮：请求通知权限 → 开启每日提醒（若授权）→ 结束 onboarding。
     private func startWriting() {
         Task { @MainActor in
             let nm = NotificationManager()
             let granted = await nm.requestPermission()
-            if granted { nm.isEnabled = true }   // 授权了就开启每日提问提醒，权限不浪费
+            if granted { nm.isEnabled = true }
             UserDefaults.standard.set(true, forKey: "hasRequestedNotification")
-            showEditor = true
+            onFinish()
         }
     }
 }
 
 private struct PageData {
     let icon: String
-    let title: String
-    let body: String
+    // LocalizedStringKey：让 Text 走字符串目录本地化（String 变量会走 verbatim 不查表）。
+    let title: LocalizedStringKey
+    let body: LocalizedStringKey
 }

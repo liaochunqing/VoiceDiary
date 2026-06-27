@@ -38,6 +38,18 @@ targets:
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Used to transcribe your voice into text. Recognition runs entirely on your device and is never uploaded."
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Records where a diary entry was written. Used once while writing — never tracked continuously."
         INFOPLIST_KEY_NSFaceIDUsageDescription: "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens."
+  VoiceDiaryTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: VoiceDiary
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: "YES"
+        PRODUCT_BUNDLE_IDENTIFIER: "com.chunqingliao.VoiceDiaryTests"
+        PRODUCT_NAME: "VoiceDiaryTests"
 schemes:
   VoiceDiary:
     build:
@@ -46,3 +58,7 @@ schemes:
     run:
       config: Debug
       storeKitConfiguration: Support/VoiceDiary.storekit
+    test:
+      config: Debug
+      targets:
+        - VoiceDiaryTests

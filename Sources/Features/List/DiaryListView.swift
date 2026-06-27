@@ -1,20 +1,32 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct DiaryListView: View {
     @Environment(\.palette) private var pal
     @Environment(\.bookNavigator) private var navigator
+    @Environment(\.modelContext) private var context
+    @Environment(DeletionCoordinator.self) private var deletionCoordinator
     @Query(sort: \DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
     @State private var search = ""
     @State private var showSearch = false
     @FocusState private var searchFocused: Bool
     @State private var showEditor = false
-    /// 从「今日状态条」进编辑器时携带的 prompt；FAB 进则置 nil。
+    /// 从「今日状态条」进编辑器时携带的 prompt；胶囊按钮进则置 nil。
     @State private var pendingPrompt: String? = nil
+    /// 「Talk」按钮点下 → 编辑器打开后自动拉起录音。
+    @State private var pendingAutoRecord = false
     @State private var showInsights = false
     @State private var showPrompts = false
     @State private var showStats = false
-
+    /// 左滑「Edit」选中的待编辑日记；非空即弹编辑器。
+    @State private var editTarget: DiaryEntry? = nil
+    /// 左滑「Delete」选中的待删日记；非空即弹确认 alert。
+    @State private var deleteTarget: DiaryEntry? = nil
+    /// alert 确认后立刻加入此集合，把 entry 从 ForEach 移除，避免 context.delete 后再访问 photos 崩溃。
+    @State private var deletedIDs: Set<UUID> = []
+    /// 目录页手势提示是否已收起（用户建了自己的第一篇 / 手动 × 后置 true，不再出现）。
+    @AppStorage("contentsGestureHintDone") private var gestureHintDone = false
     private var stats: DataManager.StreakStats { DataManager.streakStats(entries) }
 
     private var filtered: [DiaryEntry] {
@@ -29,6 +41,16 @@ struct DiaryListView: View {
         }
     }
 
+    /// 实际参与渲染的日记：批量删除期间整体清空，单条删除（含详情页）按 id 隐藏，
+    /// 配合 `DeletionCoordinator` 避免 `context.delete + save` 后 `DiaryRow` 仍访问
+    /// `entry.photos`（externalStorage）崩溃。
+    private var visibleEntries: [DiaryEntry] {
+        guard !deletionCoordinator.isBulkDeleting else { return [] }
+        return filtered.filter {
+            !deletedIDs.contains($0.id) && !deletionCoordinator.hiddenIDs.contains($0.id)
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             PaperBackground()
@@ -39,20 +61,31 @@ struct DiaryListView: View {
                     searchBar
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                if entries.isEmpty || filtered.isEmpty {
+                if showGestureHint {
+                    gestureHint
+                        .transition(.opacity)
+                }
+                if visibleEntries.isEmpty {
                     Spacer(minLength: 0)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: Metric.m) {
-                            ForEach(filtered, id: \.id) { entry in
+                            ForEach(visibleEntries, id: \.id) { entry in
                                 let gi = entries.firstIndex { $0.id == entry.id } ?? 0
+                                // entries 是新→旧排序(reverse)，书里也是新→旧(index 3 = 最新)
+                                // gi=0 = 最新 = 第 1 篇，直接用 gi 作为 entryIndex
                                 let page = gi + 1
-                                Button {
-                                    navigator.goToEntry(at: gi)
-                                } label: {
-                                    DiaryRow(entry: entry, page: page)
-                                }
-                                .buttonStyle(.plain)
+                                let pending = deletedIDs.contains(entry.id) || deletionCoordinator.hiddenIDs.contains(entry.id)
+                                DiaryRow(entry: entry, page: page, isPendingDelete: pending)
+                                    .onTapGesture { navigator.goToEntry(at: gi) }
+                                    .contextMenu {
+                                        Button { editTarget = entry; showEditor = true } label: {
+                                            Label("Edit", systemImage: "square.and.pencil")
+                                        }
+                                        Button(role: .destructive) { deleteTarget = entry } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
                             }
                         }
                         .padding(.horizontal, Metric.l)
@@ -78,10 +111,52 @@ struct DiaryListView: View {
 
             fab
         }
-        .dimmedSheet(isPresented: $showEditor) { AddDiaryView(initialPrompt: pendingPrompt) }
+        // 用户建了自己的第一篇（欢迎页之外）后，目录手势提示功成身退，永久收起。
+        .onChange(of: entries.count) { _, newCount in
+            if newCount >= 2 { gestureHintDone = true }
+        }
+        // 新建与编辑共用同一个编辑器 sheet：editTarget 非空＝左滑「Edit」进编辑，否则＝新建。
+        .dimmedSheet(isPresented: $showEditor, detents: [.fraction(2/3), .large], onDismiss: { editTarget = nil; pendingAutoRecord = false }) {
+            AddDiaryView(editingEntry: editTarget,
+                         initialPrompt: editTarget == nil ? pendingPrompt : nil,
+                         autoFocusText: editTarget == nil && !pendingAutoRecord,
+                         autoStartRecording: pendingAutoRecord)
+        }
         .dimmedSheet(isPresented: $showInsights) { InsightsView() }
         .dimmedSheet(isPresented: $showPrompts) { PromptsView() }
         .dimmedSheet(isPresented: $showStats) { StatsView() }
+        .alert("Delete this entry?", isPresented: Binding(
+            get: { deleteTarget != nil },
+            set: { if !$0 { deleteTarget = nil } }
+        )) {
+            Button("Delete", role: .destructive) { if let e = deleteTarget { deleteEntry(e) } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This can't be undone")
+        }
+    }
+
+    /// 删除一条日记。跨库音频无 SwiftData 级联，删前手动清理对应 VoiceAudio
+    /// （与 DiaryDetailView.deleteEntry 同一逻辑）。
+    ///
+    /// 时序要点：`context.delete` 只是标记 isDeleted=true，backing data（含
+    /// @Attribute.externalStorage 的 photos）在 `context.save` 之前**不会** detach。
+    /// 所以立刻 delete 让 DiaryRow guard 生效，save 延迟到视图移除之后执行。
+    private func deleteEntry(_ entry: DiaryEntry) {
+        deletedIDs.insert(entry.id)
+        // 立刻标记删除：同步设置 isDeleted=true，DiaryRow guard 马上生效；
+        // 关键 —— 此时尚未 save，backing data 完整，即使极端情况下访问 photos 也不崩。
+        context.delete(entry)
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            for memo in entry.memos {
+                guard let aid = memo.audioID else { continue }
+                let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
+                for a in (try? context.fetch(desc)) ?? [] { context.delete(a) }
+            }
+            // save 后 externalStorage 才真正清理；此时 DiaryRow 应已从视图层级移除
+            try? context.save()
+        }
     }
 
     // MARK: 顶部栏（标题行 + 三入口）
@@ -137,6 +212,7 @@ struct DiaryListView: View {
         let streak = stats.current
         let savers = stats.saversLeft
         return Button {
+            editTarget = nil
             pendingPrompt = written ? nil : DailyPrompt.today()
             showEditor = true
         } label: {
@@ -268,13 +344,41 @@ struct DiaryListView: View {
 
     // MARK: 空状态（一条数据都没有）
 
+    // MARK: 目录页手势提示（仅「只有欢迎页」这一刻出现，教左右滑翻页 + 长按编辑删除）
+
+    /// 仅当本机只剩内置欢迎页一篇、且用户还没收起时出现。
+    private var showGestureHint: Bool { !gestureHintDone && entries.count == 1 }
+
+    private var gestureHint: some View {
+        HStack(spacing: Metric.s) {
+            Text("← → Swipe to flip pages · Long-press to edit")
+                .font(.dCaption)
+                .foregroundStyle(pal.inkSoft)
+            Spacer(minLength: Metric.s)
+            Button {
+                withAnimation { gestureHintDone = true }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(pal.inkSoft.opacity(0.7))
+                    .frame(width: 24, height: 24)
+            }
+        }
+        .padding(.leading, Metric.m)
+        .padding(.trailing, Metric.xs)
+        .padding(.vertical, Metric.xs)
+        .background(pal.card.opacity(0.6), in: Capsule())
+        .softEdge(Capsule())
+        .padding(.horizontal, Metric.l)
+    }
+
     private var emptyState: some View {
         VStack(spacing: 20) {
             bookBadge
             Text("No entries yet")
                 .font(.dSerifPageTitle)
                 .foregroundStyle(pal.ink)
-            Text("Tap ＋ in the corner\nto write today — or record your voice.")
+            Text("Tap Write to start typing,\nor Talk to speak your mind.")
                 .font(.dSerifReading)
                 .foregroundStyle(pal.inkSoft)
                 .multilineTextAlignment(.center)
@@ -316,7 +420,7 @@ struct DiaryListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: 指向 + 的引导（仅空状态）
+    // MARK: 指向右下角胶囊的引导箭头（仅空状态）
 
     private var arrowGuide: some View {
         VStack(spacing: 2) {
@@ -328,11 +432,24 @@ struct DiaryListView: View {
         .foregroundStyle(pal.accent.opacity(0.7))
     }
 
-    // MARK: 新建按钮（传统圆形 FAB）
+    // MARK: 新建按钮（两段胶囊：Write ┃ Talk）
 
     private var fab: some View {
-        AddEntryFAB { pendingPrompt = nil; showEditor = true }
-            .padding(Metric.xl)
+        SplitEntryCapsule(
+            onWrite: {
+                editTarget = nil
+                pendingPrompt = nil
+                pendingAutoRecord = false
+                showEditor = true
+            },
+            onTalk: {
+                editTarget = nil
+                pendingPrompt = nil
+                pendingAutoRecord = true
+                showEditor = true
+            }
+        )
+        .padding(Metric.xl)
     }
 }
 
@@ -342,8 +459,13 @@ private struct DiaryRow: View {
     @Environment(\.palette) private var pal
     let entry: DiaryEntry
     let page: Int
+    /// ForEach 创建行时同步传入：`deletedIDs.contains(id) || hiddenIDs.contains(id)`。
+    /// 纯 Swift Bool，不碰托管对象，彻底规避 save 后 backing data detach 导致的
+    /// `entry.photos`（@Attribute.externalStorage）fatal error。
+    let isPendingDelete: Bool
 
     var body: some View {
+        if isPendingDelete || entry.isDeleted { EmptyView() } else {
         VStack(alignment: .leading, spacing: Metric.xs) {
             // meta：日期 · 语音 · 地址 并排在第一行
             HStack(spacing: Metric.xs) {
@@ -376,8 +498,8 @@ private struct DiaryRow: View {
                 .lineSpacing(2)
             if !entry.photos.isEmpty {
                 HStack(spacing: Metric.xs) {
-                    ForEach(entry.photos.prefix(3).indices, id: \.self) { i in
-                        if let ui = Thumbnailer.thumbnail(entry.photos[i], side: 38) {
+                    ForEach(Array(entry.photos.prefix(3).enumerated()), id: \.offset) { _, photo in
+                        if let ui = Thumbnailer.thumbnail(photo, side: 38) {
                             Image(uiImage: ui).resizable().scaledToFill()
                                 .frame(width: 38, height: 38)
                                 .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
@@ -395,7 +517,7 @@ private struct DiaryRow: View {
             // 页码放右下角
             HStack {
                 Spacer()
-                Text("Page \(page)")
+                Text("Entry \(page)")
                     .font(.dLabel)
                     .tracking(1)
                     .foregroundStyle(pal.inkSoft.opacity(0.5))
@@ -404,6 +526,7 @@ private struct DiaryRow: View {
         .padding(Metric.l)
         .frame(maxWidth: .infinity, alignment: .leading)
         .diaryCard()
+        }
     }
 
     private var dot: some View { Text("·").font(.dCaption).foregroundStyle(pal.inkSoft) }
@@ -427,3 +550,30 @@ private struct FeatureButtonStyle: ButtonStyle {
             .animation(.spring(response: 0.3, dampingFraction: 0.65), value: configuration.isPressed)
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+struct DiaryListView_Previews: PreviewProvider {
+    static var previews: some View {
+        let container = PreviewHelper.container()
+        Group {
+            PreviewWrapper(container: container) { DiaryListView() }
+                .previewDevice("iPhone SE (3rd generation)")
+                .previewDisplayName("SE")
+
+            PreviewWrapper(container: container) { DiaryListView() }
+                .previewDevice("iPhone 16 Pro")
+                .previewDisplayName("16 Pro")
+
+            PreviewWrapper(container: container) { DiaryListView() }
+                .previewDevice("iPhone 16 Pro Max")
+                .previewDisplayName("Pro Max")
+
+            PreviewWrapper(container: container) { DiaryListView() }
+                .previewDevice("iPad (10th generation)")
+                .previewDisplayName("iPad 10")
+        }
+    }
+}
+#endif

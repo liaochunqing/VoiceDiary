@@ -61,6 +61,8 @@ struct RootView: View {
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
                 UserDefaults.standard.set(true, forKey: "onboardingDone")
+                // 全新用户引导完成那一刻：若本机还没有任何日记，灌入一篇欢迎日记当引导。
+                WelcomeEntry.seedIfNeeded(into: modelContext, existingCount: entries.count)
                 showOnboarding = false
             }
         }

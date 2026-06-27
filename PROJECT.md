@@ -6,7 +6,7 @@
 - Bundle ID：`com.chunqingliao.VoiceDiary`
 - App Store ID：`6670278331`，显示名：英文 `Voice Diary` / 简中「翻页日记」（随系统语言）
 - IAP：`com.chunqingliao.VoiceDiary.fullunlock`（永久买断 $59.99，NonConsumable）
-  - 新增订阅：`weekly` $1.49 / `monthly` $2.99 / `annual` $24.99（Auto-Renewable Subscription）
+  - 订阅：`monthly` $3.99 / `annual` $29.99（Auto-Renewable Subscription）
 - iCloud 容器：`iCloud.com.chunqingliao.VoiceDiary`（CloudKit 私有库）
 - Team：`8X79G5XCU6`，部署目标 iOS 17.5，iPhone + iPad（通用 App，纯竖屏 / `UIRequiresFullScreen`）
 
@@ -129,7 +129,29 @@ Support/          VoiceDiary.entitlements, VoiceDiary.storekit
 
 ---
 
+### 已完成（2026-06-23/26）
+- [x] 法律页面：Privacy Policy / Terms of Use 已上线 windylabs.app/voicepaper/
+- [x] PrivacyInfo.xcprivacy（开发者零收集声明）
+- [x] Onboarding 底部加 Terms of Use / Privacy Policy 链接（审核合规）
+
 ### 待完成
-- [ ] 把占位法律页换成自有链接（隐私政策 / 使用条款现指向 apple.com 通用页）
+
+#### 内置欢迎日记 + 页角掀起（新用户翻页引导）
+- [ ] `WelcomeEntrySeeder`：首次安装 seed 一篇「欢迎日记」，日期=安装当天，UserDefaults 防重复（release 也跑）
+- [ ] 欢迎日记正文 = 6 大功能介绍（📖翻页 🎤语音 📷附件 🔒隐私 ☁️iCloud 🔥streak），末尾引导左滑
+- [ ] `PageCurlPeekModifier`：列表页/详情页两侧金色纸角掀起动画，3 秒消失，只播一次
+- [ ] 卡片金色 `Welcome` 微标
+- [ ] 语音附件可选（18s 欢迎语）
+- [ ] 欢迎日记可删
+- HTML 原型：`shotcut/output/swipe-tutorial-prototype.html`
+
+#### 小修
+- [ ] 设置页 About 区补「Terms of Use」行（目前只在 PaywallView 有，设置页缺）
+- [ ] `.photos` / `.stats` 付费枚举：目前无实际入口限制（仅 PaywallView featureGrid 展示）
+- [ ] exportHTML 日期用 locale-aware 格式（目前可能写死）
+- [ ] ASC 确认 VoicePaper 名称唯一性
+
+#### 上架前
 - [ ] iPad 截图 + 真机逐屏核对（中英 + iPad 竖屏布局）
-- [ ] 上架前：英文/中文 ASO 文案、截图、What's New
+- [ ] 英文/中文 ASO 文案、截图、What's New
+- [ ] TestFlight 外部测试

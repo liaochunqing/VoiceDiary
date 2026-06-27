@@ -83,13 +83,16 @@ struct DiaryCardModifier: ViewModifier {
 struct PaperLinedCardModifier: ViewModifier {
     @Environment(\.palette) private var pal
     var radius: CGFloat = Metric.cardRadius
+    var linesSpacing: CGFloat = 28
+    var linesFirstY: CGFloat? = nil
 
     func body(content: Content) -> some View {
         content
             .background(
                 RoundedRectangle(cornerRadius: radius, style: .continuous).fill(pal.card)
                     .overlay(
-                        PaperLines(color: pal.line.opacity(0.5))
+                        PaperLines(spacing: linesSpacing, firstY: linesFirstY,
+                                   color: pal.line.opacity(0.5))
                             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                     )
             )
@@ -132,8 +135,12 @@ extension View {
     }
 
     /// 横线纸纹信纸卡（正文卡 / 编辑区）。
-    func paperLinedCard(radius: CGFloat = Metric.cardRadius) -> some View {
-        modifier(PaperLinedCardModifier(radius: radius))
+    /// - linesSpacing: 行间距，传入 UIFont.lineHeight（编辑区不含额外行距，详情卡加 lineSpacing）。
+    /// - linesFirstY: 第一条线的 Y 坐标（padding + UITextView内边距 + 字体ascender）。
+    func paperLinedCard(radius: CGFloat = Metric.cardRadius,
+                        linesSpacing: CGFloat = 28,
+                        linesFirstY: CGFloat? = nil) -> some View {
+        modifier(PaperLinedCardModifier(radius: radius, linesSpacing: linesSpacing, linesFirstY: linesFirstY))
     }
 
     /// 小控件软边（圆 / 胶囊），传入与背景同形状的 shape。
@@ -143,13 +150,17 @@ extension View {
 }
 
 /// 日记本横线纸纹：等距横线，叠在卡片底色上营造纸张质感。
+/// - spacing: 行间距，应与实际字体行高一致，确保每行文字基线都落在线上。
+/// - firstY: 第一条线的 Y 位置；nil 时退回 spacing（向后兼容）。
+///   计算方式：文字上方 padding + 字体 ascender。
 struct PaperLines: View {
     var spacing: CGFloat = 28
+    var firstY: CGFloat? = nil
     var color: Color = Color(lightHex: 0xD9CBAC, darkHex: 0x3E3222)
 
     var body: some View {
         Canvas { ctx, size in
-            var y = spacing
+            var y = firstY ?? spacing
             while y < size.height {
                 var path = Path()
                 path.move(to: CGPoint(x: 0, y: y))
