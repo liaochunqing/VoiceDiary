@@ -75,7 +75,7 @@ struct OnboardingView: View {
                             startWriting()
                         }
                     } label: {
-                        Text(page < pages.count - 1 ? "Next" : "Start writing")
+                        Text(page < pages.count - 1 ? String(localized: "Next") : String(localized: "Start writing"))
                             .font(.dCallout.weight(.semibold))
                             .foregroundStyle(colors.first ?? .black)
                             .frame(maxWidth: .infinity)

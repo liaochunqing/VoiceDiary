@@ -2,13 +2,6 @@ import SwiftUI
 import SwiftData
 import UIKit
 
-/// 「检查更新」结果：查 App Store 最新版本与本地比对。
-private enum UpdateCheckResult {
-    case available(version: String, url: URL)
-    case upToDate
-    case failed
-}
-
 struct SettingsView: View {
     @Environment(\.palette) private var pal
     @Environment(\.bookNavigator) private var navigator
@@ -28,8 +21,6 @@ struct SettingsView: View {
     @State private var audioSyncEnabled = UserDefaults.standard.object(forKey: "audioSyncEnabled") as? Bool ?? true
     @State private var showICloudSheet = false
     @State private var showNotifDeniedAlert = false
-    @State private var isCheckingUpdate = false
-    @State private var updateResult: UpdateCheckResult?
     @AppStorage("isSoundEnabled") private var isSoundEnabled: Bool = true
     @AppStorage("transcriptionLanguage") private var transcriptionLanguage: String = ""
     @State private var availableLocales: [Locale] = []
@@ -37,6 +28,12 @@ struct SettingsView: View {
     @Environment(DeletionCoordinator.self) private var deletionCoordinator
     @State private var showDeleteAllAlert = false
     @State private var storageSize: String = String(localized: "Calculating…")
+
+    // 隐藏入口：连点版本号 7 次 → 弹访问码弹窗（作者自用，避免重复购买自己的会员）
+    @State private var versionTapCount = 0
+    @State private var showUnlockPrompt = false
+    @State private var unlockInput = ""
+    @State private var showUnlockResult = false
 
     // 隐私锁图标用安全绿，呼应「音频不出本机」红线卖点；其余图标统一 accent。
     private let safeGreen = Color(lightHex: 0x4E8C5A, darkHex: 0x6FBF7E)
@@ -66,6 +63,7 @@ struct SettingsView: View {
                     #if DEBUG
                     debugSection
                     #endif
+
                 }
                 .padding(.horizontal, Metric.l)
                 .padding(.bottom, Metric.xxl)
@@ -105,25 +103,23 @@ struct SettingsView: View {
         } message: {
             Text("This will permanently delete all \(entries.count) entries and their recordings. This can't be undone.")
         }
-        .alert("Check for Updates", isPresented: Binding(
-            get: { updateResult != nil },
-            set: { if !$0 { updateResult = nil } }
-        ), presenting: updateResult) { result in
-            if case let .available(_, url) = result {
-                Button("Update") { UIApplication.shared.open(url) }
-                Button("Later", role: .cancel) {}
-            } else {
-                Button("OK", role: .cancel) {}
+        // 隐藏入口：访问码正确则切换本地会员解锁；错误静默不提示，不暴露机制。
+        .alert("Enter Access Code", isPresented: $showUnlockPrompt) {
+            SecureField("Access Code", text: $unlockInput)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+            Button("Confirm") {
+                let ok = Self.verifyAccessCode(unlockInput)
+                unlockInput = ""
+                if ok {
+                    UserDefaults.standard.set(true, forKey: "debugForceUnlocked")
+                    purchaseManager.isUnlocked = true
+                    showUnlockResult = true
+                }
             }
-        } message: { result in
-            switch result {
-            case let .available(version, _):
-                Text("Version \(version) is available on the App Store.")
-            case .upToDate:
-                Text("You already have the latest version.")
-            case .failed:
-                Text("Couldn't check for updates. Check your connection and try again.")
-            }
+            Button("Cancel", role: .cancel) { unlockInput = "" }
+        }
+        .alert(purchaseManager.isUnlocked ? "Pro Unlocked" : "Pro Locked", isPresented: $showUnlockResult) {
+            Button("OK") {}
         }
     }
 
@@ -508,27 +504,6 @@ struct SettingsView: View {
     private var aboutSection: some View {
         settingCard(title: "About") {
             VStack(spacing: 0) {
-                // 检查更新：查 App Store 最新版本与本地比对，有新版引导去更新。
-                Button { Task { await checkForUpdate() } } label: {
-                    HStack(spacing: Metric.m) {
-                        IconRowLabel(icon: "arrow.triangle.2.circlepath", label: "Check for Updates")
-                        Spacer()
-                        if isCheckingUpdate {
-                            ProgressView().tint(pal.accent)
-                        } else {
-                            Text("v\(appVersion)")
-                                .font(.dCaption)
-                                .foregroundStyle(pal.inkSoft)
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(pal.inkSoft.opacity(0.7))
-                                .font(.system(size: 13, weight: .semibold))
-                        }
-                    }
-                    .padding(.vertical, Metric.m)
-                }
-                .disabled(isCheckingUpdate)
-
-                RowDivider()
                 Button {
                     if let url = URL(string: "https://windylabs.app/voicepaper/privacy.html") {
                         UIApplication.shared.open(url)
@@ -547,6 +522,25 @@ struct SettingsView: View {
                     }
                 } label: {
                     settingRow(icon: "creditcard", label: "Manage Subscription")
+                }
+
+                RowDivider()
+                Button {
+                    versionTapCount += 1
+                    if versionTapCount >= 7 {
+                        versionTapCount = 0
+                        unlockInput = ""
+                        showUnlockPrompt = true
+                    }
+                } label: {
+                    HStack(spacing: Metric.m) {
+                        IconRowLabel(icon: "info.circle", label: "Version")
+                        Spacer()
+                        Text("v\(appVersion)")
+                            .font(.dCaption)
+                            .foregroundStyle(pal.inkSoft)
+                    }
+                    .padding(.vertical, Metric.m)
                 }
             }
         }
@@ -624,6 +618,11 @@ struct SettingsView: View {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.2.0"
     }
 
+    /// 隐藏入口访问码校验（作者自用，避免重复购买自己的会员）。
+    private static func verifyAccessCode(_ input: String) -> Bool {
+        input == "liaochunqing"
+    }
+
     private func calculateStorageSize() {
         Task.detached(priority: .utility) {
             let formatted = Self.appDataSize()
@@ -695,40 +694,10 @@ struct SettingsView: View {
             // 避免短暂窗口里残影行重新访问已删对象。
             try? await Task.sleep(nanoseconds: 150_000_000)
             deletionCoordinator.isBulkDeleting = false
-        }
-    }
 
-    /// 查 App Store 最新版本（iTunes Lookup API），与本地版本号数值比对。
-    /// 有新版 → 弹更新提示并可直达 App Store；否则提示已最新 / 检查失败。
-    @MainActor
-    private func checkForUpdate() async {
-        isCheckingUpdate = true
-        defer { isCheckingUpdate = false }
-
-        struct Lookup: Decodable {
-            struct Item: Decodable { let version: String; let trackViewUrl: String }
-            let results: [Item]
-        }
-        guard var comps = URLComponents(string: "https://itunes.apple.com/lookup") else {
-            updateResult = .failed; return
-        }
-        comps.queryItems = [URLQueryItem(name: "id", value: Self.appStoreID)]
-        guard let url = comps.url else { updateResult = .failed; return }
-
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let lookup = try JSONDecoder().decode(Lookup.self, from: data)
-            // results 为空 = App Store 暂查不到该版本，按「已最新」处理，不打扰用户。
-            guard let item = lookup.results.first, let storeURL = URL(string: item.trackViewUrl) else {
-                updateResult = .upToDate; return
-            }
-            if appVersion.compare(item.version, options: .numeric) == .orderedAscending {
-                updateResult = .available(version: item.version, url: storeURL)
-            } else {
-                updateResult = .upToDate
-            }
-        } catch {
-            updateResult = .failed
+            // 给 Core Data 一点时间清理 external storage 文件，再刷新存储用量。
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            calculateStorageSize()
         }
     }
 }

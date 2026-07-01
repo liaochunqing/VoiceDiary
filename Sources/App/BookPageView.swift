@@ -11,9 +11,9 @@ final class BookNavigator {
 
     // 页面结构：[0=封面, 1=设置, 2=列表, 3..N=日记]
     // direction 由 navigate 根据目标 index 自动判断，确保多页连翻方向正确
-    func goToList()                    { coordinator?.navigate(to: 2) }
-    func goToSettings()                { coordinator?.navigate(to: 1) }
-    func goToEntry(at entryIndex: Int) { coordinator?.navigate(to: entryIndex + 3) }
+    func goToList(animated: Bool = true)     { coordinator?.navigate(to: 2, animated: animated) }
+    func goToSettings()                      { coordinator?.navigate(to: 1) }
+    func goToEntry(at entryIndex: Int)       { coordinator?.navigate(to: entryIndex + 3) }
 }
 
 extension EnvironmentValues {
@@ -80,14 +80,17 @@ struct BookPageView: UIViewControllerRepresentable {
         context.coordinator.pvc = pvc
         let startVC = context.coordinator.vc(for: 2)  // 列表页
 
-        // 同步预热设置页：在 pvc 挂上 window 之前，切到设置页再切回目录。
-        // 这就强制 SwiftUI 为设置页走完「body 求值 → 布局 → 挂入视图层级 → 渲染」，之后真
-        // 正翻页时页面已完全就绪，不会卡。两个 setViewControllers 都是 animated:false，
-        // 用户完全看不到这个瞬间切换。
-        let primeVC = context.coordinator.vc(for: 1)
-        pvc.setViewControllers([primeVC], direction: .forward, animated: false)
-        pvc.setViewControllers([startVC], direction: .reverse, animated: false)
-        context.coordinator.currentIndex = 2
+        // 异步预热设置页：等 pvc 回到 SwiftUI、进入 window 层级并获得正确 bounds 后，
+        // 再瞬间切到设置页并切回目录。此时设置页的 SwiftUI body 会在有效布局上下文中求值、
+        // 完整走完布局 → 渲染，之后用户第一次翻到设置页直接命中已就绪缓存，不会卡顿。
+        // 两个 setViewControllers 都是 animated:false，用户完全看不到这个瞬间切换。
+        DispatchQueue.main.async { [weak pvc, weak coordinator = context.coordinator] in
+            guard let pvc, let coordinator else { return }
+            let primeVC = coordinator.vc(for: 1)
+            pvc.setViewControllers([primeVC], direction: .forward, animated: false)
+            pvc.setViewControllers([startVC], direction: .reverse, animated: false)
+            coordinator.currentIndex = 2
+        }
 
         return pvc
     }
@@ -138,6 +141,9 @@ struct BookPageView: UIViewControllerRepresentable {
         // 页面结构：0=封面, 1=设置, 2=目录, 3..N=日记（日记 i 在 index i+3）
         private var pageCount: Int { 3 + entries.count }
 
+        /// 固定页索引集合：封面(0)、设置(1)、目录(2)——无论如何不可被淘汰/删除。
+        private let fixedPageIndices: Set<Int> = [0, 1, 2]
+
         init(entries: [DiaryEntry], themeManager: ThemeManager,
              navigator: BookNavigator, container: ModelContainer) {
             self.themeManager = themeManager
@@ -145,13 +151,30 @@ struct BookPageView: UIViewControllerRepresentable {
             self.container    = container
             self.entries      = entries
             super.init()
+            // 预缓存固定页：封面(0)、设置(1)、目录(2) 在构造阶段直接建好并登记，
+            // 后续 vc(for:) 命中缓存直接返回，不会触发「缓存缺失」误报警告。
+            for idx in fixedPageIndices {
+                let vc = makeContentVC(for: idx)
+                vcCache[idx] = vc
+                indexByVC[ObjectIdentifier(vc)] = idx
+            }
         }
 
         // MARK: 页面懒加载 + 缓存
 
         /// 取指定 index 的页面 VC：命中缓存直接返回，否则即时构建并缓存，随后按需淘汰远处页。
+        /// 固定页（0/1/2）绝不淘汰；若因任何意外从缓存消失，无条件重建并告警。
         func vc(for index: Int) -> UIViewController {
-            if let cached = vcCache[index] { return cached }
+            if let cached = vcCache[index] {
+                return cached
+            }
+            // 固定页正常应在初始化时就缓存；若之后仍走到这里，说明某处逻辑越过了保护。
+            // 兜底重建确保不崩，同时打 log 便于追踪根因。
+            #if DEBUG
+            if fixedPageIndices.contains(index) {
+                print("⚠️ [BookPageView] 固定页 index=\(index) 缓存缺失，触发兜底重建")
+            }
+            #endif
             let vc = makeContentVC(for: index)
             vcCache[index] = vc
             indexByVC[ObjectIdentifier(vc)] = index
@@ -178,17 +201,19 @@ struct BookPageView: UIViewControllerRepresentable {
         }
 
         /// 淘汰离当前页最远的日记页，把常驻日记页数压回 cacheCapacity。
-        /// 绝不淘汰：① 固定页 0/1/2；② 正在显示的页（pvc 仍强引用它，丢映射会让滑动找不到邻页）；
+        /// 固定页（0/1/2）受硬保护：无论在不在 displayed/justInserted 集合里都不可淘汰。
+        /// 绝不淘汰：① 固定页 0/1/2（硬保护）；② 正在显示的页（pvc 仍强引用它，丢映射会让滑动找不到邻页）；
         /// ③ 本次刚插入的页（远距跳转时目标页离旧 currentIndex 很远，否则会被误删）。
         private func evictIfNeeded(justInserted: Int) {
-            let entryIdxs = vcCache.keys.filter { $0 >= 3 }
+            let entryIdxs = vcCache.keys.filter { !fixedPageIndices.contains($0) }
             guard entryIdxs.count > cacheCapacity else { return }
             let displayed = Set((pvc?.viewControllers ?? []).compactMap { indexByVC[ObjectIdentifier($0)] })
-            let protected = displayed.union([justInserted])
+            let protected = displayed.union([justInserted]).union(fixedPageIndices)
             let evictable = entryIdxs
                 .filter { !protected.contains($0) }
                 .sorted { abs($0 - currentIndex) > abs($1 - currentIndex) }
             for idx in evictable.prefix(entryIdxs.count - cacheCapacity) {
+                guard !fixedPageIndices.contains(idx) else { continue }
                 if let vc = vcCache.removeValue(forKey: idx) {
                     indexByVC.removeValue(forKey: ObjectIdentifier(vc))
                 }
@@ -227,8 +252,9 @@ struct BookPageView: UIViewControllerRepresentable {
         }
 
         /// 日记数据变动后，作废所有日记页缓存（index→日记 的映射已变），固定页保留。
+        /// 固定页（0/1/2）受硬保护，永不清除。
         private func evictAllEntryVCs() {
-            for idx in vcCache.keys.filter({ $0 >= 3 }) {
+            for idx in vcCache.keys where !fixedPageIndices.contains(idx) {
                 if let vc = vcCache.removeValue(forKey: idx) {
                     indexByVC.removeValue(forKey: ObjectIdentifier(vc))
                 }

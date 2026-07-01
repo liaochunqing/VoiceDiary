@@ -299,13 +299,14 @@ struct DiaryDetailView: View {
 
     private func deleteEntry() {
         player?.stop()
+        // 先隐藏条目（列表页 DiaryRow guard 会立刻拦掉），再无动画切回目录，
+        // 等列表页就绪后才动 context，彻底避免 updateEntries 打断 pageCurl。
         deletionCoordinator.hiddenIDs.insert(entry.id)
-        // 立刻标记删除：isDeleted=true，切到列表后任何 DiaryRow 的 guard 都会拦住；
-        // 此时未 save，backing data（photos externalStorage）仍完整，访问不崩。
-        context.delete(entry)
-        navigator.goToList()
+        navigator.goToList(animated: false)
         Task { @MainActor in
+            // 给 UIPageViewController 一个 runloop 周期完成 setViewControllers
             try? await Task.sleep(nanoseconds: 400_000_000)
+            context.delete(entry)
             // 跨库音频无 SwiftData 级联，删日记前手动清理对应 VoiceAudio。
             for memo in entry.memos {
                 guard let aid = memo.audioID else { continue }

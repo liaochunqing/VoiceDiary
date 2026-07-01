@@ -87,7 +87,7 @@
 		272BCC8892B20AC703C860DA /* EmojiBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiBubbleView.swift; sourceTree = "<group>"; };
 		2C88429E537710682CD580EB /* PromptsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptsView.swift; sourceTree = "<group>"; };
 		2FAF46BD7E57C1805C313012 /* DiaryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryDetailView.swift; sourceTree = "<group>"; };
-		30040C9F616FE5225F189FF9 /* VoiceDiary.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VoiceDiary.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		30040C9F616FE5225F189FF9 /* VoiceDiary.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceDiary.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34D0DA937D925CB5F377DE4E /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
 		36DB3F7DC03FC97CF4E372F5 /* LongCang-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "LongCang-Regular.ttf"; sourceTree = "<group>"; };
 		371E89CD6EF5398B74987B8E /* DiaryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryListView.swift; sourceTree = "<group>"; };
@@ -108,7 +108,7 @@
 		7B8ED5C18C84778C1F1E0FDE /* PaperLines.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperLines.swift; sourceTree = "<group>"; };
 		8102154847CAA9032CD7ED54 /* SpriteKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SpriteKit.framework; path = System/Library/Frameworks/SpriteKit.framework; sourceTree = SDKROOT; };
 		818105303A993B6FF12D3D78 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
-		88B806901A7927C89A96A80C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		88B806901A7927C89A96A80C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		89FD967772E1150F0F2ABD59 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		8B0526507D0402E407D332B7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		8EC3A2B6E7742FC39EA2E410 /* Slidexiaxing-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Slidexiaxing-Regular.ttf"; sourceTree = "<group>"; };
@@ -129,9 +129,10 @@
 		E2C509DE88BD06AE7FADDCFA /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		E8E08DF7CB2A3F8349F5D5CC /* DiaryFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryFont.swift; sourceTree = "<group>"; };
 		F0404C74877ED404211C092D /* SplitEntryCapsule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitEntryCapsule.swift; sourceTree = "<group>"; };
-		F25A56B7AB6B3D643189D7A2 /* fp3.m4a */ = {isa = PBXFileReference; path = fp3.m4a; sourceTree = "<group>"; };
+		F25A56B7AB6B3D643189D7A2 /* fp3.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = fp3.m4a; sourceTree = "<group>"; };
 		FD5D117A8D3D25770E0B291E /* YSHaoShenTi.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = YSHaoShenTi.ttf; sourceTree = "<group>"; };
 		FE851D8CB18C5F24C5BFBCEF /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		A06E44A009164B2997A1173A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Support/Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,6 +184,7 @@
 				D9045664CA610F95E1430403 /* Tests */,
 				55A7FC18C8B3D9AA24315239 /* Frameworks */,
 				DA3C886529BDBC4095712204 /* Products */,
+				A06E44A009164B2997A1173A /* Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -553,13 +555,16 @@
 				CODE_SIGN_ENTITLEMENTS = Support/VoiceDiary.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Support/Info.plist;
 				INFOPLIST_KEY_CFBundleDevelopmentRegion = en;
 				INFOPLIST_KEY_CFBundleDisplayName = VoicePaper;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a diary entry was written. Used once while writing — never tracked continuously.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Recording a voice diary needs the microphone. Audio stays on your device and your own iCloud — never uploaded to us or any third party.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Used to transcribe your voice into text. Recognition runs entirely on your device and is never uploaded.";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -567,6 +572,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chunqingliao.VoiceDiary;
 				PRODUCT_NAME = VoiceDiary;
 				SDKROOT = iphoneos;
@@ -641,13 +647,16 @@
 				CODE_SIGN_ENTITLEMENTS = Support/VoiceDiary.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Support/Info.plist;
 				INFOPLIST_KEY_CFBundleDevelopmentRegion = en;
 				INFOPLIST_KEY_CFBundleDisplayName = VoicePaper;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a diary entry was written. Used once while writing — never tracked continuously.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Recording a voice diary needs the microphone. Audio stays on your device and your own iCloud — never uploaded to us or any third party.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Used to transcribe your voice into text. Recognition runs entirely on your device and is never uploaded.";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -655,6 +664,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chunqingliao.VoiceDiary;
 				PRODUCT_NAME = VoiceDiary;
 				SDKROOT = iphoneos;

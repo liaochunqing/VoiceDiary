@@ -338,4 +338,33 @@ final class VoiceRecorder {
         levels.append(tapState.latestRMS)
         if levels.count > Self.barCount { levels.removeFirst() }
     }
+
+    // MARK: - PCM → AAC 转码
+
+    /// 将 PCM .caf 录音转为 AAC .m4a，体积约缩至 1/10。
+    /// 语音识别用原始 PCM（保证准确率），存储/同步用 AAC（省空间省流量）。
+    /// CloudKit 不感知格式——Data blob 换什么编码都一样同步。
+    static func compressedAudioData(from pcmURL: URL) -> Data? {
+        let asset = AVAsset(url: pcmURL)
+        let outURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("aac-\(UUID().uuidString).m4a")
+
+        guard let export = AVAssetExportSession(
+            asset: asset, presetName: AVAssetExportPresetAppleM4A
+        ) else { return nil }
+
+        export.outputURL = outURL
+        export.outputFileType = .m4a
+        export.shouldOptimizeForNetworkUse = true
+
+        let semaphore = DispatchSemaphore(value: 0)
+        var result: Data?
+        export.exportAsynchronously {
+            if export.status == .completed { result = try? Data(contentsOf: outURL) }
+            semaphore.signal()
+        }
+        semaphore.wait()
+        try? FileManager.default.removeItem(at: outURL)
+        return result
+    }
 }

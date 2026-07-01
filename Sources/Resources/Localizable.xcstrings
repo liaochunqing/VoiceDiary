@@ -723,6 +723,7 @@
       }
     },
     "Couldn't check for updates. Check your connection and try again." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -1162,6 +1163,16 @@
         }
       }
     },
+    "Free plan: 1 photo per entry. Upgrade to add up to 4." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "免费版每篇限 1 张照片。升级会员可添加最多 4 张。"
+          }
+        }
+      }
+    },
     "Full Stats" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1354,6 +1365,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "有没有一件小事，其实你做得挺好？"
+          }
+        }
+      }
+    },
+    "Just 1" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只要一张"
           }
         }
       }
@@ -1953,6 +1975,17 @@
         }
       }
     },
+    "Photo Limit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片数量限制"
+          }
+        }
+      }
+    },
     "Photos" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2505,6 +2538,17 @@
         }
       }
     },
+    "Start writing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始写吧"
+          }
+        }
+      }
+    },
     "Start writing to read your mood" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2523,6 +2567,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "统计"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止"
           }
         }
       }
@@ -2677,7 +2731,14 @@
       }
     },
     "Tap Write to start typing,\nor Talk to speak your mind." : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点「写」开始打字，\n或点「说」说出你的想法。"
+          }
+        }
+      }
     },
     "Terms of Use" : {
       "extractionState" : "stale",
@@ -2733,6 +2794,7 @@
       }
     },
     "The free plan allows 1 photo per entry. Upgrade to add up to 4." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3100,6 +3162,17 @@
         }
       }
     },
+    "Upgrade" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "升级"
+          }
+        }
+      }
+    },
     "Upgrade to Full" : {
       "localizations" : {
         "zh-Hans" : {
@@ -3157,6 +3230,7 @@
       }
     },
     "Version %@ is available on the App Store." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -3736,6 +3810,7 @@
       }
     },
     "You already have the latest version." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {

@@ -186,28 +186,43 @@ struct AddDiaryView: View {
         .onChange(of: photoItems) { _, items in
             guard !items.isEmpty else { return }
             let isUnlocked = PurchaseManager.shared.isUnlocked
-            // 非会员选了多张：提示后只保留第一张。
-            if !isUnlocked && items.count > 1 {
-                showPhotoLimitAlert = true
+            let maxPhotos = isUnlocked ? 4 : 1
+
+            // 非会员已到上限 → 清空选择，直接弹付费墙。
+            if !isUnlocked, photos.count >= maxPhotos {
+                photoItems = []
+                paywallFeature = .photos
+                showPaywall = true
+                return
             }
+
+            // 非会员选了多张 → 清空选择，弹提示（可升级或只保留一张）。
+            if !isUnlocked, items.count > 1 {
+                photoItems = []
+                showPhotoLimitAlert = true
+                return
+            }
+
             Task { @MainActor in
-                let allowed = isUnlocked ? items : Array(items.prefix(1))
                 var datas: [Data] = []
-                for item in allowed {
+                for item in items.prefix(maxPhotos - photos.count) {
                     if let d = try? await item.loadTransferable(type: Data.self),
                        let compressed = UIImage(data: d)?.diaryCompressed() {
                         datas.append(compressed)
                     }
                 }
-                let maxPhotos = isUnlocked ? 4 : 1
                 photos = Array((photos + datas).prefix(maxPhotos))
                 photoItems = []
             }
         }
-        .alert("1 photo only", isPresented: $showPhotoLimitAlert) {
-            Button("OK", role: .cancel) {}
+        .alert("Photo Limit", isPresented: $showPhotoLimitAlert) {
+            Button("Upgrade") {
+                paywallFeature = .photos
+                showPaywall = true
+            }
+            Button("Just 1", role: .cancel) {}
         } message: {
-            Text("The free plan allows 1 photo per entry. Upgrade to add up to 4.")
+            Text("Free plan: 1 photo per entry. Upgrade to add up to 4.")
         }
         .task {
             // 定位默认已开时 onChange 不会触发，手动补一次初始抓取。
@@ -294,8 +309,8 @@ struct AddDiaryView: View {
                             .foregroundStyle(pal.inkSoft)
                     } else {
                         Text("Write something, or tap the mic and talk to it…")
-                            .font(fontFamily.swiftUIFont(size: fontSize))
-                            .foregroundStyle(pal.inkSoft)
+                            .font(.body)
+                            .foregroundStyle(pal.inkSoft.opacity(0.5))
                     }
                 }
                 .padding(Metric.l)

@@ -123,7 +123,7 @@ struct FontPickerPanel: View {
 
     private var sizeRow: some View {
         HStack(spacing: Metric.m) {
-            Slider(value: $size, in: 15...30, step: 1)
+            Slider(value: $size, in: 15...40, step: 1)
                 .tint(pal.accent)
             TextField("", value: $size, format: .number.precision(.fractionLength(0)))
                 .keyboardType(.numberPad)
@@ -134,7 +134,7 @@ struct FontPickerPanel: View {
                 .softEdge(RoundedRectangle(cornerRadius: Metric.thumbRadius), elevation: 0.5)
                 .onChange(of: size) { _, v in
                     if v < 15 { size = 15 }
-                    if v > 30 { size = 30 }
+                    if v > 40 { size = 40 }
                 }
         }
     }

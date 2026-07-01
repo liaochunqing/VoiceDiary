@@ -62,6 +62,8 @@ struct RecordingView: View {
 
     // 录音中转写文字的自然高度（用于让文字框随内容长高）
     @State private var liveContentHeight: CGFloat = 0
+    // 脉动动画：驱动红点 + 卡边呼吸
+    @State private var isPulsing = false
 
     // MARK: - Body
 
@@ -128,15 +130,16 @@ struct RecordingView: View {
       GeometryReader { geo in
         VStack(spacing: 0) {
             sharedTopBar(
-                title: stage == .recording ? "Recording" : "This recording"
+                title: stage == .recording ? "Recording" : "This recording",
+                showRecordingDot: stage == .recording
             )
 
             VStack(spacing: Metric.m) {
-                // 计时器 — 录音中走字，停止后定格
-                timerSection
-
-                // 波形 — 录音中实时跳动，停止后变暗
-                waveformSection
+                // 计时器 + 波形 — 仅录音中显示；停止后语音条自带迷你波形和时长
+                if stage == .recording {
+                    timerSection
+                    waveformSection
+                }
 
                 // 转写文字 — 录音中只读滚动（随内容长高），停止后可编辑
                 transcriptSection(availableHeight: geo.size.height)
@@ -176,23 +179,23 @@ struct RecordingView: View {
     // MARK: - 计时器
 
     private var timerSection: some View {
-        Text(stage == .recording ? recorder.timeString : durString(duration))
-            .font(.system(size: stage == .recording ? 44 : 36, weight: .bold))
+        Text(recorder.timeString)
+            .font(.system(size: 44, weight: .bold))
             .monospacedDigit()
-            .foregroundStyle(pal.ink)
+            .foregroundStyle(Color(hex: 0xD9534F).opacity(0.85))
             .animation(.easeInOut(duration: 0.25), value: stage)
     }
 
     // MARK: - 波形
 
     private var waveformSection: some View {
-        // 录音中：实时跳动；停止后：定格变暗，纯装饰（播放控制在语音条里）
         WaveformView(
             levels: recorder.levels,
-            color: stage == .recording ? pal.accent : pal.accent.opacity(0.45)
+            color: pal.accent
         )
         .frame(height: 56)
         .padding(.horizontal, Metric.xl)
+        .shadow(color: pal.accent.opacity(0.25), radius: 8, y: 0)
         .animation(.easeInOut(duration: 0.3), value: stage)
     }
 
@@ -237,6 +240,11 @@ struct RecordingView: View {
             }
             .frame(height: boxHeight)
             .diaryCard()
+            .overlay(
+                RoundedRectangle(cornerRadius: Metric.cardRadius, style: .continuous)
+                    .stroke(pal.accent.opacity(isPulsing ? 0.25 : 0.08), lineWidth: 1.5)
+            )
+            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
             .animation(.easeInOut(duration: 0.22), value: boxHeight)
             .onPreferenceChange(TranscriptHeightKey.self) { h in
                 liveContentHeight = h
@@ -282,16 +290,21 @@ struct RecordingView: View {
     // MARK: - 录音中底部
 
     private var recordingBottom: some View {
-        Button { finish() } label: {
-            ZStack {
-                Circle()
+        VStack(spacing: Metric.s) {
+            Button { finish() } label: {
+                RoundedRectangle(cornerRadius: 14)
                     .fill(Color(hex: 0xD9534F))
-                    .frame(width: 72, height: 72)
-                    .shadow(color: Color(hex: 0xD9534F).opacity(0.5), radius: 12, y: 4)
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(.white)
-                    .frame(width: 26, height: 26)
+                    .frame(width: 64, height: 64)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(.white)
+                            .frame(width: 24, height: 24)
+                    }
+                    .shadow(color: Color(hex: 0xD9534F).opacity(0.45), radius: 14, y: 6)
             }
+            Text("Stop")
+                .font(.dCaption.weight(.semibold))
+                .foregroundStyle(Color(hex: 0xD9534F).opacity(0.8))
         }
         .padding(.bottom, Metric.l)
     }
@@ -415,7 +428,7 @@ struct RecordingView: View {
 
     // MARK: - 共用组件
 
-    private func sharedTopBar(title: LocalizedStringKey) -> some View {
+    private func sharedTopBar(title: LocalizedStringKey, showRecordingDot: Bool = false) -> some View {
         HStack {
             Button { discardAll() } label: {
                 Image(systemName: "xmark")
@@ -426,7 +439,17 @@ struct RecordingView: View {
                     .softEdge(Circle(), elevation: 0.5)
             }
             Spacer()
-            Text(title).font(.dCallout).foregroundStyle(pal.ink)
+            HStack(spacing: 6) {
+                if showRecordingDot {
+                    Circle()
+                        .fill(Color(hex: 0xD9534F))
+                        .frame(width: 8, height: 8)
+                        .scaleEffect(isPulsing ? 1.0 : 0.6)
+                        .opacity(isPulsing ? 1.0 : 0.4)
+                        .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPulsing)
+                }
+                Text(title).font(.dCallout).foregroundStyle(pal.ink)
+            }
             Spacer()
             Color.clear.frame(width: 34, height: 34)
         }
@@ -451,6 +474,7 @@ struct RecordingView: View {
 
     /// 录音被中断时保命：让 recorder 落盘，再把停止态铺好，提示用户这段已保存。
     private func handleInterrupt() {
+        isPulsing = false
         recorder.interruptAndSave()
         duration = recorder.elapsed
         transcript = recorder.liveTranscript
@@ -458,7 +482,12 @@ struct RecordingView: View {
         keepAudio = true
         stage = .stopped
         showInterruptedNotice = true
-        Task { if let url = recorder.audioURL { audioData = try? Data(contentsOf: url) } }
+        Task {
+            if let url = recorder.audioURL {
+                audioData = VoiceRecorder.compressedAudioData(from: url)
+                    ?? (try? Data(contentsOf: url))
+            }
+        }
     }
 
     private func begin() async {
@@ -466,11 +495,12 @@ struct RecordingView: View {
         let mic = await recorder.requestMicPermission()
         _ = await SpeechTranscriber.requestAuthorization()
         guard mic else { stage = .denied; return }
-        do { try recorder.start(); stage = .recording }
+        do { try recorder.start(); stage = .recording; isPulsing = true }
         catch { stage = .denied }
     }
 
     private func finish() {
+        isPulsing = false
         _ = recorder.stop()
         duration = recorder.elapsed
         transcript = recorder.liveTranscript
@@ -479,7 +509,10 @@ struct RecordingView: View {
         keepAudio = true
         stage = .stopped
         Task {
-            if let url = recorder.audioURL { audioData = try? Data(contentsOf: url) }
+            if let url = recorder.audioURL {
+                audioData = VoiceRecorder.compressedAudioData(from: url)
+                    ?? (try? Data(contentsOf: url))  // 转码失败时兜底用原始 PCM
+            }
             try? await Task.sleep(for: .milliseconds(600))
             if !recorder.liveTranscript.isEmpty { transcript = recorder.liveTranscript }
         }
