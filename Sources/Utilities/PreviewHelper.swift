@@ -109,6 +109,7 @@ struct PreviewWrapper<Content: View>: View {
         content
             .modelContainer(container)
             .environment(ThemeManager())
+            .environment(DeletionCoordinator())
             .environment(\.palette, palette)
             .environment(\.bookNavigator, BookNavigator())
     }

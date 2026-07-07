@@ -53,6 +53,9 @@ struct RecordingView: View {
     @State private var duration: TimeInterval = 0
     @State private var audioData: Data?
     @State private var player: AVAudioPlayer?
+    @State private var audioPreparationTask: Task<Void, Never>?
+    @State private var isPreparingAudio = false
+    @State private var audioPreparationFailed = false
     /// 录音被中断后自动落盘，置 true 让停止页提示用户「这段已保存」。
     @State private var showInterruptedNotice = false
 
@@ -327,7 +330,13 @@ struct RecordingView: View {
     private var confirmButtons: some View {
         VStack(spacing: Metric.s) {
             Button { confirm() } label: {
-                Text("Add to entry")
+                Group {
+                    if isPreparingAudio {
+                        Text("Optimizing audio…")
+                    } else {
+                        Text("Add to entry")
+                    }
+                }
                     .font(.dCallout.weight(.semibold))
                     .foregroundStyle(pal.onAccent)
                     .frame(maxWidth: .infinity)
@@ -349,7 +358,9 @@ struct RecordingView: View {
 
     /// 既没有文字、也移除了语音时，没有可加入的内容 → 禁用「加入日记」
     private var canConfirm: Bool {
-        keepAudio || !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard !isPreparingAudio else { return false }
+        if keepAudio { return audioData?.isEmpty == false }
+        return !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: 精简语音条（播放 + 迷你波形 + 时长 + 移除）
@@ -357,13 +368,20 @@ struct RecordingView: View {
     private var voiceRowSlim: some View {
         HStack(spacing: Metric.s) {
             Button { togglePlay() } label: {
-                Image(systemName: player?.isPlaying == true ? "pause.fill" : "play.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(pal.onAccent)
-                    .frame(width: 28, height: 28)
-                    .background(pal.accent, in: Circle())
+                Group {
+                    if isPreparingAudio {
+                        ProgressView().tint(pal.onAccent).controlSize(.small)
+                    } else {
+                        Image(systemName: player?.isPlaying == true ? "pause.fill" : "play.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                }
+                .foregroundStyle(pal.onAccent)
+                .frame(width: 28, height: 28)
+                .background(pal.accent, in: Circle())
             }
             .buttonStyle(.plain)
+            .disabled(isPreparingAudio || audioData == nil)
 
             WaveformView(levels: recorder.levels, color: pal.accent.opacity(0.45))
                 .frame(height: 20)
@@ -389,13 +407,21 @@ struct RecordingView: View {
         HStack(spacing: Metric.xs) {
             Image(systemName: "waveform.slash")
                 .font(.system(size: 13)).foregroundStyle(pal.inkSoft)
-            Text("Don't save audio, keep text only")
-                .font(.dCaption).foregroundStyle(pal.inkSoft)
-            Spacer()
-            Button { keepAudio = true } label: {
-                Text("Undo").font(.dCaption.weight(.semibold)).foregroundStyle(pal.accent)
+            Group {
+                if audioPreparationFailed {
+                    Text("Audio couldn't be compressed. Your transcript is still available.")
+                } else {
+                    Text("Don't save audio, keep text only")
+                }
             }
-            .buttonStyle(.plain)
+            .font(.dCaption).foregroundStyle(pal.inkSoft)
+            Spacer()
+            if !audioPreparationFailed {
+                Button { keepAudio = true } label: {
+                    Text("Undo").font(.dCaption.weight(.semibold)).foregroundStyle(pal.accent)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(Metric.m)
         .diaryCard()
@@ -482,12 +508,7 @@ struct RecordingView: View {
         keepAudio = true
         stage = .stopped
         showInterruptedNotice = true
-        Task {
-            if let url = recorder.audioURL {
-                audioData = VoiceRecorder.compressedAudioData(from: url)
-                    ?? (try? Data(contentsOf: url))
-            }
-        }
+        prepareAudio()
     }
 
     private func begin() async {
@@ -508,13 +529,41 @@ struct RecordingView: View {
         textAction = .append
         keepAudio = true
         stage = .stopped
-        Task {
-            if let url = recorder.audioURL {
-                audioData = VoiceRecorder.compressedAudioData(from: url)
-                    ?? (try? Data(contentsOf: url))  // 转码失败时兜底用原始 PCM
+        prepareAudio(refreshTranscript: true)
+    }
+
+    /// 将原始 PCM 转为固定 64 kbps AAC。失败时不保存巨大 PCM，仅保留转写文字。
+    private func prepareAudio(refreshTranscript: Bool = false) {
+        audioPreparationTask?.cancel()
+        audioData = nil
+        audioPreparationFailed = false
+        isPreparingAudio = true
+
+        guard let url = recorder.audioURL else {
+            isPreparingAudio = false
+            audioPreparationFailed = true
+            keepAudio = false
+            return
+        }
+
+        audioPreparationTask = Task {
+            do {
+                let data = try await VoiceRecorder.compressedAudioData(from: url)
+                try Task.checkCancellation()
+                audioData = data
+            } catch is CancellationError {
+                return
+            } catch {
+                audioData = nil
+                audioPreparationFailed = true
+                keepAudio = false
             }
-            try? await Task.sleep(for: .milliseconds(600))
-            if !recorder.liveTranscript.isEmpty { transcript = recorder.liveTranscript }
+            isPreparingAudio = false
+
+            if refreshTranscript {
+                try? await Task.sleep(for: .milliseconds(600))
+                if !recorder.liveTranscript.isEmpty { transcript = recorder.liveTranscript }
+            }
         }
     }
 
@@ -534,9 +583,12 @@ struct RecordingView: View {
 
     private func redo() {
         player?.stop(); player = nil
+        audioPreparationTask?.cancel(); audioPreparationTask = nil
         recorder.discard()
         recorder.wasInterrupted = false
         transcript = ""; duration = 0; audioData = nil
+        isPreparingAudio = false
+        audioPreparationFailed = false
         textAction = .append
         keepAudio = true
         showInterruptedNotice = false
@@ -546,6 +598,7 @@ struct RecordingView: View {
 
     private func discardAll() {
         player?.stop(); player = nil
+        audioPreparationTask?.cancel(); audioPreparationTask = nil
         recorder.discard()
         onDone(nil)
     }

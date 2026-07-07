@@ -188,7 +188,7 @@ struct PaywallView: View {
         [
             FeatureItem(icon: "mic.fill",
                         title: "Transcription",
-                        free: "3 per week",
+                        free: "7 per week",
                         pro: "Unlimited"),
             FeatureItem(icon: "sparkles",
                         title: "Weekly recap",

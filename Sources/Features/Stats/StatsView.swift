@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 /// 统计页：连续记录 / 数字汇总 / 热力图 / 语音比例。纯数字，端侧计算。
 /// 情绪/趋势/关键词/AI 小结在独立的「洞察」页（InsightsView）。
@@ -7,6 +8,9 @@ struct StatsView: View {
     @Environment(\.palette) private var pal
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \DiaryEntry.date, order: .reverse) private var entries: [DiaryEntry]
+
+    @State private var purchaseManager = PurchaseManager.shared
+    @State private var showPaywall = false
 
     private var stats: DataManager.StreakStats { DataManager.streakStats(entries) }
     private var totalCount: Int { entries.count }
@@ -44,6 +48,9 @@ struct StatsView: View {
                         .foregroundStyle(pal.accent)
                 }
             }
+        }
+        .dimmedSheet(isPresented: $showPaywall) {
+            PaywallView(feature: .stats)
         }
     }
 
@@ -103,12 +110,45 @@ struct StatsView: View {
         .diaryCard()
     }
 
-    // MARK: 日历热力图（近 35 天）
+    // MARK: 日历热力图（近 35 天 · Pro）
 
     private var calendarHeatmap: some View {
         VStack(alignment: .leading, spacing: Metric.m) {
-            Text("Recent activity").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
+            HStack(spacing: 6) {
+                Text("Recent activity").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
+                if !purchaseManager.isUnlocked {
+                    Text("PRO")
+                        .font(.system(size: 10.5, weight: .bold)).foregroundStyle(pal.accent)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(pal.accentSoft, in: RoundedRectangle(cornerRadius: 6))
+                }
+            }
 
+            if purchaseManager.isUnlocked {
+                let days = last35Days()
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                    ForEach(days, id: \.self) { day in
+                        let hasEntry = entryExists(on: day)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(hasEntry ? pal.accent : pal.line.opacity(0.4))
+                            .frame(height: 28)
+                            .overlay(
+                                Text(dayLabel(day))
+                                    .font(.system(size: 8))
+                                    .foregroundStyle(hasEntry ? pal.onAccent : pal.inkSoft)
+                            )
+                    }
+                }
+            } else {
+                lockedHeatmap
+            }
+        }
+        .padding(Metric.m)
+        .diaryCard()
+    }
+
+    private var lockedHeatmap: some View {
+        ZStack {
             let days = last35Days()
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
                 ForEach(days, id: \.self) { day in
@@ -116,45 +156,105 @@ struct StatsView: View {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(hasEntry ? pal.accent : pal.line.opacity(0.4))
                         .frame(height: 28)
-                        .overlay(
-                            Text(dayLabel(day))
-                                .font(.system(size: 8))
-                                .foregroundStyle(hasEntry ? pal.onAccent : pal.inkSoft)
-                        )
                 }
+            }
+            .blur(radius: 5).opacity(0.6)
+            VStack(spacing: Metric.s) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 18)).foregroundStyle(pal.accent)
+                    .frame(width: 40, height: 40).background(pal.accentSoft, in: Circle())
+                Text("See your writing rhythm")
+                    .font(.dSubhead.weight(.semibold)).foregroundStyle(pal.ink)
+                Button { showPaywall = true } label: {
+                    Text("Unlock with Pro")
+                        .font(.dSubhead.weight(.semibold)).foregroundStyle(pal.onAccent)
+                        .padding(.horizontal, Metric.l).padding(.vertical, Metric.s)
+                        .background(pal.accent, in: Capsule())
+                }
+            }
+        }
+    }
+
+    // MARK: 语音比例条（Pro）
+
+    private var voiceRatio: some View {
+        VStack(alignment: .leading, spacing: Metric.s) {
+            HStack(spacing: 6) {
+                Text("Voice vs. Text").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
+                if !purchaseManager.isUnlocked {
+                    Text("PRO")
+                        .font(.system(size: 10.5, weight: .bold)).foregroundStyle(pal.accent)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(pal.accentSoft, in: RoundedRectangle(cornerRadius: 6))
+                }
+            }
+
+            if purchaseManager.isUnlocked {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 6).fill(pal.line.opacity(0.4))
+                        if totalCount > 0 {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(pal.accent)
+                                .frame(width: geo.size.width * CGFloat(voiceCount) / CGFloat(totalCount))
+                        }
+                    }
+                    .frame(height: 12)
+                }
+                .frame(height: 12)
+                HStack {
+                    Circle().fill(pal.accent).frame(width: 8, height: 8)
+                    Text("Voice \(voiceCount)").font(.dCaption).foregroundStyle(pal.inkSoft)
+                    Spacer()
+                    Circle().fill(pal.line).frame(width: 8, height: 8)
+                    Text("Text \(totalCount - voiceCount)").font(.dCaption).foregroundStyle(pal.inkSoft)
+                }
+            } else {
+                lockedVoiceRatio
             }
         }
         .padding(Metric.m)
         .diaryCard()
     }
 
-    // MARK: 语音比例条
-
-    private var voiceRatio: some View {
-        VStack(alignment: .leading, spacing: Metric.s) {
-            Text("Voice vs. Text").font(.dSerifSubhead.weight(.semibold)).foregroundStyle(pal.ink)
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 6).fill(pal.line.opacity(0.4))
-                    if totalCount > 0 {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(pal.accent)
-                            .frame(width: geo.size.width * CGFloat(voiceCount) / CGFloat(totalCount))
+    private var lockedVoiceRatio: some View {
+        ZStack {
+            VStack(spacing: Metric.s) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 6).fill(pal.line.opacity(0.4))
+                        if totalCount > 0 {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(pal.accent)
+                                .frame(width: geo.size.width * CGFloat(voiceCount) / CGFloat(totalCount))
+                        }
                     }
+                    .frame(height: 12)
                 }
                 .frame(height: 12)
+                HStack {
+                    Circle().fill(pal.accent).frame(width: 8, height: 8)
+                    Text("Voice \(voiceCount)").font(.dCaption).foregroundStyle(pal.inkSoft)
+                    Spacer()
+                    Circle().fill(pal.line).frame(width: 8, height: 8)
+                    Text("Text \(totalCount - voiceCount)").font(.dCaption).foregroundStyle(pal.inkSoft)
+                }
             }
-            .frame(height: 12)
-            HStack {
-                Circle().fill(pal.accent).frame(width: 8, height: 8)
-                Text("Voice \(voiceCount)").font(.dCaption).foregroundStyle(pal.inkSoft)
-                Spacer()
-                Circle().fill(pal.line).frame(width: 8, height: 8)
-                Text("Text \(totalCount - voiceCount)").font(.dCaption).foregroundStyle(pal.inkSoft)
+            .blur(radius: 5).opacity(0.6)
+            VStack(spacing: Metric.s) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 18)).foregroundStyle(pal.accent)
+                    .frame(width: 40, height: 40).background(pal.accentSoft, in: Circle())
+                Text("Voice vs. text breakdown")
+                    .font(.dSubhead.weight(.semibold)).foregroundStyle(pal.ink)
+                Button { showPaywall = true } label: {
+                    Text("Unlock with Pro")
+                        .font(.dSubhead.weight(.semibold)).foregroundStyle(pal.onAccent)
+                        .padding(.horizontal, Metric.l).padding(.vertical, Metric.s)
+                        .background(pal.accent, in: Capsule())
+                }
             }
         }
-        .padding(Metric.m)
-        .diaryCard()
     }
 
     // MARK: 工具

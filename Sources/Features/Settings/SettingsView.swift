@@ -27,6 +27,8 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(DeletionCoordinator.self) private var deletionCoordinator
     @State private var showDeleteAllAlert = false
+    @State private var showMoreApps = false
+    @State private var deleteAllResult: DeleteAllResult? = nil
     @State private var storageSize: String = String(localized: "Calculating…")
 
     // 隐藏入口：连点版本号 7 次 → 弹访问码弹窗（作者自用，避免重复购买自己的会员）
@@ -78,6 +80,9 @@ struct SettingsView: View {
         .dimmedSheet(isPresented: $showICloudSheet) {
             ICloudSyncSheet(iCloudEnabled: $iCloudEnabled, audioSyncEnabled: $audioSyncEnabled)
         }
+        .dimmedSheet(isPresented: $showMoreApps) {
+            MoreAppsView()
+        }
         // 打开设置页 / 从系统设置返回时，同步真实授权状态，保证开关不撒谎。
         .task {
             await notifManager.refreshAuthorizationStatus()
@@ -88,6 +93,9 @@ struct SettingsView: View {
             if phase == .active {
                 Task { await notifManager.refreshAuthorizationStatus() }
             }
+        }
+        .onChange(of: entries.count) { _, _ in
+            calculateStorageSize()
         }
         .alert("Notifications are turned off", isPresented: $showNotifDeniedAlert) {
             Button("Open Settings") {
@@ -102,6 +110,13 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will permanently delete all \(entries.count) entries and their recordings. This can't be undone.")
+        }
+        .alert(deleteAllResult == .success ? "Delete Successful" : "Delete Failed",
+               isPresented: Binding(
+                   get: { deleteAllResult != nil },
+                   set: { if !$0 { deleteAllResult = nil } }
+               )) {
+            Button("OK") { deleteAllResult = nil }
         }
         // 隐藏入口：访问码正确则切换本地会员解锁；错误静默不提示，不暴露机制。
         .alert("Enter Access Code", isPresented: $showUnlockPrompt) {
@@ -484,17 +499,13 @@ struct SettingsView: View {
 
                 RowDivider()
                 Button {
-                    if let url = URL(string: "mailto:support@windylabs.app?subject=Voice%20Diary%20Feedback") {
+                    if let url = URL(string: "mailto:windylabs@icloud.com?subject=Voice%20Diary%20Feedback") {
                         UIApplication.shared.open(url)
                     }
                 } label: { settingRow(icon: "envelope", label: "Feedback") }
 
                 RowDivider()
-                Button {
-                    if let url = URL(string: "itms-apps://itunes.apple.com/developer/id\("8X79G5XCU6")") {
-                        UIApplication.shared.open(url)
-                    }
-                } label: { settingRow(icon: "apps.iphone", label: "More Apps") }
+                Button { showMoreApps = true } label: { settingRow(icon: "apps.iphone", label: "More Apps") }
             }
         }
     }
@@ -623,41 +634,46 @@ struct SettingsView: View {
         input == "liaochunqing"
     }
 
+    private enum DeleteAllResult {
+        case success
+        case failure
+    }
+
     private func calculateStorageSize() {
+        let container = context.container
         Task.detached(priority: .utility) {
-            let formatted = Self.appDataSize()
+            let formatted: String
+            do {
+                // 用独立 context 在后台读取「当前仍存在」的用户数据。
+                // 不统计 SQLite/WAL 预留页：那是实现细节，不是用户的日记用量。
+                let backgroundContext = ModelContext(container)
+                let allEntries = try backgroundContext.fetch(FetchDescriptor<DiaryEntry>())
+                let allAudio = try backgroundContext.fetch(FetchDescriptor<VoiceAudio>())
+
+                var bytes: Int64 = 0
+                for entry in allEntries {
+                    bytes += Int64(entry.content.utf8.count)
+                    bytes += Int64(entry.location.utf8.count)
+                    bytes += entry.photos.reduce(into: 0) { $0 += Int64($1.count) }
+                    bytes += entry.memos.reduce(into: 0) { $0 += Int64($1.transcript.utf8.count) }
+                }
+                bytes += allAudio.reduce(into: 0) { $0 += Int64($1.data?.count ?? 0) }
+                formatted = Self.formattedDataSize(bytes)
+            } catch {
+                formatted = "—"
+                #if DEBUG
+                print("[Settings] Calculate storage usage failed: \(error)")
+                #endif
+            }
             await MainActor.run { self.storageSize = formatted }
         }
     }
 
-    /// 统计本 App 实际占用的磁盘。SwiftData 的库（Main.store / Audio.store）和
-    /// `@Attribute(.externalStorage)` 的照片/音频大块都落在 Application Support
-    /// （不在 Documents——旧实现只扫 Documents，所以永远显示 0）。这里把
-    /// Application Support 与 Documents 一起算上，覆盖所有真实数据。
-    private static nonisolated func appDataSize() -> String {
-        let fm = FileManager.default
-        let roots = [
-            fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
-            fm.urls(for: .documentDirectory, in: .userDomainMask).first
-        ].compactMap { $0 }
-
-        var total: Int64 = 0
-        // 不跳过隐藏文件：external storage 在 `.Main.store_SUPPORT` 这类点开头目录里。
-        for root in roots {
-            guard let enumerator = fm.enumerator(at: root,
-                                                 includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .fileSizeKey, .isRegularFileKey]) else { continue }
-            for case let url as URL in enumerator {
-                let attrs = try? url.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileSizeKey, .isRegularFileKey])
-                guard attrs?.isRegularFile == true else { continue }
-                total += Int64(attrs?.totalFileAllocatedSize ?? attrs?.fileSize ?? 0)
-            }
-        }
-        return ByteCountFormatter.string(fromByteCount: total, countStyle: .file)
+    private static nonisolated func formattedDataSize(_ bytes: Int64) -> String {
+        bytes == 0 ? "0 B" : ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
     private func deleteAllEntries() {
-        // 先拿到 ID 列表（值类型，不持有 managed object）。
-        let ids = entries.map(\.id)
         // 立刻通知列表页清空 ForEach：必须在动 context 之前让所有 DiaryRow 从视图层级
         // 移除，否则 delete + save 后 backing data detach，DiaryRow.body 再访问
         // entry.photos(@Attribute.externalStorage) 会触发 fatal error 崩溃。
@@ -668,36 +684,36 @@ struct SettingsView: View {
             // 同时给列表页一拍完成清空渲染。
             try? await Task.sleep(nanoseconds: 450_000_000)
 
-            // 一次性收集跨库音频 id 并删除所有 entry（VoiceMemo 由 cascade 随 DiaryEntry 删除）。
-            // 先 collect memos（delete 后 relationship 仍可访问），再逐条 context.delete。
-            var audioIDs: [UUID] = []
-            for id in ids {
-                guard let entry = (try? context.fetch(FetchDescriptor<DiaryEntry>(
-                    predicate: #Predicate { $0.id == id })))?.first else { continue }
-                audioIDs.append(contentsOf: entry.memos.compactMap(\.audioID))
-                // 标记 isDeleted=true；backing data 在 save 前不会 detach，
-                // 此时任何 DiaryRow 的 guard 已经生效，且极端访问 photos 仍安全。
-                context.delete(entry)
+            do {
+                // 删除全部 VoiceAudio，而不仅是当前日记引用到的部分；
+                // 这样也会清理历史版本或异常保存留下的孤立音频。
+                let entriesToDelete = try context.fetch(FetchDescriptor<DiaryEntry>())
+                let audioToDelete = try context.fetch(FetchDescriptor<VoiceAudio>())
+                for entry in entriesToDelete { context.delete(entry) }
+                for audio in audioToDelete { context.delete(audio) }
+
+                // ★ 与单条删除同一原则：delete 和 save 之间必须留出间隙，
+                // 让视图层彻底移除所有行引用，再 detach backing data。
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                try context.save()
+
+                // 等 @Query 刷新落地后再解除清空状态，避免残影行访问已删对象。
+                try? await Task.sleep(nanoseconds: 150_000_000)
+                deletionCoordinator.isBulkDeleting = false
+
+                // 保存已成功，用户日记数据此刻就是 0；不等待 SQLite 何时回收预留页。
+                storageSize = Self.formattedDataSize(0)
+                deleteAllResult = .success
+            } catch {
+                // save 失败时撤销内存中的删除标记，避免出现「看起来已删除」的假成功。
+                context.rollback()
+                deletionCoordinator.isBulkDeleting = false
+                calculateStorageSize()
+                deleteAllResult = .failure
+                #if DEBUG
+                print("[Settings] Delete all entries failed: \(error)")
+                #endif
             }
-            for aid in audioIDs {
-                let desc = FetchDescriptor<VoiceAudio>(predicate: #Predicate { $0.id == aid })
-                for a in (try? context.fetch(desc)) ?? [] { context.delete(a) }
-            }
-
-            // ★ 与单条删除同一原则：delete 和 save 之间必须留出间隙，
-            // 让视图层消化 isDeleted 标记、彻底移除所有行引用，再 detach backing data。
-            // 防止 save 后 LazyVStack 缓存的残影行求值 entry.photos（externalStorage）崩溃。
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            try? context.save()
-
-            // 等列表页基于 @Query 的刷新落地（entries 已为空）后再解除清空状态，
-            // 避免短暂窗口里残影行重新访问已删对象。
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            deletionCoordinator.isBulkDeleting = false
-
-            // 给 Core Data 一点时间清理 external storage 文件，再刷新存储用量。
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            calculateStorageSize()
         }
     }
 }
@@ -909,6 +925,67 @@ private struct DiaryWebView: UIViewRepresentable {
         let onLoaded: () -> Void
         init(onLoaded: @escaping () -> Void) { self.onLoaded = onLoaded }
         func webView(_ webView: WKWebView, didFinish _: WKNavigation!) { onLoaded() }
+    }
+}
+
+// MARK: - More Apps
+
+private struct MoreAppsView: View {
+    @Environment(\.palette) private var pal
+    @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
+
+    private let snoreScribeURL = URL(string: "https://apps.apple.com/app/id6778848782")!
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Metric.xl) {
+                Image("SnoreScribe")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 88, height: 88)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+
+                VStack(spacing: Metric.xs) {
+                    Text("SnoreScribe")
+                        .font(.dSerifPageTitle)
+                        .foregroundStyle(pal.ink)
+                    Text("Is your snoring getting better or worse?")
+                        .font(.dBody)
+                        .foregroundStyle(pal.inkSoft)
+                        .multilineTextAlignment(.center)
+                }
+
+                Text("SnoreScribe listens while you sleep, then gives you a morning report with trends, severity scores, and insights — so you know whether your snoring is improving over time.")
+                    .font(.dSerifBody)
+                    .foregroundStyle(pal.inkSoft)
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+
+                Button {
+                    openURL(snoreScribeURL)
+                } label: {
+                    HStack(spacing: Metric.xs) {
+                        Image(systemName: "arrow.down.app")
+                        Text("Download on the App Store")
+                    }
+                    .font(.dBody.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Metric.m)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(lightHex: 0x007AFF, darkHex: 0x0A84FF))
+                    )
+                }
+            }
+            .padding(.horizontal, Metric.l)
+            .padding(.vertical, Metric.xl)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollIndicators(.hidden)
     }
 }
 

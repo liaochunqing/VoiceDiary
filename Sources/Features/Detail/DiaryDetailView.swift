@@ -111,7 +111,7 @@ struct DiaryDetailView: View {
             Spacer()
             HStack(spacing: Metric.s) {
                 iconBtn("trash", tint: pal.inkSoft) { showDeleteAlert = true }
-                iconBtn("square.and.pencil", tint: pal.inkSoft) { showEditor = true }
+                iconBtn("square.and.pencil", tint: pal.inkSoft) { preWarmKeyboard(); showEditor = true }
             }
         }
     }

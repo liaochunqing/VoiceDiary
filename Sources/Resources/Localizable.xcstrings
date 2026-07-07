@@ -173,17 +173,6 @@
         }
       }
     },
-    "3 per week" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每周 3 次"
-          }
-        }
-      }
-    },
     "3rd-party" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -212,6 +201,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "5 种主题 · 多种字体"
+          }
+        }
+      }
+    },
+    "7 per week" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每周 7 次"
           }
         }
       }
@@ -265,6 +265,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "这一周，平稳"
+          }
+        }
+      }
+    },
+    "A strong date anchor with a tidy reading column." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用更强的日期锚点配合整洁的阅读列。"
           }
         }
       }
@@ -488,6 +499,16 @@
         }
       }
     },
+    "Audio couldn't be compressed. Your transcript is still available." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录音压缩失败，识别文字仍可使用。"
+          }
+        }
+      }
+    },
     "Auto Sync" : {
       "localizations" : {
         "zh-Hans" : {
@@ -648,12 +669,33 @@
         }
       }
     },
+    "Choose how each entry looks in your notebook." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择你想让每篇内容在目录里的呈现方式。"
+          }
+        }
+      }
+    },
     "Choose your plan" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择你的方案"
+          }
+        }
+      }
+    },
+    "Clear separation between meta and writing." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将信息和正文清楚分开。"
           }
         }
       }
@@ -697,6 +739,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "颜色"
+          }
+        }
+      }
+    },
+    "Content First" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正文优先"
           }
         }
       }
@@ -784,6 +837,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日期"
+          }
+        }
+      }
+    },
+    "Date Rail" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期侧栏"
           }
         }
       }
@@ -876,6 +940,28 @@
         }
       }
     },
+    "Delete Failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除失败"
+          }
+        }
+      }
+    },
+    "Delete Successful" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除成功"
+          }
+        }
+      }
+    },
     "Delete this entry?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -963,6 +1049,9 @@
         }
       }
     },
+    "Download on the App Store" : {
+
+    },
     "Edit" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -981,6 +1070,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "编辑日记"
+          }
+        }
+      }
+    },
+    "Editorial" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分区排版"
           }
         }
       }
@@ -1216,6 +1316,17 @@
         }
       }
     },
+    "Gives recording details more presence." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让录音信息更有存在感。"
+          }
+        }
+      }
+    },
     "Grape" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1369,6 +1480,9 @@
         }
       }
     },
+    "Is your snoring getting better or worse?" : {
+
+    },
     "Just 1" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1409,6 +1523,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保持记录，下周也给自己留一点喘息的空间。"
+          }
+        }
+      }
+    },
+    "Keeps the writing as the main focus." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把正文放在最前面。"
           }
         }
       }
@@ -1464,6 +1589,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "永久买断"
+          }
+        }
+      }
+    },
+    "List Style" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列表样式"
           }
         }
       }
@@ -1905,6 +2040,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "翻开本子，对它说话"
+          }
+        }
+      }
+    },
+    "Optimizing audio…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在优化录音…"
           }
         }
       }
@@ -2409,6 +2554,9 @@
         }
       }
     },
+    "See your writing rhythm" : {
+
+    },
     "Settings" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2494,6 +2642,12 @@
           }
         }
       }
+    },
+    "SnoreScribe" : {
+
+    },
+    "SnoreScribe listens while you sleep, then gives you a morning report with trends, severity scores, and insights — so you know whether your snoring is improving over time." : {
+
     },
     "Start Free Trial" : {
       "extractionState" : "stale",
@@ -2768,6 +2922,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "纯文字 %lld"
+          }
+        }
+      }
+    },
+    "Text Note" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字记录"
           }
         }
       }
@@ -3283,12 +3448,34 @@
         }
       }
     },
+    "Voice First" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录音优先"
+          }
+        }
+      }
+    },
     "Voice journaling, on-device mood insight, and a private book that's yours forever." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "语音日记、端侧情绪洞察，以及永属于你的私密本子"
+          }
+        }
+      }
+    },
+    "Voice Memo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "录音笔记"
           }
         }
       }
@@ -3302,6 +3489,9 @@
           }
         }
       }
+    },
+    "Voice vs. text breakdown" : {
+
     },
     "VOICEPAPER" : {
 
@@ -3783,6 +3973,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天写下第一页"
+          }
+        }
+      }
+    },
+    "Writing Only" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅文字"
           }
         }
       }

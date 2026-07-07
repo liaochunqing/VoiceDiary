@@ -10,11 +10,11 @@ final class DiaryEntry {
     var date: Date = Date()
     var location: String = ""
     var showLocation: Bool = false
-    var emoji: String = ""
+    @Attribute(originalName: "emojiString") var emoji: String = ""
     var pageNumber: Int = 0
 
     // 字体（用户可调）
-    var fontName: String = "System"
+    @Attribute(originalName: "fontStyle") var fontName: String = "System"
     var fontSize: Double = 17
     var fontColorHex: String = ""
 

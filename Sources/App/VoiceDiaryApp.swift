@@ -54,6 +54,14 @@ struct VoiceDiaryApp: App {
             ?? (try? ModelContainer(for: fullSchema,
                                     configurations: configs(cloud: false, audioCloud: false)))
         if let made {
+            let migrationReport = LegacyDataMigrator().migrateIfNeeded(into: made)
+            #if DEBUG
+            if migrationReport.importedCount > 0 || !migrationReport.failedStoreNames.isEmpty {
+                print("[LegacyDataMigrator] Imported \(migrationReport.importedCount), "
+                      + "duplicates \(migrationReport.duplicateCount), "
+                      + "failed \(migrationReport.failedStoreNames)")
+            }
+            #endif
             DiaryFont.registerCustomFonts()
             #if DEBUG
             ScreenshotSeeder.seedIfRequested(made.mainContext)
@@ -62,9 +70,6 @@ struct VoiceDiaryApp: App {
             DiaryFont.validateAllFonts()
             #endif
             container = made
-            // 预热键盘：iOS 首次弹出键盘冷启动 ~0.5–1s，用隐藏 UITextField
-            // 提前触发一次 becomeFirstResponder 再立刻 resign，把初始化成本摊到后台。
-            preWarmKeyboard()
             // 续期每日提醒的滚动调度窗口（多天非重复通知会用完）。
             NotificationManager().refreshScheduleIfNeeded()
             // 订阅 MetricKit：崩溃/卡顿/耗电数据自动进入 Xcode Organizer。
@@ -75,11 +80,12 @@ struct VoiceDiaryApp: App {
 
 // MARK: - 键盘预热
 
-/// App 启动时预热键盘：iOS 首次弹出键盘有 ~0.5–1s 冷启动延迟（加载键盘扩展），
+/// 预热键盘：iOS 首次弹出键盘有 ~0.5–1s 冷启动延迟（加载键盘扩展），
 /// 此后键盘驻留内存即秒出。用隐藏 UITextField 提前触发一次 becomeFirstResponder
 /// 再立刻 resign，把冷启动成本摊到后台，编辑器首次打开就不卡了。
+/// 应在用户点按「写日记」按钮时调用，利用 sheet 弹出动画时间预热，避免在封面页弹键盘。
 @MainActor
-private func preWarmKeyboard() {
+func preWarmKeyboard() {
     let field = UITextField(frame: .zero)
     field.isHidden = true
     field.autocorrectionType = .no

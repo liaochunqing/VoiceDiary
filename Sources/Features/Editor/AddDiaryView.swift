@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 import CoreLocation
+import ImageIO
 
 struct AddDiaryView: View {
     @Environment(\.palette) private var pal
@@ -207,7 +208,7 @@ struct AddDiaryView: View {
                 var datas: [Data] = []
                 for item in items.prefix(maxPhotos - photos.count) {
                     if let d = try? await item.loadTransferable(type: Data.self),
-                       let compressed = UIImage(data: d)?.diaryCompressed() {
+                       let compressed = d.diaryCompressed() {
                         datas.append(compressed)
                     }
                 }
@@ -541,9 +542,9 @@ struct AddDiaryView: View {
 
     // MARK: 免费额度
 
-    /// 免费转写按自然周计数（每周一重置）。3 条/周对偶尔写日记的用户够用，
-    /// 又比旧的 3 条/天更易触达付费墙——核心语音转写是高频卖点，不能让免费档无限白用。
-    private static let maxFreeTranscriptionsPerWeek = 3
+    /// 免费转写按自然周计数（每周一重置）。7 条/周覆盖每天一次的频率，
+    /// 重度用户多录才触达付费墙，兼顾体验与变现。
+    private static let maxFreeTranscriptionsPerWeek = 7
 
     private var weeklyTranscriptionKey: String {
         var c = Calendar.current
@@ -638,14 +639,19 @@ private struct ToolLabel: View {
 
 // MARK: - 图片压缩
 
-private extension UIImage {
-    /// 等比缩到 maxDimension 内，再以 JPEG quality 压缩，降低 CloudKit 存储压力。
-    func diaryCompressed(maxDimension: CGFloat = 1080, quality: CGFloat = 0.8) -> Data? {
-        let scale = min(1, min(maxDimension / size.width, maxDimension / size.height))
-        let newSize = CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        let resized = renderer.image { _ in draw(in: CGRect(origin: .zero, size: newSize)) }
-        return resized.jpegData(compressionQuality: quality)
+extension Data {
+    /// 用 ImageIO 流式缩到 maxDimension 内（不解完整原图），再以 JPEG 压缩，降低 CloudKit 存储压力。
+    func diaryCompressed(maxDimension: CGFloat = 1080, quality: CGFloat = 0.7) -> Data? {
+        let srcOpts = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let src = CGImageSourceCreateWithData(self as CFData, srcOpts) else { return nil }
+        let opts: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxDimension,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+        return UIImage(cgImage: cg).jpegData(compressionQuality: quality)
     }
 }
 

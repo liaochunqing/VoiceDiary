@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0787E58D438D57A47B6DBB7B /* Thumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D83BC586AEF42A6073ABDAC7 /* Thumbnailer.swift */; };
+		0A7D10AFC4C04748B9A1E301 /* AudioCompressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7D10AFC4C04748B9A1E302 /* AudioCompressionTests.swift */; };
 		105AA767C94FED907F0266AA /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4041AC328A428F032A6DEA32 /* Theme.swift */; };
 		16B1F2EDC17CD159C88E9B95 /* DiaryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAF46BD7E57C1805C313012 /* DiaryDetailView.swift */; };
 		215BA26D7E99600B0B3264C6 /* PurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 795BECD32926790DCDB8E444 /* PurchaseManager.swift */; };
@@ -16,6 +17,7 @@
 		2DFDF43B940A5E9F0A5DAAB7 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A96D95575AC5DB787EDE1A6C /* InfoPlist.xcstrings */; };
 		3133AC9DA3F376E0ABE4D059 /* DraggableFAB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 730428253EBFF81559BDEFE5 /* DraggableFAB.swift */; };
 		372CBEA118B408748ADBEFCD /* SplitEntryCapsule.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0404C74877ED404211C092D /* SplitEntryCapsule.swift */; };
+		39A1FA3AB97D8842CAB7A1DC /* PhotoCompressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48BCA9A4CB26731ABBDBDF0 /* PhotoCompressionTests.swift */; };
 		3B7384C5EE00D91F08BE6A63 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B0526507D0402E407D332B7 /* SettingsView.swift */; };
 		3E5B86DA5207F0DC7A6BFD22 /* ReadableColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFACC5D532628433B4006A89 /* ReadableColumn.swift */; };
 		47195933FD95E396C935DACA /* PromptsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C88429E537710682CD580EB /* PromptsView.swift */; };
@@ -37,6 +39,7 @@
 		7AB75BB68EE12C891BE46A75 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 636060BD84D5C7955E7590AD /* DataManager.swift */; };
 		7BBC8F20CB6F83BA55531C22 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BFC6227EFBDBF590EDFC68 /* RootView.swift */; };
 		7E25B907F77A47E368B4F37C /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FD967772E1150F0F2ABD59 /* AppSettings.swift */; };
+		8EADCD11AB0FE2C45A0CED5E /* EmotionAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA1DA8EB289F34DA56E9DE2 /* EmotionAnalyzerTests.swift */; };
 		8EDEF59364E493DD5EFD3764 /* DiaryFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8E08DF7CB2A3F8349F5D5CC /* DiaryFont.swift */; };
 		8F758A4DDBAED915D4DB0712 /* BookPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBF83F07A3120A007EF7754 /* BookPageView.swift */; };
 		8FC779E3A0050B848B54DE49 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE851D8CB18C5F24C5BFBCEF /* ThemeManager.swift */; };
@@ -55,11 +58,13 @@
 		CAEF9A0B6F0A95366643FA99 /* PhotoFullScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D343B002A2CF86B2EFEAE10F /* PhotoFullScreenView.swift */; };
 		CB47DA206EACA30B6064DA15 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF355B94184388F6244E908D /* Localizable.xcstrings */; };
 		CE8560DDF30ECAEA72718693 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 387F81EB6595240D8830BD28 /* Assets.xcassets */; };
+		CFEB755B6B37429991731D21 /* LegacyDataMigratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B020E2799584641AA604445 /* LegacyDataMigratorTests.swift */; };
 		DBF15E85C11F5C8634DC5AD6 /* ViewSizeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C4342CFC9BC4FA749E94D2A /* ViewSizeTests.swift */; };
 		DC6CAA4061DCBE8FF0165AEA /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D0DA937D925CB5F377DE4E /* InsightsView.swift */; };
 		DEB749B16BF6E0EB3A6A8969 /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D82951BF0E45C8A15D4E09 /* VoiceRecorder.swift */; };
 		E1592199726EF8D96C935FBE /* RatingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF810B4CE5889E474A15307 /* RatingManager.swift */; };
 		E71860C74399B537DBC02183 /* WelcomeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 928E19C6981FDA8605BC355C /* WelcomeEntry.swift */; };
+		EA41A7C832C04268A3B415A1 /* LegacyDataMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5A785F6C104DA89BD90467 /* LegacyDataMigrator.swift */; };
 		F6E7675E4B8497379C029B4B /* DiaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E89CD6EF5398B74987B8E /* DiaryListView.swift */; };
 		FBB6726A32CB49CF3D6DEB14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 88B806901A7927C89A96A80C /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
@@ -75,6 +80,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0A7D10AFC4C04748B9A1E302 /* AudioCompressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCompressionTests.swift; sourceTree = "<group>"; };
 		0C4342CFC9BC4FA749E94D2A /* ViewSizeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewSizeTests.swift; sourceTree = "<group>"; };
 		0CC40491749971D5EBED3271 /* FontPickerPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontPickerPanel.swift; sourceTree = "<group>"; };
 		1B3B0F7598E652A572FAAE2A /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
@@ -86,6 +92,7 @@
 		2692BCF76843EDAEAAEEAA79 /* DiaryEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryEntry.swift; sourceTree = "<group>"; };
 		272BCC8892B20AC703C860DA /* EmojiBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiBubbleView.swift; sourceTree = "<group>"; };
 		2C88429E537710682CD580EB /* PromptsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptsView.swift; sourceTree = "<group>"; };
+		2EA1DA8EB289F34DA56E9DE2 /* EmotionAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionAnalyzerTests.swift; sourceTree = "<group>"; };
 		2FAF46BD7E57C1805C313012 /* DiaryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryDetailView.swift; sourceTree = "<group>"; };
 		30040C9F616FE5225F189FF9 /* VoiceDiary.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceDiary.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34D0DA937D925CB5F377DE4E /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
@@ -96,9 +103,11 @@
 		4041AC328A428F032A6DEA32 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		42BCC7C7F5F73AFB2AAA29BE /* DeletionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionCoordinator.swift; sourceTree = "<group>"; };
 		44BFC6227EFBDBF590EDFC68 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		4B020E2799584641AA604445 /* LegacyDataMigratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyDataMigratorTests.swift; sourceTree = "<group>"; };
 		4C5A489003061A6443B9F70F /* DimmedSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimmedSheet.swift; sourceTree = "<group>"; };
 		57944CDD43799094BE2FA885 /* AddDiaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDiaryView.swift; sourceTree = "<group>"; };
 		5860D35E25B45942E35CCA9F /* DiaryPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryPalette.swift; sourceTree = "<group>"; };
+		5E5A785F6C104DA89BD90467 /* LegacyDataMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyDataMigrator.swift; sourceTree = "<group>"; };
 		636060BD84D5C7955E7590AD /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		6A5164549A73A8B849D707D7 /* EmotionAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionAnalyzer.swift; sourceTree = "<group>"; };
 		728CA476601BEA386DA4213A /* ScreenshotSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSeeder.swift; sourceTree = "<group>"; };
@@ -114,6 +123,7 @@
 		8EC3A2B6E7742FC39EA2E410 /* Slidexiaxing-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Slidexiaxing-Regular.ttf"; sourceTree = "<group>"; };
 		928E19C6981FDA8605BC355C /* WelcomeEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeEntry.swift; sourceTree = "<group>"; };
 		9AC167C493898994EF4A3CB8 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
+		A06E44A009164B2997A1173A /* Support/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Support/Info.plist; sourceTree = "<group>"; };
 		A2D82951BF0E45C8A15D4E09 /* VoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecorder.swift; sourceTree = "<group>"; };
 		A96D95575AC5DB787EDE1A6C /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		AF355B94184388F6244E908D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -127,12 +137,12 @@
 		DDC1A19E78D7CFA768B0C098 /* PreviewHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelper.swift; sourceTree = "<group>"; };
 		DF5E9FDFD1A8C59494E0506A /* CoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverView.swift; sourceTree = "<group>"; };
 		E2C509DE88BD06AE7FADDCFA /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		E48BCA9A4CB26731ABBDBDF0 /* PhotoCompressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCompressionTests.swift; sourceTree = "<group>"; };
 		E8E08DF7CB2A3F8349F5D5CC /* DiaryFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryFont.swift; sourceTree = "<group>"; };
 		F0404C74877ED404211C092D /* SplitEntryCapsule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitEntryCapsule.swift; sourceTree = "<group>"; };
 		F25A56B7AB6B3D643189D7A2 /* fp3.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = fp3.m4a; sourceTree = "<group>"; };
 		FD5D117A8D3D25770E0B291E /* YSHaoShenTi.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = YSHaoShenTi.ttf; sourceTree = "<group>"; };
 		FE851D8CB18C5F24C5BFBCEF /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		A06E44A009164B2997A1173A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Support/Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -184,7 +194,7 @@
 				D9045664CA610F95E1430403 /* Tests */,
 				55A7FC18C8B3D9AA24315239 /* Frameworks */,
 				DA3C886529BDBC4095712204 /* Products */,
-				A06E44A009164B2997A1173A /* Info.plist */,
+				A06E44A009164B2997A1173A /* Support/Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -226,6 +236,7 @@
 				636060BD84D5C7955E7590AD /* DataManager.swift */,
 				42BCC7C7F5F73AFB2AAA29BE /* DeletionCoordinator.swift */,
 				6A5164549A73A8B849D707D7 /* EmotionAnalyzer.swift */,
+				5E5A785F6C104DA89BD90467 /* LegacyDataMigrator.swift */,
 				23B951EA8982A916BFDFC3DA /* NotificationManager.swift */,
 				2196024DED362C7E57040862 /* PrivacyLockManager.swift */,
 				795BECD32926790DCDB8E444 /* PurchaseManager.swift */,
@@ -319,7 +330,11 @@
 		D9045664CA610F95E1430403 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				0A7D10AFC4C04748B9A1E302 /* AudioCompressionTests.swift */,
+				4B020E2799584641AA604445 /* LegacyDataMigratorTests.swift */,
 				0C4342CFC9BC4FA749E94D2A /* ViewSizeTests.swift */,
+				2EA1DA8EB289F34DA56E9DE2 /* EmotionAnalyzerTests.swift */,
+				E48BCA9A4CB26731ABBDBDF0 /* PhotoCompressionTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -482,7 +497,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A7D10AFC4C04748B9A1E301 /* AudioCompressionTests.swift in Sources */,
+				CFEB755B6B37429991731D21 /* LegacyDataMigratorTests.swift in Sources */,
 				DBF15E85C11F5C8634DC5AD6 /* ViewSizeTests.swift in Sources */,
+				8EADCD11AB0FE2C45A0CED5E /* EmotionAnalyzerTests.swift in Sources */,
+				39A1FA3AB97D8842CAB7A1DC /* PhotoCompressionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,6 +553,7 @@
 				9337A22672680313CE70CFF8 /* VoiceDiaryApp.swift in Sources */,
 				DEB749B16BF6E0EB3A6A8969 /* VoiceRecorder.swift in Sources */,
 				E71860C74399B537DBC02183 /* WelcomeEntry.swift in Sources */,
+				EA41A7C832C04268A3B415A1 /* LegacyDataMigrator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -555,16 +575,16 @@
 				CODE_SIGN_ENTITLEMENTS = Support/VoiceDiary.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Support/Info.plist;
 				INFOPLIST_KEY_CFBundleDevelopmentRegion = en;
 				INFOPLIST_KEY_CFBundleDisplayName = VoicePaper;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a diary entry was written. Used once while writing — never tracked continuously.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Recording a voice diary needs the microphone. Audio stays on your device and your own iCloud — never uploaded to us or any third party.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Used to transcribe your voice into text. Recognition runs entirely on your device and is never uploaded.";
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -572,10 +592,14 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chunqingliao.VoiceDiary;
 				PRODUCT_NAME = VoiceDiary;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -647,16 +671,16 @@
 				CODE_SIGN_ENTITLEMENTS = Support/VoiceDiary.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Support/Info.plist;
 				INFOPLIST_KEY_CFBundleDevelopmentRegion = en;
 				INFOPLIST_KEY_CFBundleDisplayName = VoicePaper;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Uses Face ID or a passcode to keep your diary private, verifying you each time the app opens.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a diary entry was written. Used once while writing — never tracked continuously.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Recording a voice diary needs the microphone. Audio stays on your device and your own iCloud — never uploaded to us or any third party.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Used to transcribe your voice into text. Recognition runs entirely on your device and is never uploaded.";
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -664,10 +688,14 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chunqingliao.VoiceDiary;
 				PRODUCT_NAME = VoiceDiary;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

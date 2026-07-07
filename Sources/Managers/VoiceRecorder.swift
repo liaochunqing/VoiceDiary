@@ -27,6 +27,21 @@ private func audioRMS(_ buffer: AVAudioPCMBuffer) -> CGFloat {
 @Observable
 final class VoiceRecorder {
 
+    enum AudioEncodingError: LocalizedError {
+        case exporterUnavailable
+        case exportFailed(Error?)
+        case emptyOutput
+
+        var errorDescription: String? {
+            switch self {
+            case .exporterUnavailable:
+                "This recording couldn't be prepared for storage."
+            case .exportFailed, .emptyOutput:
+                "This recording couldn't be compressed."
+            }
+        }
+    }
+
     enum Phase { case idle, recording, finished }
 
     var phase: Phase = .idle
@@ -341,30 +356,49 @@ final class VoiceRecorder {
 
     // MARK: - PCM → AAC 转码
 
-    /// 将 PCM .caf 录音转为 AAC .m4a，体积约缩至 1/10。
-    /// 语音识别用原始 PCM（保证准确率），存储/同步用 AAC（省空间省流量）。
-    /// CloudKit 不感知格式——Data blob 换什么编码都一样同步。
-    static func compressedAudioData(from pcmURL: URL) -> Data? {
-        let asset = AVAsset(url: pcmURL)
+    /// 语音识别和实时波形使用设备原始 PCM；持久化前交给系统导出器生成 M4A。
+    /// 优先低质量系统预设以控制语音体积，不兼容时回退 Apple M4A 预设。
+    /// 这里刻意不再手写 AVAudioConverter 供帧循环：不同真机音频格式下不够稳定。
+    /// 无论成功、失败还是取消，都会立即删除原始 PCM 和中间文件。
+    nonisolated static func compressedAudioData(from pcmURL: URL) async throws -> Data {
         let outURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("aac-\(UUID().uuidString).m4a")
+        defer {
+            try? FileManager.default.removeItem(at: pcmURL)
+            try? FileManager.default.removeItem(at: outURL)
+        }
 
-        guard let export = AVAssetExportSession(
-            asset: asset, presetName: AVAssetExportPresetAppleM4A
-        ) else { return nil }
+        try Task.checkCancellation()
+        let data = try exportM4A(from: pcmURL, to: outURL)
+        try Task.checkCancellation()
+        return data
+    }
 
-        export.outputURL = outURL
-        export.outputFileType = .m4a
-        export.shouldOptimizeForNetworkUse = true
+    /// `compressedAudioData` 是 nonisolated async，调用此同步辅助函数时运行在通用执行器；
+    /// 系统导出的短暂等待不会阻塞主线程，同时兼容 iOS 17 的回调式 API。
+    private nonisolated static func exportM4A(from pcmURL: URL, to outURL: URL) throws -> Data {
+        let asset = AVURLAsset(url: pcmURL)
+        let presets = [AVAssetExportPresetLowQuality, AVAssetExportPresetAppleM4A]
+        let exporter = presets.lazy.compactMap { preset -> AVAssetExportSession? in
+            guard let session = AVAssetExportSession(asset: asset, presetName: preset),
+                  session.supportedFileTypes.contains(.m4a) else { return nil }
+            return session
+        }.first
+
+        guard let exporter else { throw AudioEncodingError.exporterUnavailable }
+        exporter.outputURL = outURL
+        exporter.outputFileType = .m4a
+        exporter.shouldOptimizeForNetworkUse = true
 
         let semaphore = DispatchSemaphore(value: 0)
-        var result: Data?
-        export.exportAsynchronously {
-            if export.status == .completed { result = try? Data(contentsOf: outURL) }
-            semaphore.signal()
-        }
+        exporter.exportAsynchronously { semaphore.signal() }
         semaphore.wait()
-        try? FileManager.default.removeItem(at: outURL)
-        return result
+
+        guard exporter.status == .completed else {
+            throw AudioEncodingError.exportFailed(exporter.error)
+        }
+        let data = try Data(contentsOf: outURL, options: .mappedIfSafe)
+        guard !data.isEmpty else { throw AudioEncodingError.emptyOutput }
+        return data
     }
 }

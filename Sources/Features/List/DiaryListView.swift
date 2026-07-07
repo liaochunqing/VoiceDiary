@@ -19,6 +19,9 @@ struct DiaryListView: View {
     @State private var showInsights = false
     @State private var showPrompts = false
     @State private var showStats = false
+    @State private var purchaseManager = PurchaseManager.shared
+    @State private var showPaywall = false
+    @State private var paywallFeature: PaywallView.PaywallFeature? = nil
     /// 左滑「Edit」选中的待编辑日记；非空即弹编辑器。
     @State private var editTarget: DiaryEntry? = nil
     /// 左滑「Delete」选中的待删日记；非空即弹确认 alert。
@@ -27,6 +30,8 @@ struct DiaryListView: View {
     @State private var deletedIDs: Set<UUID> = []
     /// 目录页手势提示是否已收起（用户建了自己的第一篇 / 手动 × 后置 true，不再出现）。
     @AppStorage("contentsGestureHintDone") private var gestureHintDone = false
+    @AppStorage(AppSettings.diaryListStyleKey) private var listStyleName = DiaryListStyle.editorial.rawValue
+    @State private var showStylePicker = false
     private var stats: DataManager.StreakStats { DataManager.streakStats(entries) }
 
     private var filtered: [DiaryEntry] {
@@ -76,10 +81,10 @@ struct DiaryListView: View {
                                 // gi=0 = 最新 = 第 1 篇，直接用 gi 作为 entryIndex
                                 let page = gi + 1
                                 let pending = deletedIDs.contains(entry.id) || deletionCoordinator.hiddenIDs.contains(entry.id)
-                                DiaryRow(entry: entry, page: page, isPendingDelete: pending)
+                                DiaryRow(entry: entry, page: page, style: selectedListStyle, isPendingDelete: pending)
                                     .onTapGesture { navigator.goToEntry(at: gi) }
                                     .contextMenu {
-                                        Button { editTarget = entry; showEditor = true } label: {
+                                        Button { editTarget = entry; preWarmKeyboard(); showEditor = true } label: {
                                             Label("Edit", systemImage: "square.and.pencil")
                                         }
                                         Button(role: .destructive) { deleteTarget = entry } label: {
@@ -111,9 +116,22 @@ struct DiaryListView: View {
 
             fab
         }
+        .task { await purchaseManager.refresh() }
         // 用户建了自己的第一篇（欢迎页之外）后，目录手势提示功成身退，永久收起。
         .onChange(of: entries.count) { _, newCount in
             if newCount >= 2 { gestureHintDone = true }
+        }
+        .onChange(of: purchaseManager.isUnlocked) { _, unlocked in
+            if !unlocked, !(DiaryListStyle(rawValue: listStyleName) ?? .editorial).isFree {
+                listStyleName = DiaryListStyle.editorial.rawValue
+            }
+        }
+        .onChange(of: listStyleName) { _, newValue in
+            let style = DiaryListStyle(rawValue: newValue) ?? .editorial
+            let effective = effectiveStyle(for: style)
+            if effective.rawValue != newValue {
+                listStyleName = effective.rawValue
+            }
         }
         // 新建与编辑共用同一个编辑器 sheet：editTarget 非空＝左滑「Edit」进编辑，否则＝新建。
         .dimmedSheet(isPresented: $showEditor, detents: [.fraction(2/3), .large], onDismiss: { editTarget = nil; pendingAutoRecord = false }) {
@@ -125,6 +143,21 @@ struct DiaryListView: View {
         .dimmedSheet(isPresented: $showInsights) { InsightsView() }
         .dimmedSheet(isPresented: $showPrompts) { PromptsView() }
         .dimmedSheet(isPresented: $showStats) { StatsView() }
+        .dimmedSheet(isPresented: $showPaywall) {
+            PaywallView(feature: paywallFeature)
+        }
+        .dimmedSheet(isPresented: $showStylePicker, detents: [.medium]) {
+            DiaryListStylePicker(
+                selectedStyle: Binding(
+                    get: { selectedListStyle },
+                    set: { setSelectedListStyle($0) }
+                ),
+                isUnlocked: purchaseManager.isUnlocked,
+                onSelectLocked: {
+                    showStylePaywall()
+                }
+            )
+        }
         .alert("Delete this entry?", isPresented: Binding(
             get: { deleteTarget != nil },
             set: { if !$0 { deleteTarget = nil } }
@@ -159,11 +192,35 @@ struct DiaryListView: View {
         }
     }
 
+    private var selectedListStyle: DiaryListStyle {
+        let stored = DiaryListStyle(rawValue: listStyleName) ?? .editorial
+        return effectiveStyle(for: stored)
+    }
+
+    private func effectiveStyle(for style: DiaryListStyle) -> DiaryListStyle {
+        guard !style.isFree, !purchaseManager.isUnlocked else { return style }
+        return .editorial
+    }
+
+    private func setSelectedListStyle(_ style: DiaryListStyle) {
+        if style.isFree || purchaseManager.isUnlocked {
+            listStyleName = style.rawValue
+        } else {
+            listStyleName = DiaryListStyle.editorial.rawValue
+            showStylePaywall()
+        }
+    }
+
+    private func showStylePaywall() {
+        paywallFeature = .general
+        showPaywall = true
+    }
+
     // MARK: 顶部栏（标题行 + 三入口）
 
     private var header: some View {
         VStack(spacing: Metric.m) {
-            // 标题行：目录 + 搜索图标 + 设置齿轮
+            // 标题行：目录 + 搜索图标 + 样式选择 + 设置齿轮
             HStack(alignment: .center, spacing: Metric.l) {
                 Text("Contents").font(.dSerifTitle).foregroundStyle(pal.ink)
                 Spacer()
@@ -183,6 +240,14 @@ struct DiaryListView: View {
                         .font(.system(size: 19, weight: .regular))
                         .foregroundStyle(showSearch ? pal.accent : pal.inkSoft)
                 }
+                Button {
+                    showStylePicker = true
+                } label: {
+                    Image(systemName: "rectangle.grid.1x2")
+                        .font(.system(size: 19, weight: .regular))
+                        .foregroundStyle(showStylePicker ? pal.accent : pal.inkSoft)
+                }
+                .accessibilityLabel("List Style")
                 Button { navigator.goToSettings() } label: {
                     Image(systemName: "gearshape")
                         .font(.system(size: 20, weight: .regular))
@@ -214,6 +279,7 @@ struct DiaryListView: View {
         return Button {
             editTarget = nil
             pendingPrompt = written ? nil : DailyPrompt.today()
+            preWarmKeyboard()
             showEditor = true
         } label: {
             HStack(spacing: Metric.m) {
@@ -440,16 +506,236 @@ struct DiaryListView: View {
                 editTarget = nil
                 pendingPrompt = nil
                 pendingAutoRecord = false
+                preWarmKeyboard()
                 showEditor = true
             },
             onTalk: {
                 editTarget = nil
                 pendingPrompt = nil
                 pendingAutoRecord = true
+                preWarmKeyboard()
                 showEditor = true
             }
         )
         .padding(Metric.xl)
+    }
+}
+
+// MARK: - 列表样式选择
+
+private struct DiaryListStylePicker: View {
+    @Environment(\.palette) private var pal
+    @Binding var selectedStyle: DiaryListStyle
+    let isUnlocked: Bool
+    let onSelectLocked: () -> Void
+
+    private let columns = [
+        GridItem(.flexible(), spacing: Metric.s),
+        GridItem(.flexible(), spacing: Metric.s)
+    ]
+
+    var body: some View {
+        ZStack {
+            PaperBackground()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: Metric.l) {
+                    VStack(alignment: .leading, spacing: Metric.xs) {
+                        Text("List Style")
+                            .font(.dTitle)
+                            .foregroundStyle(pal.ink)
+                        Text("Choose how each entry looks in your notebook.")
+                            .font(.dCaption)
+                            .foregroundStyle(pal.inkSoft)
+                    }
+
+                    LazyVGrid(columns: columns, spacing: Metric.s) {
+                        ForEach(DiaryListStyle.allCases) { style in
+                            let locked = !style.isFree && !isUnlocked
+                            Button {
+                                if locked {
+                                    onSelectLocked()
+                                } else {
+                                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                                        selectedStyle = style
+                                    }
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: Metric.s) {
+                                    DiaryListStylePreview(style: style)
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: style.symbolName)
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundStyle(selectedStyle == style && !locked ? pal.accent : pal.inkSoft)
+                                            Text(LocalizedStringKey(style.titleKey))
+                                                .font(.dSubhead.weight(.semibold))
+                                                .foregroundStyle(pal.ink)
+                                                .lineLimit(1)
+                                            Spacer(minLength: 0)
+                                            if locked {
+                                                Image(systemName: "lock.fill")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(pal.inkSoft)
+                                            } else if selectedStyle == style {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .foregroundStyle(pal.accent)
+                                            }
+                                        }
+
+                                        Text(LocalizedStringKey(style.subtitleKey))
+                                            .font(.dCaption)
+                                            .foregroundStyle(pal.inkSoft)
+                                            .multilineTextAlignment(.leading)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                                .padding(Metric.m)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: Metric.cardRadius)
+                                        .fill(selectedStyle == style && !locked ? pal.accentSoft.opacity(0.32) : pal.card)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: Metric.cardRadius)
+                                        .stroke(selectedStyle == style && !locked ? pal.accent.opacity(0.6) : pal.line, lineWidth: selectedStyle == style && !locked ? 1.5 : 1)
+                                )
+                                .softEdge(RoundedRectangle(cornerRadius: Metric.cardRadius), elevation: 0.8)
+                                .opacity(locked ? 0.88 : 1)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text(LocalizedStringKey(style.titleKey)))
+                        }
+                    }
+                }
+                .padding(.horizontal, Metric.l)
+                .padding(.top, Metric.l)
+                .padding(.bottom, Metric.xxl)
+                .readableColumn()
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+}
+
+private struct DiaryListStylePreview: View {
+    @Environment(\.palette) private var pal
+    let style: DiaryListStyle
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 14)
+            .fill(pal.card.opacity(0.92))
+            .frame(height: 114)
+            .overlay(alignment: .topLeading) {
+                previewLayout
+                    .padding(10)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(pal.line.opacity(0.9), lineWidth: 1)
+            )
+    }
+
+    @ViewBuilder
+    private var previewLayout: some View {
+        switch style {
+        case .editorial:
+            VStack(alignment: .leading, spacing: 8) {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(pal.accentSoft.opacity(0.45))
+                    .frame(height: 28)
+                    .overlay {
+                        HStack(spacing: 5) {
+                            Capsule().fill(pal.inkSoft.opacity(0.24)).frame(width: 28, height: 8)
+                            Capsule().fill(pal.accent.opacity(0.22)).frame(width: 24, height: 8)
+                            Capsule().fill(pal.inkSoft.opacity(0.2)).frame(width: 34, height: 8)
+                        }
+                        .padding(.horizontal, 8)
+                    }
+                previewLine(width: 90)
+                previewLine(width: 72)
+                HStack(spacing: 6) {
+                    thumbnailBox
+                    thumbnailBox.opacity(0.9)
+                    Spacer()
+                    Capsule().fill(pal.inkSoft.opacity(0.18)).frame(width: 26, height: 8)
+                }
+            }
+
+        case .dateRail:
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Capsule().fill(pal.accent.opacity(0.24)).frame(width: 30, height: 10)
+                    Capsule().fill(pal.inkSoft.opacity(0.18)).frame(width: 20, height: 7)
+                }
+                Rectangle().fill(pal.line).frame(width: 1)
+                VStack(alignment: .leading, spacing: 8) {
+                    previewLine(width: 82)
+                    previewLine(width: 70)
+                    HStack(spacing: 6) {
+                        Capsule().fill(pal.accentSoft.opacity(0.55)).frame(width: 30, height: 12)
+                        Capsule().fill(pal.inkSoft.opacity(0.16)).frame(width: 48, height: 12)
+                    }
+                    HStack(spacing: 6) {
+                        thumbnailBox
+                        Spacer()
+                        Capsule().fill(pal.inkSoft.opacity(0.18)).frame(width: 26, height: 8)
+                    }
+                }
+            }
+
+        case .voiceFirst:
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Capsule().fill(pal.inkSoft.opacity(0.18)).frame(width: 28, height: 8)
+                    Spacer()
+                    Capsule().fill(pal.inkSoft.opacity(0.16)).frame(width: 24, height: 8)
+                }
+                Capsule()
+                    .fill(pal.accentSoft.opacity(0.6))
+                    .frame(height: 24)
+                    .overlay {
+                        HStack(spacing: 5) {
+                            Circle().fill(pal.accent.opacity(0.5)).frame(width: 10, height: 10)
+                            Capsule().fill(pal.accent.opacity(0.35)).frame(width: 16, height: 6)
+                            Capsule().fill(pal.accent.opacity(0.25)).frame(width: 12, height: 6)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 8)
+                    }
+                previewLine(width: 88)
+                previewLine(width: 74)
+                Capsule().fill(pal.inkSoft.opacity(0.16)).frame(width: 50, height: 12)
+            }
+
+        case .contentFirst:
+            VStack(alignment: .leading, spacing: 8) {
+                previewLine(width: 92)
+                previewLine(width: 82)
+                previewLine(width: 66)
+                Rectangle().fill(pal.line).frame(height: 1)
+                HStack(spacing: 6) {
+                    Capsule().fill(pal.inkSoft.opacity(0.16)).frame(width: 28, height: 8)
+                    Capsule().fill(pal.accent.opacity(0.22)).frame(width: 26, height: 10)
+                    Spacer()
+                    Capsule().fill(pal.inkSoft.opacity(0.16)).frame(width: 26, height: 8)
+                }
+            }
+        }
+    }
+
+    private func previewLine(width: CGFloat) -> some View {
+        Capsule()
+            .fill(pal.ink.opacity(0.12))
+            .frame(width: width, height: 8)
+    }
+
+    private var thumbnailBox: some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(pal.accentSoft.opacity(0.55))
+            .frame(width: 20, height: 20)
     }
 }
 
@@ -459,85 +745,416 @@ private struct DiaryRow: View {
     @Environment(\.palette) private var pal
     let entry: DiaryEntry
     let page: Int
+    let style: DiaryListStyle
     /// ForEach 创建行时同步传入：`deletedIDs.contains(id) || hiddenIDs.contains(id)`。
     /// 纯 Swift Bool，不碰托管对象，彻底规避 save 后 backing data detach 导致的
     /// `entry.photos`（@Attribute.externalStorage）fatal error。
     let isPendingDelete: Bool
 
     var body: some View {
-        if isPendingDelete || entry.isDeleted { EmptyView() } else {
-        VStack(alignment: .leading, spacing: Metric.xs) {
-            // meta：日期 · 语音 · 地址 并排在第一行
-            HStack(spacing: Metric.xs) {
-                Text(dateStr).font(.dCaption).foregroundStyle(pal.inkSoft)
-                if let m = entry.memos.first {
-                    dot
-                    HStack(spacing: 3) {
-                        Image(systemName: "mic.fill").font(.system(size: 12))
-                        Text(durStr(m.duration))
-                    }
-                    .font(.dCaption.weight(.semibold))
-                    .foregroundStyle(pal.accent)
-                }
-                if entry.showLocation, !entry.location.isEmpty {
-                    dot
-                    HStack(spacing: 3) {
-                        LocationPin(size: 12, color: pal.accent)
-                        Text(entry.location)
-                            .lineLimit(1).truncationMode(.tail)
-                    }
-                    .font(.dCaption)
-                    .foregroundStyle(pal.inkSoft)
-                }
-                Spacer(minLength: 0)
-            }
-            Text(entry.content)
-                .font(entry.resolvedFont.swiftUIFont(size: 17))
-                .foregroundStyle(entry.bodyColor(palette: pal))
-                .lineLimit(2).multilineTextAlignment(.leading)
-                .lineSpacing(2)
-            if !entry.photos.isEmpty {
-                HStack(spacing: Metric.xs) {
-                    ForEach(Array(entry.photos.prefix(3).enumerated()), id: \.offset) { _, photo in
-                        if let ui = Thumbnailer.thumbnail(photo, side: 38) {
-                            Image(uiImage: ui).resizable().scaledToFill()
-                                .frame(width: 38, height: 38)
-                                .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
-                        }
-                    }
-                    if entry.photos.count > 3 {
-                        Text("+\(entry.photos.count - 3)")
-                            .font(.dCaption).foregroundStyle(pal.inkSoft)
-                            .frame(width: 38, height: 38)
-                            .background(pal.line, in: RoundedRectangle(cornerRadius: Metric.thumbRadius))
-                    }
-                }
-                .padding(.top, 2)
-            }
-            // 页码放右下角
-            HStack {
-                Spacer()
-                Text("Entry \(page)")
-                    .font(.dLabel)
-                    .tracking(1)
-                    .foregroundStyle(pal.inkSoft.opacity(0.5))
-            }
-        }
-        .padding(Metric.l)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .diaryCard()
+        if isPendingDelete || entry.isDeleted {
+            EmptyView()
+        } else {
+            rowBody
         }
     }
 
-    private var dot: some View { Text("·").font(.dCaption).foregroundStyle(pal.inkSoft) }
-    private var dateStr: String {
-        let f = DateFormatter()
-        let cal = Calendar.current
-        let isSameYear = cal.component(.year, from: entry.date) == cal.component(.year, from: Date())
-        f.dateFormat = isSameYear ? "MM/dd" : "yyyy/MM/dd"
-        return f.string(from: entry.date)
+    @ViewBuilder
+    private var rowBody: some View {
+        switch style {
+        case .editorial:
+            editorialLayout
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .diaryCard()
+        case .dateRail, .voiceFirst, .contentFirst:
+            layout
+                .padding(Metric.l)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .diaryCard()
+        }
     }
-    private func durStr(_ d: Double) -> String { String(format: "%d:%02d", Int(d) / 60, Int(d) % 60) }
+
+    @ViewBuilder
+    private var layout: some View {
+        switch style {
+        case .editorial:
+            editorialLayout
+        case .dateRail:
+            dateRailLayout
+        case .voiceFirst:
+            voiceFirstLayout
+        case .contentFirst:
+            contentFirstLayout
+        }
+    }
+
+    private var editorialLayout: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                editorialDateTimeLine
+                Spacer()
+                editorialTopMetaLine
+            }
+            .padding(.horizontal, Metric.l)
+            .padding(.vertical, Metric.m)
+            .background(
+                LinearGradient(
+                    colors: [pal.accentSoft.opacity(0.58), pal.accentSoft.opacity(0.14)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+
+            VStack(alignment: .leading, spacing: Metric.m) {
+                contentText(lineLimit: 2)
+
+                HStack(alignment: .bottom, spacing: Metric.m) {
+                    if !entry.photos.isEmpty {
+                        photoStrip
+                    }
+                    Spacer(minLength: 0)
+                    pageLabel
+                }
+            }
+            .padding(Metric.l)
+        }
+    }
+
+    private var dateRailLayout: some View {
+        HStack(alignment: .center, spacing: Metric.m) {
+            VStack(spacing: 2) {
+                Text(monthAbbrevStr)
+                    .font(.dLabel)
+                    .foregroundStyle(pal.inkSoft)
+                    .tracking(1.2)
+                Text(dayNumberStr)
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundStyle(pal.ink)
+                    .monospacedDigit()
+                Text(timeStr)
+                    .font(.dLabel)
+                    .foregroundStyle(pal.inkSoft)
+            }
+            .frame(width: 74)
+
+            Rectangle()
+                .fill(pal.line.opacity(0.9))
+                .frame(width: 1)
+
+            VStack(alignment: .leading, spacing: Metric.m) {
+                contentText(lineLimit: 2)
+
+                if !entry.photos.isEmpty {
+                    photoStrip
+                }
+
+                HStack(spacing: Metric.s) {
+                    HStack(spacing: 7) {
+                        if memo != nil {
+                            compactVoiceChip
+                        }
+                        if locationText != nil {
+                            compactLocationChip
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    pageLabel
+                }
+            }
+        }
+    }
+
+    private var voiceFirstLayout: some View {
+        VStack(alignment: .leading, spacing: Metric.m) {
+            HStack(alignment: .top, spacing: Metric.m) {
+                voiceTopMetaLine
+                Spacer(minLength: 0)
+                voiceArtifactMeta
+            }
+
+            contentText(lineLimit: 2)
+
+            HStack(alignment: .bottom, spacing: Metric.m) {
+                VStack(alignment: .leading, spacing: Metric.s) {
+                    if !entry.photos.isEmpty {
+                        photoStrip
+                    }
+                    if locationText != nil {
+                        locationLine
+                    }
+                }
+                Spacer(minLength: 0)
+                pageLabel
+            }
+        }
+    }
+
+    private var contentFirstLayout: some View {
+        VStack(alignment: .leading, spacing: Metric.m) {
+            contentText(lineLimit: 3)
+
+            HStack(alignment: .bottom, spacing: Metric.m) {
+                if !entry.photos.isEmpty {
+                    photoStrip
+                }
+                Spacer(minLength: 0)
+                pageLabel
+            }
+
+            Rectangle()
+                .fill(pal.line.opacity(0.9))
+                .frame(height: 1)
+
+            HStack(spacing: 8) {
+                footerDateTimeLine
+                if memo != nil {
+                    metaDot
+                    footerMetaText(systemImage: "mic.fill", text: durStr(memo?.duration ?? 0), accent: false)
+                }
+                if locationText != nil {
+                    metaDot
+                    footerLocationText
+                }
+                Spacer(minLength: 0)
+            }
+            .font(.dCaption)
+        }
+    }
+
+    private var memo: VoiceMemo? { entry.memos.first }
+
+    private var locationText: String? {
+        guard entry.showLocation, !entry.location.isEmpty else { return nil }
+        return entry.location
+    }
+
+    private var editorialTopMetaLine: some View {
+        HStack(spacing: 12) {
+            if memo != nil {
+                footerMetaText(systemImage: "mic.fill", text: durStr(memo?.duration ?? 0), accent: true)
+            }
+            if locationText != nil {
+                footerLocationText
+            }
+        }
+        .font(.dCaption)
+    }
+
+    private var editorialDateTimeLine: some View {
+        HStack(spacing: 8) {
+            Text(spacedDateStr)
+                .font(.dCaption.weight(.bold))
+                .foregroundStyle(pal.accent)
+                .monospacedDigit()
+            Text(timeStr)
+                .font(.dLabel)
+                .foregroundStyle(pal.inkSoft)
+                .monospacedDigit()
+        }
+    }
+
+    private func footerMetaText(systemImage: String, text: String, accent: Bool) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .font(.system(size: 11, weight: .semibold))
+            Text(text)
+                .monospacedDigit()
+        }
+        .foregroundStyle(accent ? pal.accent : pal.inkSoft)
+    }
+
+    private var footerLocationText: some View {
+        HStack(spacing: 4) {
+            LocationPin(size: 12, color: pal.accent)
+            Text(locationText ?? "")
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .foregroundStyle(pal.inkSoft)
+    }
+
+    private var compactVoiceChip: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "mic.fill")
+                .font(.system(size: 11, weight: .semibold))
+            Text(durStr(memo?.duration ?? 0))
+                .monospacedDigit()
+        }
+        .font(.dCaption.weight(.bold))
+        .foregroundStyle(pal.accent)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(pal.accentSoft.opacity(0.72))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(pal.accent.opacity(0.16), lineWidth: 1)
+        )
+    }
+
+    private var compactLocationChip: some View {
+        HStack(spacing: 4) {
+            LocationPin(size: 12, color: pal.inkSoft)
+            Text(locationText ?? "")
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .font(.dCaption)
+        .foregroundStyle(pal.inkSoft)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(red: 0.96, green: 0.94, blue: 0.88).opacity(0.9))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(pal.line, lineWidth: 1)
+        )
+    }
+
+    private var voiceTopMetaLine: some View {
+        HStack(spacing: 8) {
+            Text(fullDateStr)
+                .font(.dSubhead.weight(.semibold))
+                .foregroundStyle(pal.ink)
+            Text(timeStr)
+                .font(.dLabel)
+                .foregroundStyle(pal.inkSoft)
+                .monospacedDigit()
+        }
+    }
+
+    private var voiceArtifactMeta: some View {
+        HStack(spacing: 6) {
+            HStack(alignment: .center, spacing: 2) {
+                waveformBar(5)
+                waveformBar(11)
+                waveformBar(8)
+                waveformBar(14)
+                waveformBar(7)
+                waveformBar(10)
+            }
+
+            Text(durStr(memo?.duration ?? 0))
+                .monospacedDigit()
+        }
+        .font(.dCaption.weight(.semibold))
+        .foregroundStyle(pal.accent)
+    }
+
+    private func waveformBar(_ height: CGFloat) -> some View {
+        Capsule()
+            .fill(pal.accent)
+            .frame(width: 2, height: height)
+    }
+
+    private var photoStrip: some View {
+        HStack(spacing: Metric.xs) {
+            ForEach(Array(entry.photos.prefix(3).enumerated()), id: \.offset) { _, photo in
+                if let ui = Thumbnailer.thumbnail(photo, side: 42) {
+                    Image(uiImage: ui)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 42, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: Metric.thumbRadius))
+                }
+            }
+            if entry.photos.count > 3 {
+                Text("+\(entry.photos.count - 3)")
+                    .font(.dCaption)
+                    .foregroundStyle(pal.inkSoft)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: Metric.thumbRadius)
+                            .fill(pal.line.opacity(0.8))
+                    )
+            }
+        }
+    }
+
+    private func contentText(lineLimit: Int) -> some View {
+        Text(entry.content)
+            .font(entry.resolvedFont.swiftUIFont(size: 17))
+            .foregroundStyle(entry.bodyColor(palette: pal))
+            .lineLimit(lineLimit)
+            .multilineTextAlignment(.leading)
+            .lineSpacing(2)
+    }
+
+    private var pageLabel: some View {
+        Text("Entry \(page)")
+            .font(.dLabel)
+            .tracking(1)
+            .foregroundStyle(pal.inkSoft.opacity(0.55))
+    }
+
+    private var locationLine: some View {
+        HStack(spacing: 5) {
+            LocationPin(size: 12, color: pal.accent)
+            Text(locationText ?? "")
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .font(.dCaption)
+        .foregroundStyle(pal.inkSoft)
+    }
+
+    private var metaDot: some View {
+        Text("·")
+            .font(.dCaption)
+            .foregroundStyle(pal.inkSoft.opacity(0.7))
+    }
+
+    private var footerDateTimeLine: some View {
+        HStack(spacing: 8) {
+            Text(dateStr)
+                .font(.dCaption.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(pal.accent)
+            Text(timeStr)
+                .font(.dCaption)
+                .monospacedDigit()
+                .foregroundStyle(pal.inkSoft)
+        }
+    }
+
+    private var dateStr: String {
+        if isCurrentYear {
+            return entry.date.formatted(.dateTime.month(.twoDigits).day(.twoDigits))
+        }
+        return entry.date.formatted(.dateTime.year().month(.twoDigits).day(.twoDigits))
+    }
+
+    private var spacedDateStr: String {
+        "\(entry.date.formatted(.dateTime.month(.twoDigits))) / \(entry.date.formatted(.dateTime.day(.twoDigits)))"
+    }
+
+    private var fullDateStr: String {
+        entry.date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private var monthAbbrevStr: String {
+        entry.date.formatted(.dateTime.month(.abbreviated)).uppercased()
+    }
+
+    private var dayNumberStr: String {
+        entry.date.formatted(.dateTime.day(.twoDigits))
+    }
+
+    private var timeStr: String {
+        entry.date.formatted(.dateTime.hour().minute())
+    }
+
+    private var isCurrentYear: Bool {
+        Calendar.current.component(.year, from: entry.date) == Calendar.current.component(.year, from: Date())
+    }
+
+    private func durStr(_ d: Double) -> String {
+        String(format: "%d:%02d", Int(d) / 60, Int(d) % 60)
+    }
 }
 
 // MARK: - 特性入口按钮按压反馈（轻微缩放 + 压暗，强化「可点」感）

@@ -5,6 +5,8 @@ import SwiftUI
 @MainActor
 enum AppSettings {
 
+    static let diaryListStyleKey = "diaryListStyle"
+
     // MARK: - 上次使用的字体
 
     @AppStorage("lastFontName")
@@ -37,4 +39,61 @@ enum AppSettings {
 
     @AppStorage("transcriptionLanguage")
     static var transcriptionLanguage: String = ""
+}
+
+enum DiaryListStyle: String, CaseIterable, Identifiable {
+    case editorial
+    case dateRail
+    case voiceFirst
+    case contentFirst
+
+    var id: String { rawValue }
+
+    var isFree: Bool {
+        switch self {
+        case .editorial, .dateRail:
+            return true
+        case .voiceFirst, .contentFirst:
+            return false
+        }
+    }
+
+    var titleKey: String {
+        switch self {
+        case .editorial:
+            return "Editorial"
+        case .dateRail:
+            return "Date Rail"
+        case .voiceFirst:
+            return "Voice First"
+        case .contentFirst:
+            return "Content First"
+        }
+    }
+
+    var subtitleKey: String {
+        switch self {
+        case .editorial:
+            return "Clear separation between meta and writing."
+        case .dateRail:
+            return "A strong date anchor with a tidy reading column."
+        case .voiceFirst:
+            return "Gives recording details more presence."
+        case .contentFirst:
+            return "Keeps the writing as the main focus."
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .editorial:
+            return "rectangle.grid.1x2"
+        case .dateRail:
+            return "sidebar.left"
+        case .voiceFirst:
+            return "waveform"
+        case .contentFirst:
+            return "text.alignleft"
+        }
+    }
 }

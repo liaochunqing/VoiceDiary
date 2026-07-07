@@ -142,6 +142,7 @@ struct PromptsView: View {
             .navigationDestination(item: $selectedPack) { pack in
                 PromptPackDetailView(pack: pack) { prompt in
                     pickedPrompt = prompt
+                    preWarmKeyboard()
                     showEditor = true
                 }
             }
@@ -165,6 +166,7 @@ struct PromptsView: View {
     private var todayCard: some View {
         Button {
             pickedPrompt = todayPrompt
+            preWarmKeyboard()
             showEditor = true
         } label: {
             VStack(alignment: .leading, spacing: Metric.m) {
