@@ -105,6 +105,28 @@
         }
       }
     },
+    "%lld free recordings left this week" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本周剩余 %lld 次免费录音"
+          }
+        }
+      }
+    },
+    "%lld left" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剩余 %lld 次"
+          }
+        }
+      }
+    },
     "← → Swipe left or right to flip between pages, like a real notebook." : {
       "extractionState" : "stale",
       "localizations" : {

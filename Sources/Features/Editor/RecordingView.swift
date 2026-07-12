@@ -43,6 +43,8 @@ struct RecordingView: View {
     var hasExistingContent: Bool = false
     /// 录音 sheet 的高度档位：转写文字塞不下时自动从 medium 升到 large。
     var detent: Binding<PresentationDetent>? = nil
+    /// 本周剩余免费转写次数；nil = Pro 用户（不限），非 nil 时在界面展示剩余次数。
+    var remainingTranscriptions: Int? = nil
     let onDone: (VoiceResult?) -> Void
 
     private enum Stage { case prep, recording, stopped, denied }
@@ -136,6 +138,18 @@ struct RecordingView: View {
                 title: stage == .recording ? "Recording" : "This recording",
                 showRecordingDot: stage == .recording
             )
+
+            // 免费用户剩余次数提示
+            if let remaining = remainingTranscriptions {
+                HStack {
+                    Spacer()
+                    Text(recordingRemainingText(remaining))
+                        .font(.dCaption)
+                        .foregroundStyle(pal.inkSoft)
+                    Spacer()
+                }
+                .padding(.top, Metric.xs)
+            }
 
             VStack(spacing: Metric.m) {
                 // 计时器 + 波形 — 仅录音中显示；停止后语音条自带迷你波形和时长
@@ -497,6 +511,11 @@ struct RecordingView: View {
     }
 
     // MARK: - 逻辑
+
+    /// 剩余次数提示文本：String(localized:) 返回已本地化的字符串，再由 Text 以 verbatim 渲染。
+    private func recordingRemainingText(_ remaining: Int) -> String {
+        String(localized: "\(remaining) free recordings left this week")
+    }
 
     /// 录音被中断时保命：让 recorder 落盘，再把停止态铺好，提示用户这段已保存。
     private func handleInterrupt() {

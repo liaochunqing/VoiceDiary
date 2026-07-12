@@ -145,7 +145,9 @@ struct AddDiaryView: View {
         .dimmedSheet(isPresented: $showRecorder) {
             RecordingView(
                 hasExistingContent: !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                detent: $recorderDetent
+                detent: $recorderDetent,
+                remainingTranscriptions: PurchaseManager.shared.isUnlocked
+                    ? nil : remainingTranscriptions
             ) { result in
                 showRecorder = false
                 guard let r = result else { return }
@@ -420,9 +422,23 @@ struct AddDiaryView: View {
 
     private var bottomToolbar: some View {
         HStack(spacing: Metric.xs) {
-            toolButton(icon: "mic.fill", label: "Record", active: false) {
+            // 录音按钮：免费用户展示剩余次数，Pro 不展示
+            Button {
                 tryStartRecording()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(pal.accent)
+                        .frame(height: 20)
+                    Text(recordLabel)
+                        .font(.dCaption)
+                        .foregroundStyle(pal.inkSoft)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Metric.s)
             }
+            .buttonStyle(.plain)
 
             // 照片：本身就是相册选择器，点开系统选图
             PhotosPicker(selection: $photoItems,
@@ -558,6 +574,18 @@ struct AddDiaryView: View {
 
     private func canTranscribeThisWeek() -> Bool {
         PurchaseManager.shared.isUnlocked || weeklyTranscriptionCount < Self.maxFreeTranscriptionsPerWeek
+    }
+
+    /// 本周剩余免费转写次数（Pro 用户为 0 不展示，仅用于免费用户 UI 提示）。
+    private var remainingTranscriptions: Int {
+        max(0, Self.maxFreeTranscriptionsPerWeek - weeklyTranscriptionCount)
+    }
+
+    /// 录音按钮文案：Pro 仅「Record」，免费展示「N left」。
+    /// 用 String(localized:) 返回已本地化的字符串，再由 Text 以 verbatim 渲染。
+    private var recordLabel: String {
+        if PurchaseManager.shared.isUnlocked { return String(localized: "Record") }
+        return String(localized: "\(remainingTranscriptions) left")
     }
 
     private func incrementTranscriptionCount() {
