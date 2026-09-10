@@ -786,6 +786,17 @@
         }
       }
     },
+    "Contents Modules" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目录模块"
+          }
+        }
+      }
+    },
     "Continue · %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1382,6 +1393,16 @@
         }
       }
     },
+    "Hidden — tap the modules icon to bring it back" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已隐藏，点上方 ≙ 图标可恢复"
+          }
+        }
+      }
+    },
     "How does your body feel today?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1674,6 +1695,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要麦克风权限"
+          }
+        }
+      }
+    },
+    "Modules" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模块"
           }
         }
       }
@@ -2764,6 +2795,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "存储用量"
+          }
+        }
+      }
+    },
+    "Streak" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连续天数"
           }
         }
       }

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>目录页模块显隐 · 方案 C v2（弹窗开关式）</title>
+<style>
+  :root {
+    --paper: #F5EDDA;
+    --card: #FFFEF8;
+    --line: #D9CBAC;
+    --ink: #221A0E;
+    --ink-soft: #8A7860;
+    --accent: #7A5A14;
+    --accent-soft: #E8C97A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", sans-serif;
+    background: #EDE4CE;
+    color: var(--ink);
+    padding: 48px 32px 96px;
+  }
+  .page-head { max-width: 1240px; margin: 0 auto 40px; }
+  .page-head h1 { font-family: Georgia, "Songti SC", serif; font-size: 30px; }
+  .page-head p { margin-top: 10px; color: var(--ink-soft); font-size: 14px; line-height: 1.9; }
+  .page-head code { background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+
+  .section-title {
+    max-width: 1240px; margin: 56px auto 20px;
+    font-size: 17px; font-weight: 700;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .section-title .zh { color: var(--ink-soft); font-weight: 400; font-size: 13px; }
+
+  .frames { max-width: 1240px; margin: 0 auto; display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start; }
+  .frame-wrap { text-align: center; }
+  .frame-wrap .cap { margin-top: 12px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.7; max-width: 300px; text-align: center; }
+  .frame-wrap .cap b { color: var(--ink); }
+
+  .phone {
+    width: 300px; height: 620px;
+    background: var(--paper);
+    border: 6px solid #1d1710;
+    border-radius: 42px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 18px 40px rgba(40,28,8,.25);
+    text-align: left;
+  }
+  .phone-inner { padding: 18px 16px; height: 100%; display: flex; flex-direction: column; gap: 12px; }
+
+  .p-title-row { display: flex; align-items: center; gap: 14px; }
+  .p-title { font-family: Georgia, serif; font-size: 25px; font-weight: 700; }
+  .p-icons { margin-left: auto; display: flex; gap: 13px; color: var(--ink-soft); font-size: 15px; align-items: center; }
+  .p-icons svg { display: block; }
+  .icon-badge { position: relative; }
+  .icon-badge::after {
+    content: ""; position: absolute; top: -3px; right: -4px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); border: 1.5px solid var(--paper);
+  }
+
+  .streak-card {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(232,201,122,.45);
+    border: 1px solid rgba(122,90,20,.22);
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+  .streak-ico {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(122,90,20,.16);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex: none;
+  }
+  .streak-txt .t1 { font-size: 12.5px; font-weight: 700; }
+  .streak-txt .t2 { font-size: 10.5px; color: var(--ink-soft); font-style: italic; margin-top: 2px; }
+  .write-btn {
+    margin-left: auto; background: var(--accent); color: #FFF8E7;
+    font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 5px 12px; flex: none;
+  }
+
+  .feat-row { display: flex; gap: 8px; }
+  .feat {
+    flex: 1; background: var(--card); border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(40,28,8,.08);
+    padding: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .feat .f-ico {
+    width: 24px; height: 24px; border-radius: 50%; flex: none;
+    background: linear-gradient(180deg, var(--accent-soft), rgba(232,201,122,.5));
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+  .feat .f-label { font-size: 10px; font-weight: 700; line-height: 1.2; }
+
+  .row-card {
+    background: var(--card); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 3px 8px rgba(40,28,8,.07);
+  }
+  .row-head {
+    background: linear-gradient(90deg, rgba(232,201,122,.58), rgba(232,201,122,.14));
+    padding: 8px 12px; display: flex; gap: 8px; align-items: center;
+  }
+  .row-head .d { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .5px; }
+  .row-head .tm { font-size: 9px; color: var(--ink-soft); }
+  .row-body { padding: 10px 12px; }
+  .sk { height: 8px; border-radius: 5px; background: rgba(34,26,14,.12); margin-bottom: 7px; }
+  .entry-no { font-size: 8.5px; color: rgba(138,120,96,.55); letter-spacing: 1px; text-align: right; margin-top: 4px; }
+
+  .fab {
+    position: absolute; right: 16px; bottom: 18px;
+    background: var(--ink); color: #F5EDDA;
+    border-radius: 30px; padding: 10px 18px;
+    font-size: 12px; font-weight: 700;
+    display: flex; gap: 8px; align-items: center;
+    box-shadow: 0 8px 18px rgba(34,26,14,.35);
+  }
+  .fab .sep { opacity: .4; }
+
+  /* 模块弹窗 */
+  .module-menu {
+    position: absolute; top: 50px; right: 12px; width: 216px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: 0 16px 36px rgba(40,28,8,.3);
+    padding: 6px; z-index: 5;
+  }
+  .module-menu .mm-title {
+    font-size: 9px; letter-spacing: 1.2px; color: var(--ink-soft);
+    padding: 7px 10px 5px;
+  }
+  .mm-row { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 10px; font-size: 11.5px; }
+  .mm-row:hover { background: rgba(232,201,122,.25); }
+  .mm-row .m-ico {
+    width: 22px; height: 22px; border-radius: 50%; flex: none;
+    background: linear-gradient(180deg, var(--accent-soft), rgba(232,201,122,.5));
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+  }
+  .switch {
+    margin-left: auto; width: 32px; height: 19px; border-radius: 11px;
+    background: #D8CBAE; position: relative; flex: none; transition: background .15s;
+  }
+  .switch.on { background: var(--accent); }
+  .switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 15px; height: 15px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  }
+  .switch.on::after { left: 15px; }
+
+  .toast {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 78px;
+    background: var(--ink); color: #F5EDDA; font-size: 10.5px;
+    border-radius: 18px; padding: 8px 16px; white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(34,26,14,.35);
+  }
+  .scrim { position: absolute; inset: 0; background: rgba(34,26,14,.18); z-index: 4; }
+
+  /* 规格表 */
+  .spec {
+    max-width: 1240px; margin: 60px auto 0;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 26px 30px;
+  }
+  .spec h3 { font-size: 16px; margin-bottom: 14px; }
+  .spec table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .spec td { padding: 9px 12px; border-top: 1px solid rgba(217,203,172,.55); vertical-align: top; line-height: 1.7; }
+  .spec tr td:first-child { width: 150px; color: var(--ink-soft); border-top: none; }
+  .spec tr td:last-child { border-top: 1px solid rgba(217,203,172,.55); }
+  .spec tr:first-child td { border-top: none; }
+  .spec code { background: var(--paper); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>目录页模块显隐 · 方案 C v2</h1>
+  <p>相对 v1 的三处改进：① 卡片上<b>不再有常驻 ×</b>，显隐全部由标题行弹出的小菜单开关控制；② 标题行图标从 👁 换成 <b>slider.horizontal.3</b>（≙ 调节滑杆，系统级"自定义"语义，不突兀）；③ 四个开关 <b>@AppStorage 持久化</b>，默认全开，杀掉 App 重进仍保持。<br>
+  模块对应关系：连续天数 = 今日状态条；引导 / 洞察 / 统计 = 三入口卡逐张独立。</p>
+</div>
+
+<div class="section-title">1 · 默认状态 <span class="zh">默认全开，与现状完全一致，无新视觉元素打扰</span></div>
+<div class="frames">
+  <div class="frame-wrap">
+    <div class="phone"><div class="phone-inner">
+      <div class="p-title-row"><span class="p-title">Contents</span>
+        <div class="p-icons">
+          <span>⌕</span>
+          <span><svg width="17" height="17" viewBox="0 0 17 17"><g stroke="#8A7860" stroke-width="1.6" stroke-linecap="round"><line x1="1.5" y1="4" x2="15.5" y2="4"/><line x1="1.5" y1="8.5" x2="15.5" y2="8.5"/><line x1="1.5" y1="13" x2="15.5" y2="13"/></g><g fill="#8A7860"><circle cx="11" cy="4" r="2.4"/><circle cx="5.5" cy="8.5" r="2.4"/><circle cx="9" cy="13" r="2.4"/></g></svg></span>
+          <span>▦</span><span>⚙</span>
+        </div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-ico">🔥</div>
+        <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+        <div class="write-btn">Write</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+        <div class="feat"><div class="f-ico">✨</div><div class="f-label">AI Insights</div></div>
+        <div class="feat"><div class="f-ico">📊</div><div class="f-label">Stats</div></div>
+      </div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+      <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+    </div></div>
+    <div class="cap"><b>默认全开</b>：和现在的目录页一模一样<br>唯一的差别是标题行多了中间的 ≙ 图标</div>
+  </div>
+
+  <div class="frame-wrap">
+    <div style="width:300px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;text-align:left;box-shadow:0 8px 20px rgba(40,28,8,.1)">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">标题行图标（从左到右）</div>
+      <div style="display:flex;gap:22px;font-size:12px;color:var(--ink-soft);align-items:center">
+        <div style="text-align:center"><div style="font-size:18px;color:var(--ink)">⌕</div>搜索</div>
+        <div style="text-align:center"><div><svg width="19" height="19" viewBox="0 0 17 17"><g stroke="#221A0E" stroke-width="1.6" stroke-linecap="round"><line x1="1.5" y1="4" x2="15.5" y2="4"/><line x1="1.5" y1="8.5" x2="15.5" y2="8.5"/><line x1="1.5" y1="13" x2="15.5" y2="13"/></g><g fill="#221A0E"><circle cx="11" cy="4" r="2.4"/><circle cx="5.5" cy="8.5" r="2.4"/><circle cx="9" cy="13" r="2.4"/></g></svg></div>模块 ≙</div>
+        <div style="text-align:center"><div style="font-size:18px;color:var(--ink)">▦</div>列表样式</div>
+        <div style="text-align:center"><div style="font-size:18px;color:var(--ink)">⚙</div>设置</div>
+      </div>
+      <div style="margin-top:14px;font-size:11.5px;color:var(--ink-soft);line-height:1.8">
+        新图标用 SF Symbol <b>slider.horizontal.3</b>——iOS 系统里"自定义 / 调节"的标准语义（控制中心编辑同款），暖灰 inkSoft 色，和搜索、样式、齿轮并排毫不突兀。备选：<code>rectangle.3.group</code>（模块感更强）。</div>
+    </div>
+    <div class="cap" style="margin-top:12px"><b>图标选型说明</b></div>
+  </div>
+</div>
+
+<div class="section-title">2 · 点 ≙ 弹出模块菜单 <span class="zh">显隐唯一的控制点，开关即点即生效</span></div>
+<div class="frames">
+  <div class="frame-wrap">
+    <div class="phone"><div class="phone-inner">
+      <div class="scrim"></div>
+      <div class="p-title-row"><span class="p-title">Contents</span>
+        <div class="p-icons">
+          <span>⌕</span>
+          <span style="color:var(--accent)"><svg width="17" height="17" viewBox="0 0 17 17"><g stroke="#7A5A14" stroke-width="1.6" stroke-linecap="round"><line x1="1.5" y1="4" x2="15.5" y2="4"/><line x1="1.5" y1="8.5" x2="15.5" y2="8.5"/><line x1="1.5" y1="13" x2="15.5" y2="13"/></g><g fill="#7A5A14"><circle cx="11" cy="4" r="2.4"/><circle cx="5.5" cy="8.5" r="2.4"/><circle cx="9" cy="13" r="2.4"/></g></svg></span>
+          <span>▦</span><span>⚙</span>
+        </div>
+      </div>
+      <div class="module-menu">
+        <div class="mm-title">目录页模块 · MODULES</div>
+        <div class="mm-row"><span class="m-ico">🔥</span>连续天数<span class="switch on"></span></div>
+        <div class="mm-row"><span class="m-ico">💡</span>今日引导<span class="switch on"></span></div>
+        <div class="mm-row"><span class="m-ico">✨</span>AI 洞察<span class="switch"></span></div>
+        <div class="mm-row"><span class="m-ico">📊</span>统计<span class="switch"></span></div>
+      </div>
+      <div class="streak-card" style="opacity:.4">
+        <div class="streak-ico">🔥</div>
+        <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+        <div class="write-btn">Write</div>
+      </div>
+      <div class="feat-row" style="opacity:.4">
+        <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+      </div>
+      <div class="row-card" style="opacity:.4"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="entry-no">ENTRY 1</div></div></div>
+      <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+    </div></div>
+    <div class="cap"><b>菜单展开</b>：背景压暗，模块随关随消失（带 0.3s 弹簧动画）<br>再点 ≙ 或点空白处收起</div>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="phone"><div class="phone-inner">
+      <div class="p-title-row"><span class="p-title">Contents</span>
+        <div class="p-icons">
+          <span>⌕</span>
+          <span class="icon-badge"><svg width="17" height="17" viewBox="0 0 17 17"><g stroke="#8A7860" stroke-width="1.6" stroke-linecap="round"><line x1="1.5" y1="4" x2="15.5" y2="4"/><line x1="1.5" y1="8.5" x2="15.5" y2="8.5"/><line x1="1.5" y1="13" x2="15.5" y2="13"/></g><g fill="#8A7860"><circle cx="11" cy="4" r="2.4"/><circle cx="5.5" cy="8.5" r="2.4"/><circle cx="9" cy="13" r="2.4"/></g></svg></span>
+          <span>▦</span><span>⚙</span>
+        </div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-ico">🔥</div>
+        <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+        <div class="write-btn">Write</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+      </div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 08</span><span class="tm">08:02</span></div><div class="row-body"><div class="sk" style="width:78%"></div><div class="entry-no">ENTRY 3</div></div></div>
+      <div class="toast">已隐藏「AI 洞察」· 点 ≙ 可随时恢复</div>
+      <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+    </div></div>
+    <div class="cap"><b>关掉「洞察、统计」后</b>：≙ 图标右上角出现小圆点，<br>静默提示"这里有被你藏起来的东西"<br><b>首次隐藏时</b>弹一次 toast 教恢复入口（只教一次）</div>
+  </div>
+</div>
+
+<div class="section-title">3 · 边界情况 <span class="zh">全部隐藏 & 空状态</span></div>
+<div class="frames">
+  <div class="frame-wrap">
+    <div class="phone"><div class="phone-inner">
+      <div class="p-title-row"><span class="p-title">Contents</span>
+        <div class="p-icons">
+          <span>⌕</span>
+          <span class="icon-badge"><svg width="17" height="17" viewBox="0 0 17 17"><g stroke="#8A7860" stroke-width="1.6" stroke-linecap="round"><line x1="1.5" y1="4" x2="15.5" y2="4"/><line x1="1.5" y1="8.5" x2="15.5" y2="8.5"/><line x1="1.5" y1="13" x2="15.5" y2="13"/></g><g fill="#8A7860"><circle cx="11" cy="4" r="2.4"/><circle cx="5.5" cy="8.5" r="2.4"/><circle cx="9" cy="13" r="2.4"/></g></svg></span>
+          <span>▦</span><span>⚙</span>
+        </div>
+      </div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 08</span><span class="tm">08:02</span></div><div class="row-body"><div class="sk" style="width:78%"></div><div class="entry-no">ENTRY 3</div></div></div>
+      <div class="row-card"><div class="row-head"><span class="d">09 / 07</span><span class="tm">21:11</span></div><div class="row-body"><div class="sk" style="width:88%"></div><div class="entry-no">ENTRY 4</div></div></div>
+      <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+    </div></div>
+    <div class="cap"><b>四个全关</b>：标题之下即是日记列表<br>最极简形态，首屏露出 4 篇日记</div>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="phone"><div class="phone-inner">
+      <div class="p-title-row"><span class="p-title">Contents</span>
+        <div class="p-icons">
+          <span>⌕</span>
+          <span><svg width="17" height="17" viewBox="0 0 17 17"><g stroke="#8A7860" stroke-width="1.6" stroke-linecap="round"><line x1="1.5" y1="4" x2="15.5" y2="4"/><line x1="1.5" y1="8.5" x2="15.5" y2="8.5"/><line x1="1.5" y1="13" x2="15.5" y2="13"/></g><g fill="#8A7860"><circle cx="11" cy="4" r="2.4"/><circle cx="5.5" cy="8.5" r="2.4"/><circle cx="9" cy="13" r="2.4"/></g></svg></span>
+          <span>▦</span><span>⚙</span>
+        </div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-ico">🔥</div>
+        <div class="streak-txt"><div class="t1">Write your first page today</div><div class="t2">What made you smile today?</div></div>
+        <div class="write-btn">Write</div>
+      </div>
+      <div class="feat-row">
+        <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+        <div class="feat"><div class="f-ico">✨</div><div class="f-label">AI Insights</div></div>
+        <div class="feat"><div class="f-ico">📊</div><div class="f-label">Stats</div></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--ink-soft)">
+        <div style="width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#FFFDF6,#F3E6C8);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:30px">📖</div>
+        <div style="font-family:Georgia,serif;font-size:16px;color:var(--ink)">No entries yet</div>
+      </div>
+      <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+    </div></div>
+    <div class="cap"><b>新用户空状态</b>：模块默认全开，<br>引导/激励对新用户最重要，不做特殊处理</div>
+  </div>
+</div>
+
+<div class="spec">
+  <h3>实现规格（定了就照这个改）</h3>
+  <table>
+    <tr><td>持久化</td><td>4 个 <code>@AppStorage</code> Bool，默认 <code>true</code>：<code>contentsShowStreak</code> / <code>contentsShowPrompt</code> / <code>contentsShowInsights</code> / <code>contentsShowStats</code>，key 集中在 <code>AppSettings</code></td></tr>
+    <tr><td>入口图标</td><td>标题行搜索与样式之间插入 <code>slider.horizontal.3</code>，19pt，inkSoft；有模块被隐藏时右上角叠 accent 色小圆点（6pt）</td></tr>
+    <tr><td>菜单</td><td>自绘小弹层（对齐现有 <code>diaryCard</code> 圆角 14），点图标切换；背景加透明压暗层，点空白或再点图标收起；每行 = 模块圆图标 + 名称 + <code>Toggle</code></td></tr>
+    <tr><td>动画</td><td>模块消失/出现走 <code>.spring(response: 0.32, dampingFraction: 0.82)</code> + opacity，与搜索栏展开收起同款</td></tr>
+    <tr><td>首次教学</td><td>第一次有模块被关掉时弹 toast「已隐藏 · 点 ≙ 可随时恢复」，<code>@AppStorage("contentsModuleHintShown")</code> 只弹一次</td></tr>
+    <tr><td>不受影响</td><td>空状态、手势提示、搜索栏、列表样式选择器逻辑不变；今日状态条被隐藏时，其"一键进编辑器"入口由 FAB 胶囊天然兜底</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

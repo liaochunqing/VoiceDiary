@@ -521,16 +521,15 @@ struct AddDiaryView: View {
         AppSettings.lastFontSize = fontSize
         AppSettings.lastFontColorHex = fontColor.rawValue
         AppSettings.lastAutoLocation = showLocation
-        // 今天写完了：撤掉今晚那条提醒别再催，并以本次保存为锚点重排 3/7/30 天挽回。
+        // 今天写完了：撤掉今晚那条提醒别再催。
         let nm = NotificationManager()
         nm.cancelTodayReminder()
-        nm.rescheduleWinback()
         // 兜住 Skip 掉 onboarding 的用户：首篇保存后请求通知权限（已请求过则幂等跳过）。
         if !UserDefaults.standard.bool(forKey: "hasRequestedNotification") {
             UserDefaults.standard.set(true, forKey: "hasRequestedNotification")
             Task { @MainActor in
                 let granted = await nm.requestPermission()
-                // 授权则开启每日提问提醒；isEnabled 的 didSet 会自动撤掉挽回、避免叠加。
+                // 授权则开启每日提问提醒。
                 if granted { nm.isEnabled = true }
             }
         }

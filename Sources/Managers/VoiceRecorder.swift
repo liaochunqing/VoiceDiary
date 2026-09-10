@@ -1,6 +1,12 @@
 import AVFoundation
 @preconcurrency import Speech
 import Observation
+import os
+
+private let exportLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "VoiceDiary",
+    category: "AudioExport"
+)
 
 private final class TapState {
     private let lock = NSLock()
@@ -48,7 +54,7 @@ final class VoiceRecorder {
     var elapsed: TimeInterval = 0
     var levels: [CGFloat] = Array(repeating: 0.04, count: barCount)
     var liveTranscript: String = ""
-    /// 录音被中断（来电/闹钟/切后台/音频服务重置）时置 true，UI 据此提示「已保存这段」。
+    /// 录音被系统音频中断（如来电、闹钟或音频服务重置）时置 true，UI 据此提示「已保存这段」。
     var wasInterrupted = false
 
     private(set) var audioURL: URL?
@@ -296,9 +302,9 @@ final class VoiceRecorder {
         }
     }
 
-    /// 被中断时保命：等价于 stop() 落盘（提交当前段、flush 音频文件、释放会话），
-    /// 并标记 wasInterrupted。来电/闹钟/切后台/音频服务重置都会调它——
-    /// 优先保证「已录到的内容不丢」，不尝试自动续录（短时日记场景，续录收益小、出错概率高）。
+    /// 被系统音频中断时保命：等价于 stop() 落盘（提交当前段、flush 音频文件、释放会话），
+    /// 并标记 wasInterrupted。来电、闹钟或音频服务重置都会调它——
+    /// 优先保证「已录到的内容不丢」，不尝试自动续录，避免用户不知情地继续录音。
     func interruptAndSave() {
         guard phase == .recording else { return }
         wasInterrupted = true
@@ -377,15 +383,24 @@ final class VoiceRecorder {
     /// `compressedAudioData` 是 nonisolated async，调用此同步辅助函数时运行在通用执行器；
     /// 系统导出的短暂等待不会阻塞主线程，同时兼容 iOS 17 的回调式 API。
     private nonisolated static func exportM4A(from pcmURL: URL, to outURL: URL) throws -> Data {
+        // 记录输入体量：长录音导出失败时用于和错误码关联分析。
+        let inputBytes = (try? FileManager.default.attributesOfItem(atPath: pcmURL.path))?[.size] as? Int64 ?? -1
+        exportLogger.info("export start, inputBytes=\(inputBytes, privacy: .public)")
+
         let asset = AVURLAsset(url: pcmURL)
         let presets = [AVAssetExportPresetLowQuality, AVAssetExportPresetAppleM4A]
+        var usedPreset = ""
         let exporter = presets.lazy.compactMap { preset -> AVAssetExportSession? in
             guard let session = AVAssetExportSession(asset: asset, presetName: preset),
                   session.supportedFileTypes.contains(.m4a) else { return nil }
+            usedPreset = preset
             return session
         }.first
 
-        guard let exporter else { throw AudioEncodingError.exporterUnavailable }
+        guard let exporter else {
+            exportLogger.error("export failed: no exporter preset supports m4a, inputBytes=\(inputBytes, privacy: .public)")
+            throw AudioEncodingError.exporterUnavailable
+        }
         exporter.outputURL = outURL
         exporter.outputFileType = .m4a
         exporter.shouldOptimizeForNetworkUse = true
@@ -395,10 +410,21 @@ final class VoiceRecorder {
         semaphore.wait()
 
         guard exporter.status == .completed else {
+            let nsError = exporter.error as NSError?
+            exportLogger.error("""
+                export failed: preset=\(usedPreset, privacy: .public) \
+                status=\(exporter.status.rawValue, privacy: .public) \
+                inputBytes=\(inputBytes, privacy: .public) \
+                error=\(nsError.map { "\($0.domain) \($0.code) \($0.localizedDescription)" } ?? "nil", privacy: .public)
+                """)
             throw AudioEncodingError.exportFailed(exporter.error)
         }
         let data = try Data(contentsOf: outURL, options: .mappedIfSafe)
-        guard !data.isEmpty else { throw AudioEncodingError.emptyOutput }
+        guard !data.isEmpty else {
+            exportLogger.error("export failed: empty output, preset=\(usedPreset, privacy: .public) inputBytes=\(inputBytes, privacy: .public)")
+            throw AudioEncodingError.emptyOutput
+        }
+        exportLogger.info("export ok, preset=\(usedPreset, privacy: .public) inputBytes=\(inputBytes, privacy: .public) outputBytes=\(data.count, privacy: .public)")
         return data
     }
 }

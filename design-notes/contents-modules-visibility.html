@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>目录页模块可隐藏 · 方案对比</title>
+<style>
+  :root {
+    --paper: #F5EDDA;
+    --card: #FFFEF8;
+    --line: #D9CBAC;
+    --ink: #221A0E;
+    --ink-soft: #8A7860;
+    --accent: #7A5A14;
+    --accent-soft: #E8C97A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", sans-serif;
+    background: #EDE4CE;
+    color: var(--ink);
+    padding: 48px 32px 96px;
+  }
+  .page-head { max-width: 1240px; margin: 0 auto 40px; }
+  .page-head h1 { font-family: Georgia, "Songti SC", serif; font-size: 30px; letter-spacing: 0.5px; }
+  .page-head p { margin-top: 10px; color: var(--ink-soft); font-size: 14px; line-height: 1.8; }
+  .page-head code { background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+
+  .scheme { max-width: 1240px; margin: 0 auto 72px; }
+  .scheme-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 10px; margin-bottom: 8px; }
+  .scheme-head .no { font-family: Georgia, serif; font-size: 30px; color: var(--accent); }
+  .scheme-head h2 { font-size: 21px; }
+  .scheme-head .tag { font-size: 12px; color: var(--ink-soft); border: 1px solid var(--line); background: var(--card); border-radius: 20px; padding: 3px 12px; }
+  .scheme-desc { color: var(--ink-soft); font-size: 13.5px; line-height: 1.9; margin: 12px 0 26px; max-width: 900px; }
+  .scheme-desc b { color: var(--ink); }
+
+  .frames { display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start; }
+  .frame-wrap { text-align: center; }
+  .frame-wrap .cap { margin-top: 12px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; max-width: 300px; }
+  .frame-wrap .cap b { color: var(--ink); }
+
+  .phone {
+    width: 300px; height: 620px;
+    background: var(--paper);
+    border: 6px solid #1d1710;
+    border-radius: 42px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 18px 40px rgba(40,28,8,.25);
+    text-align: left;
+  }
+  .phone-inner { padding: 18px 16px; height: 100%; display: flex; flex-direction: column; gap: 12px; position: relative; }
+
+  .p-title-row { display: flex; align-items: center; gap: 14px; }
+  .p-title { font-family: Georgia, serif; font-size: 25px; font-weight: 700; }
+  .p-icons { margin-left: auto; display: flex; gap: 13px; color: var(--ink-soft); font-size: 15px; align-items: center; }
+  .p-icons .on { color: var(--accent); }
+
+  .streak-card {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(232,201,122,.45);
+    border: 1px solid rgba(122,90,20,.22);
+    border-radius: 14px;
+    padding: 10px 12px;
+    position: relative;
+  }
+  .streak-card.done { background: var(--card); border-color: var(--line); }
+  .streak-ico {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(122,90,20,.16);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex: none;
+  }
+  .streak-card.done .streak-ico { background: var(--accent-soft); }
+  .streak-txt .t1 { font-size: 12.5px; font-weight: 700; }
+  .streak-txt .t2 { font-size: 10.5px; color: var(--ink-soft); font-style: italic; margin-top: 2px; }
+  .write-btn {
+    margin-left: auto; background: var(--accent); color: #FFF8E7;
+    font-size: 10.5px; font-weight: 700; border-radius: 20px; padding: 5px 12px; flex: none;
+  }
+
+  .feat-row { display: flex; gap: 8px; }
+  .feat {
+    flex: 1; background: var(--card); border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(40,28,8,.08);
+    padding: 8px; display: flex; align-items: center; gap: 6px;
+    position: relative;
+  }
+  .feat .f-ico {
+    width: 24px; height: 24px; border-radius: 50%; flex: none;
+    background: linear-gradient(180deg, var(--accent-soft), rgba(232,201,122,.5));
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+  .feat .f-label { font-size: 10px; font-weight: 700; line-height: 1.2; }
+
+  .row-card {
+    background: var(--card); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 3px 8px rgba(40,28,8,.07);
+  }
+  .row-head {
+    background: linear-gradient(90deg, rgba(232,201,122,.58), rgba(232,201,122,.14));
+    padding: 8px 12px; display: flex; gap: 8px; align-items: center;
+  }
+  .row-head .d { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .5px; }
+  .row-head .tm { font-size: 9px; color: var(--ink-soft); }
+  .row-body { padding: 10px 12px; }
+  .sk { height: 8px; border-radius: 5px; background: rgba(34,26,14,.12); margin-bottom: 7px; }
+  .entry-no { font-size: 8.5px; color: rgba(138,120,96,.55); letter-spacing: 1px; text-align: right; margin-top: 4px; }
+
+  .fab {
+    position: absolute; right: 16px; bottom: 18px;
+    background: var(--ink); color: #F5EDDA;
+    border-radius: 30px; padding: 10px 18px;
+    font-size: 12px; font-weight: 700;
+    display: flex; gap: 8px; align-items: center;
+    box-shadow: 0 8px 18px rgba(34,26,14,.35);
+  }
+  .fab .sep { opacity: .4; }
+
+  /* 隐藏时的虚线占位/提示 */
+  .ghost-slot {
+    border: 1.5px dashed var(--line); border-radius: 12px;
+    color: var(--ink-soft); font-size: 10.5px;
+    padding: 8px 12px; display: flex; align-items: center; gap: 8px;
+    background: rgba(255,254,248,.4);
+  }
+
+  /* 方案C：卡片右上角 × */
+  .card-x {
+    position: absolute; top: -7px; right: -7px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--ink-soft); font-size: 10px; line-height: 18px; text-align: center;
+    box-shadow: 0 2px 5px rgba(40,28,8,.15);
+  }
+
+  /* 方案B：编辑模式抖动角标 */
+  @keyframes jiggle { 0%{transform:rotate(-1.1deg)} 100%{transform:rotate(1.1deg)} }
+  .jiggle { animation: jiggle .18s ease-in-out infinite alternate; }
+  .minus-badge {
+    position: absolute; top: -8px; left: -8px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #B3402E; color: #fff; font-size: 15px; font-weight: 700;
+    line-height: 21px; text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3); z-index: 2;
+  }
+  .edit-banner {
+    background: var(--ink); color: #F5EDDA; border-radius: 10px;
+    font-size: 10.5px; padding: 7px 12px; display: flex; align-items: center;
+  }
+  .edit-banner .done-pill { margin-left: auto; background: var(--accent-soft); color: var(--ink); border-radius: 12px; padding: 3px 10px; font-weight: 700; }
+  .hidden-tray {
+    border: 1.5px dashed var(--line); border-radius: 12px; padding: 9px 12px;
+    font-size: 10.5px; color: var(--ink-soft);
+  }
+  .hidden-tray .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 4px 9px; margin: 4px 4px 0 0; font-size: 10px; color: var(--ink);
+  }
+  .hidden-tray .chip .plus { color: var(--accent); font-weight: 700; }
+
+  /* 方案D：折叠细条 */
+  .slim-strip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 22px;
+    padding: 6px 12px; font-size: 10.5px; color: var(--ink-soft);
+  }
+  .slim-strip .cell { display: flex; align-items: center; gap: 4px; color: var(--ink); font-weight: 600; }
+  .slim-strip .dot { color: var(--line); }
+  .slim-strip .chev { margin-left: auto; color: var(--ink-soft); }
+
+  /* 方案A：设置面板 */
+  .settings-panel {
+    background: var(--card); border-radius: 14px; border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .settings-panel .sp-head {
+    padding: 9px 14px; font-size: 9.5px; letter-spacing: 1px; color: var(--ink-soft);
+    background: rgba(217,203,172,.3);
+  }
+  .sp-row { display: flex; align-items: center; gap: 9px; padding: 9px 14px; border-top: 1px solid rgba(217,203,172,.5); font-size: 11.5px; }
+  .sp-row:first-of-type { border-top: none; }
+  .sp-row .sp-ico { width: 20px; text-align: center; font-size: 11px; }
+  .toggle { margin-left: auto; width: 34px; height: 20px; border-radius: 12px; background: #CFC0A0; position: relative; flex: none; }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%; background: #fff;
+    transition: left .15s;
+  }
+  .toggle.on::after { left: 16px; }
+
+  .eye-menu {
+    position: absolute; top: 52px; right: 14px; width: 190px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: 0 14px 30px rgba(40,28,8,.3); padding: 6px; z-index: 5;
+  }
+  .eye-menu .em-row { display: flex; align-items: center; gap: 8px; padding: 8px 9px; border-radius: 9px; font-size: 11px; }
+  .eye-menu .em-row .eye { margin-left: auto; color: var(--accent); font-size: 12px; }
+  .eye-menu .em-row.off { color: var(--ink-soft); }
+  .eye-menu .em-row.off .eye { color: var(--ink-soft); opacity: .6; }
+
+  .toast {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 78px;
+    background: var(--ink); color: #F5EDDA; font-size: 10.5px;
+    border-radius: 18px; padding: 8px 16px; white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(34,26,14,.35);
+  }
+
+  .verdict { display: flex; gap: 24px; margin-top: 22px; flex-wrap: wrap; }
+  .verdict .v { font-size: 12.5px; line-height: 1.8; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; flex: 1; min-width: 240px; }
+  .verdict .v b { display: block; margin-bottom: 4px; }
+  .v.good b { color: #4E6B2E; }
+  .v.bad b { color: #B3402E; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>目录页模块「可隐藏 / 可显示」方案对比</h1>
+  <p>现状：标题行下方固定两大块 —— ①今日状态条（连续天数 streak + 今日 prompt + Write 按钮）②三入口卡（今日引导 / AI 洞察 / 统计）。<br>
+  目标：<code>连续天数</code> <code>引导</code> <code>洞察</code> <code>统计</code> 四个模块每个都能独立隐藏、独立恢复。以下 4 个方案，交互成本与实现成本递增。</p>
+</div>
+
+<!-- ==================== 方案 A ==================== -->
+<div class="scheme">
+  <div class="scheme-head"><span class="no">A</span><h2>设置页开关</h2><span class="tag">实现最简单</span><span class="tag">改动 ~30 行</span></div>
+  <div class="scheme-desc">
+    设置页加一组「目录页模块」开关（4 个 <b>AppStorage Bool</b>），目录页按开关渲染。隐藏即消失，布局自然上提。
+    恢复入口在设置里，符合「设置类偏好」的用户心智。
+  </div>
+  <div class="frames">
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ ▦ ⚙</div></div>
+        <div class="streak-card">
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+          <div class="write-btn">Write</div>
+        </div>
+        <div class="feat-row">
+          <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+          <div class="feat"><div class="f-ico">✨</div><div class="f-label">AI Insights</div></div>
+          <div class="feat"><div class="f-ico">📊</div><div class="f-label">Stats</div></div>
+        </div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+      </div></div>
+      <div class="cap"><b>全开（现状）</b><br>默认四个模块全部显示</div>
+    </div>
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ ▦ ⚙</div></div>
+        <div class="streak-card">
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+          <div class="write-btn">Write</div>
+        </div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 08</span><span class="tm">08:02</span></div><div class="row-body"><div class="sk" style="width:78%"></div><div class="entry-no">ENTRY 3</div></div></div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+      </div></div>
+      <div class="cap"><b>关掉三入口卡后</b><br>列表直接上提，首屏多看 1 篇日记</div>
+    </div>
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title" style="font-size:20px">Settings</span></div>
+        <div class="settings-panel" style="margin-top:8px">
+          <div class="sp-head">CONTENTS PAGE · 目录页模块</div>
+          <div class="sp-row"><span class="sp-ico">🔥</span>连续天数与今日状态<div class="toggle on"></div></div>
+          <div class="sp-row"><span class="sp-ico">💡</span>今日引导<div class="toggle"></div></div>
+          <div class="sp-row"><span class="sp-ico">✨</span>AI 洞察<div class="toggle"></div></div>
+          <div class="sp-row"><span class="sp-ico">📊</span>统计<div class="toggle"></div></div>
+        </div>
+        <div class="settings-panel" style="margin-top:14px">
+          <div class="sp-head">GENERAL</div>
+          <div class="sp-row"><span class="sp-ico">🔔</span>每日提醒<div class="toggle on"></div></div>
+          <div class="sp-row"><span class="sp-ico">🔒</span>Face ID 锁<div class="toggle on"></div></div>
+        </div>
+      </div></div>
+      <div class="cap"><b>设置里的开关组</b><br>隐藏 / 恢复都在这里</div>
+    </div>
+  </div>
+  <div class="verdict">
+    <div class="v good"><b>优点</b>实现成本最低，4 个 @AppStorage + if 判断；不动现有布局逻辑；无新交互要教用户</div>
+    <div class="v bad"><b>缺点</b>入口深——藏掉之后，不熟的用户不知道去哪恢复；隐藏动作本身也不顺手</div>
+  </div>
+</div>
+
+<!-- ==================== 方案 B ==================== -->
+<div class="scheme">
+  <div class="scheme-head"><span class="no">B</span><h2>长按编辑模式</h2><span class="tag">类 iOS 主屏小组件</span><span class="tag">改动最大</span></div>
+  <div class="scheme-desc">
+    <b>长按</b>任意模块卡（或点标题行新增的「调整」图标）→ 头部区域进入编辑态：卡片轻微抖动 + 左上角 <b>−</b> 角标，点 − 即隐藏；
+    底部浮出「已隐藏模块」托盘，点 <b>＋</b> 恢复。点「完成」退出编辑态。
+  </div>
+  <div class="frames">
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ ▦ ⚙</div></div>
+        <div class="streak-card">
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+          <div class="write-btn">Write</div>
+        </div>
+        <div class="feat-row">
+          <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+          <div class="feat"><div class="f-ico">✨</div><div class="f-label">AI Insights</div></div>
+          <div class="feat"><div class="f-ico">📊</div><div class="f-label">Stats</div></div>
+        </div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+        <div style="position:absolute;left:50%;top:200px;transform:translateX(-50%);background:var(--ink);color:#F5EDDA;font-size:10px;border-radius:14px;padding:6px 12px;">👆 长按卡片进入编辑</div>
+      </div></div>
+      <div class="cap"><b>入口：长按模块卡</b><br>首次长按给一次性提示气泡</div>
+    </div>
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="edit-banner">调整目录页模块 <span class="done-pill">完成</span></div>
+        <div class="streak-card jiggle">
+          <div class="minus-badge">−</div>
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+        </div>
+        <div class="feat-row">
+          <div class="feat jiggle"><div class="minus-badge">−</div><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+          <div class="feat jiggle" style="animation-delay:.06s"><div class="minus-badge">−</div><div class="f-ico">✨</div><div class="f-label">AI Insights</div></div>
+          <div class="feat jiggle" style="animation-delay:.1s"><div class="minus-badge">−</div><div class="f-ico">📊</div><div class="f-label">Stats</div></div>
+        </div>
+        <div class="hidden-tray">已隐藏
+          <span class="chip"><span class="plus">＋</span>统计</span>
+        </div>
+        <div class="row-card" style="opacity:.55"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="entry-no">ENTRY 1</div></div></div>
+      </div></div>
+      <div class="cap"><b>编辑态</b>：点 − 隐藏，托盘里 ＋ 恢复<br>列表压暗表示不可交互</div>
+    </div>
+  </div>
+  <div class="verdict">
+    <div class="v good"><b>优点</b>就地操作最直观，和 iOS 主屏/小组件心智一致；隐藏+恢复同屏完成，不会"藏了找不回"</div>
+    <div class="v bad"><b>缺点</b>实现最重：编辑态状态机、抖动画、托盘动画；长按入口本身发现率低，需要引导提示；对一款"安静写日记"的 App 交互偏重</div>
+  </div>
+</div>
+
+<!-- ==================== 方案 C ==================== -->
+<div class="scheme">
+  <div class="scheme-head"><span class="no">C</span><h2>就地 × 关闭 + 标题行眼睛菜单恢复</h2><span class="tag">推荐 · 均衡</span><span class="tag">改动中等</span></div>
+  <div class="scheme-desc">
+    每张模块卡右上角一个小 <b>×</b>（和现有手势提示条的 × 同款语言），点 × 立即收起，底部 toast 告知「可在标题行 👁 恢复」；
+    标题行搜索图标旁加一个 <b>👁 图标</b>，点开是 4 个模块的眼睛开关清单，随时恢复。
+    隐藏一步到位，恢复入口固定在用户每天都会看到的标题行。
+  </div>
+  <div class="frames">
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ <span class="on">👁</span> ▦ ⚙</div></div>
+        <div class="streak-card">
+          <div class="card-x">✕</div>
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+          <div class="write-btn">Write</div>
+        </div>
+        <div class="feat-row">
+          <div class="feat"><div class="card-x">✕</div><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+          <div class="feat"><div class="card-x">✕</div><div class="f-ico">✨</div><div class="f-label">AI Insights</div></div>
+          <div class="feat"><div class="card-x">✕</div><div class="f-ico">📊</div><div class="f-label">Stats</div></div>
+        </div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+      </div></div>
+      <div class="cap"><b>每张卡右上角 ×</b><br>点 × 即隐藏，无需进任何模式</div>
+    </div>
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ <span class="on">👁</span> ▦ ⚙</div></div>
+        <div class="eye-menu">
+          <div class="em-row">🔥 连续天数<span class="eye">👁</span></div>
+          <div class="em-row">💡 今日引导<span class="eye">👁</span></div>
+          <div class="em-row off">✨ AI 洞察<span class="eye">🚫</span></div>
+          <div class="em-row off">📊 统计<span class="eye">🚫</span></div>
+        </div>
+        <div class="streak-card" style="opacity:.35">
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+          <div class="write-btn">Write</div>
+        </div>
+        <div class="feat-row" style="opacity:.35">
+          <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+        </div>
+        <div class="row-card" style="opacity:.35"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+      </div></div>
+      <div class="cap"><b>眼睛菜单</b>：4 个模块的显示状态一目了然<br>点哪行切换哪行</div>
+    </div>
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ <span class="on">👁</span> ▦ ⚙</div></div>
+        <div class="streak-card">
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+          <div class="write-btn">Write</div>
+        </div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+        <div class="toast">已隐藏「AI 洞察」· 点标题行 👁 可恢复</div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+      </div></div>
+      <div class="cap"><b>隐藏后的即时反馈</b><br>toast 3 秒消失，顺手教会恢复入口</div>
+    </div>
+  </div>
+  <div class="verdict">
+    <div class="v good"><b>优点</b>隐藏 1 步、恢复 2 步，都不离开目录页；× 与现有 gestureHint 的 × 语言一致；无模式切换，实现只是"卡片加 × + 一个菜单"</div>
+    <div class="v bad"><b>缺点</b>标题行图标从 3 个变 4 个；× 常驻卡片上略有视觉噪音（可做成长按卡片才浮现 ×，但那样又回到发现率问题）</div>
+  </div>
+</div>
+
+<!-- ==================== 方案 D ==================== -->
+<div class="scheme">
+  <div class="scheme-head"><span class="no">D</span><h2>折叠成细条（收而不藏）</h2><span class="tag">不真隐藏</span><span class="tag">最保守</span></div>
+  <div class="scheme-desc">
+    不让模块彻底消失，而是每张卡可<b>折叠成一条细胶囊</b>：streak 卡收成「🔥 12」，三入口收成一排小图标，点一下展开。
+    再配合方案 A/C 的彻底隐藏作为第二级——"先收起来，还嫌碍事才藏"。
+  </div>
+  <div class="frames">
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ ▦ ⚙</div></div>
+        <div class="streak-card">
+          <div class="streak-ico">🔥</div>
+          <div class="streak-txt"><div class="t1">Day 12 streak — keep it alive</div><div class="t2">What made you smile today?</div></div>
+          <div class="write-btn">Write</div>
+        </div>
+        <div class="feat-row">
+          <div class="feat"><div class="f-ico">💡</div><div class="f-label">Today's Prompt</div></div>
+          <div class="feat"><div class="f-ico">✨</div><div class="f-label">AI Insights</div></div>
+          <div class="feat"><div class="f-ico">📊</div><div class="f-label">Stats</div></div>
+        </div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+        <div style="position:absolute;left:50%;top:120px;transform:translateX(-50%);background:var(--ink);color:#F5EDDA;font-size:10px;border-radius:14px;padding:6px 12px;">点卡片右侧 ▾ 折叠</div>
+      </div></div>
+      <div class="cap"><b>展开态（现状）</b><br>每张卡右侧加折叠箭头</div>
+    </div>
+    <div class="frame-wrap">
+      <div class="phone"><div class="phone-inner">
+        <div class="p-title-row"><span class="p-title">Contents</span><div class="p-icons">⌕ ▦ ⚙</div></div>
+        <div class="slim-strip"><span class="cell">🔥 12</span><span class="dot">·</span><span style="font-style:italic">What made you smile?</span><span class="chev">▸</span></div>
+        <div class="slim-strip"><span class="cell">💡</span><span class="cell">✨</span><span class="cell">📊</span><span class="chev">▸</span></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 10</span><span class="tm">21:40</span></div><div class="row-body"><div class="sk" style="width:92%"></div><div class="sk" style="width:70%"></div><div class="entry-no">ENTRY 1</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 09</span><span class="tm">22:15</span></div><div class="row-body"><div class="sk" style="width:85%"></div><div class="entry-no">ENTRY 2</div></div></div>
+        <div class="row-card"><div class="row-head"><span class="d">09 / 08</span><span class="tm">08:02</span></div><div class="row-body"><div class="sk" style="width:78%"></div><div class="entry-no">ENTRY 3</div></div></div>
+        <div class="fab">✎ Write <span class="sep">┃</span> 🎙 Talk</div>
+      </div></div>
+      <div class="cap"><b>全折叠后</b>：头部只剩两条细胶囊<br>信息不断绝，首屏多露出 2 篇日记</div>
+    </div>
+  </div>
+  <div class="verdict">
+    <div class="v good"><b>优点</b>不存在"藏了找不到"的问题；streak 数和今日 prompt 仍有一行可见，激励不断；交互是"展开/收起"而非"显示/隐藏"，心智最轻</div>
+    <div class="v bad"><b>缺点</b>不满足"彻底隐藏"的诉求；折叠态仍占两行高度</div>
+  </div>
+</div>
+
+</body>
+</html>

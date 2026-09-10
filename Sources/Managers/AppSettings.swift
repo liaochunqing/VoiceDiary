@@ -7,6 +7,14 @@ enum AppSettings {
 
     static let diaryListStyleKey = "diaryListStyle"
 
+    // MARK: - 目录页模块显隐（默认全开，用户可在目录页 ≙ 菜单里逐个关闭）
+
+    static let contentsShowStreakKey = "contentsShowStreak"
+    static let contentsShowPromptKey = "contentsShowPrompt"
+    static let contentsShowInsightsKey = "contentsShowInsights"
+    static let contentsShowStatsKey = "contentsShowStats"
+    static let contentsModuleHintShownKey = "contentsModuleHintShown"
+
     // MARK: - 上次使用的字体
 
     @AppStorage("lastFontName")

@@ -13,10 +13,8 @@ final class NotificationManager {
             UserDefaults.standard.set(isEnabled, forKey: enabledKey)
             if isEnabled {
                 scheduleReminder()
-                cancelWinback()        // 开了每日提醒已有日常触达，撤掉挽回避免同日重复
             } else {
                 cancelReminder()
-                rescheduleWinback()    // 关了每日提醒 → 靠 3/7/30 天挽回兜底
             }
         }
     }
@@ -79,6 +77,8 @@ final class NotificationManager {
     /// App 启动时调用：开着提醒就续期，把未来调度窗口补满（多天非重复通知会用完）。
     /// NotificationManager 的设置都从 UserDefaults 读，故可 new 一个临时实例来调用，无需共享。
     func refreshScheduleIfNeeded() {
+        // 旧版本曾排过 winback-3/7/30 挽回通知；该功能已移除，启动时清掉残留。
+        center.removePendingNotificationRequests(withIdentifiers: ["winback-3", "winback-7", "winback-30"])
         guard isEnabled else { return }
         scheduleReminder()
     }
@@ -130,47 +130,5 @@ final class NotificationManager {
     private func reminderID(for date: Date) -> String {
         let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return "dailyReminder-\(c.year ?? 0)-\(c.month ?? 0)-\(c.day ?? 0)"
-    }
-
-    // MARK: 静默挽回（win-back）
-
-    /// 写完一篇后调用：以「本次保存」为锚点，重排 3/7/30 天后的挽回通知。
-    /// 仅对**未开每日提醒**的用户排——开了每日提醒的已有日常触达，再叠挽回会同日重复打扰。
-    /// 用户每写一篇就把这三个计时往后推，只有在真正停写后才依次触发。
-    func rescheduleWinback() {
-        cancelWinback()
-        guard !isEnabled else { return }
-        let cal = Calendar.current
-        let hm = cal.dateComponents([.hour, .minute], from: reminderTime)
-        let now = Date()
-        for offset in [3, 7, 30] {
-            guard let day = cal.date(byAdding: .day, value: offset, to: now) else { continue }
-            var dc = cal.dateComponents([.year, .month, .day], from: day)
-            dc.hour = hm.hour
-            dc.minute = hm.minute
-            guard let fireDate = cal.date(from: dc), fireDate > now else { continue }
-
-            let content = UNMutableNotificationContent()
-            content.title = String(localized: "Open the book. Talk to it.")
-            content.body = winbackBody(offset)
-            content.sound = .default
-
-            let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
-            let req = UNNotificationRequest(identifier: "winback-\(offset)", content: content, trigger: trigger)
-            center.add(req)
-        }
-    }
-
-    private func cancelWinback() {
-        center.removePendingNotificationRequests(withIdentifiers: ["winback-3", "winback-7", "winback-30"])
-    }
-
-    private func winbackBody(_ offset: Int) -> String {
-        switch offset {
-        case 3:  return String(localized: "It's been a few days. The book's still here when you are.")
-        case 7:  return String(localized: "A week without you. Open the book — even one line counts.")
-        case 30: return String(localized: "Your diary misses you. Come back and tell it about today.")
-        default: return String(localized: "Open the book. Talk to it.")
-        }
     }
 }

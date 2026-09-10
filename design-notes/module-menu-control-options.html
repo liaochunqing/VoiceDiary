@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块菜单 · 显隐控件选型</title>
+<style>
+  :root {
+    --paper: #F5EDDA;
+    --card: #FFFEF8;
+    --line: #D9CBAC;
+    --ink: #221A0E;
+    --ink-soft: #8A7860;
+    --accent: #7A5A14;
+    --accent-soft: #E8C97A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", sans-serif;
+    background: #EDE4CE; color: var(--ink);
+    padding: 48px 32px 96px;
+  }
+  .page-head { max-width: 1100px; margin: 0 auto 36px; }
+  .page-head h1 { font-family: Georgia, "Songti SC", serif; font-size: 28px; }
+  .page-head p { margin-top: 10px; color: var(--ink-soft); font-size: 14px; line-height: 1.8; }
+
+  .options { max-width: 1100px; margin: 0 auto; display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .opt { width: 320px; }
+  .opt-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .opt-head .no {
+    font-family: Georgia, serif; font-size: 24px; color: var(--accent);
+    width: 34px; height: 34px; border: 1.5px solid var(--accent); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .opt-head h2 { font-size: 17px; }
+  .opt-head .rec { font-size: 11px; background: var(--accent); color: #FFF8E7; border-radius: 12px; padding: 2px 10px; }
+  .opt-note { font-size: 12.5px; color: var(--ink-soft); line-height: 1.8; margin: 10px 0 18px; min-height: 88px; }
+  .opt-note b { color: var(--ink); }
+
+  /* 菜单面板（等比还原真机弹窗） */
+  .menu {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 16px 36px rgba(40,28,8,.22);
+    padding: 8px;
+  }
+  .menu .mm-title {
+    font-size: 10px; letter-spacing: 1.4px; color: var(--ink-soft);
+    padding: 8px 12px 6px;
+  }
+  .mm-row {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 12px; font-size: 14px;
+  }
+  .mm-row .m-ico {
+    width: 28px; height: 28px; border-radius: 50%; flex: none;
+    background: linear-gradient(180deg, var(--accent-soft), rgba(232,201,122,.5));
+    border: 1px solid rgba(122,90,20,.18);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .mm-row .tail { margin-left: auto; flex: none; display: flex; align-items: center; }
+  .mm-row.off { color: var(--ink-soft); }
+  .mm-row.off .m-ico { filter: grayscale(.55); opacity: .6; }
+
+  /* A · 对勾 */
+  .check { width: 20px; text-align: center; color: var(--accent); font-size: 15px; font-weight: 700; }
+  .mm-row.off .check { opacity: 0; }
+
+  /* B · 眼睛 */
+  .eye { font-size: 15px; color: var(--accent); }
+  .mm-row.off .eye { color: var(--ink-soft); opacity: .55; }
+
+  /* C · 圆点 */
+  .dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid var(--line); position: relative;
+  }
+  .dot.on { border-color: var(--accent); }
+  .dot.on::after {
+    content: ""; position: absolute; inset: 4px;
+    border-radius: 50%; background: var(--accent);
+  }
+
+  /* 底部注释 */
+  .compare {
+    max-width: 1100px; margin: 44px auto 0;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px 26px; font-size: 13px; line-height: 2;
+  }
+  .compare b { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>模块菜单 · 显隐控件选型</h1>
+  <p>替代 Toggle 开关的三个候选。整行可点（点哪都行），控件只负责表达状态。菜单语义 = "这个模块显示与否"，对照系统惯例选控件。</p>
+</div>
+
+<div class="options">
+
+  <!-- A · 对勾 -->
+  <div class="opt">
+    <div class="opt-head"><span class="no">A</span><h2>对勾 ✓</h2><span class="rec">推荐</span></div>
+    <div class="opt-note">
+      <b>macOS 菜单栏 / iOS Menu 的标准"显示-隐藏"语义</b>（访达「显示」菜单、SwiftUI Menu 的勾选项都是它）。
+      显示 = 尾部一个 accent 对勾；隐藏 = 对勾消失、整行变淡。无控件边框，视觉上最"轻"，和纸质调性最搭。
+    </div>
+    <div class="menu">
+      <div class="mm-title">目录页模块 · MODULES</div>
+      <div class="mm-row"><span class="m-ico">🔥</span>连续天数<span class="tail check">✓</span></div>
+      <div class="mm-row"><span class="m-ico">💡</span>今日引导<span class="tail check">✓</span></div>
+      <div class="mm-row off"><span class="m-ico">✨</span>AI 洞察<span class="tail check">✓</span></div>
+      <div class="mm-row off"><span class="m-ico">📊</span>统计<span class="tail check">✓</span></div>
+    </div>
+  </div>
+
+  <!-- B · 眼睛 -->
+  <div class="opt">
+    <div class="opt-head"><span class="no">B</span><h2>眼睛 👁</h2></div>
+    <div class="opt-note">
+      <b>图层显隐的行业符号</b>（Figma / PS 图层面板）。语义最直白："睁眼 = 显示，闭眼 = 隐藏"。
+      缺点是你之前提过的——眼睛图标视觉噪音略重，且隐藏态的斜杠眼在小尺寸下偏糊。
+    </div>
+    <div class="menu">
+      <div class="mm-title">目录页模块 · MODULES</div>
+      <div class="mm-row"><span class="m-ico">🔥</span>连续天数<span class="tail eye">👁</span></div>
+      <div class="mm-row"><span class="m-ico">💡</span>今日引导<span class="tail eye">👁</span></div>
+      <div class="mm-row off"><span class="m-ico">✨</span>AI 洞察<span class="tail eye">🚫</span></div>
+      <div class="mm-row off"><span class="m-ico">📊</span>统计<span class="tail eye">🚫</span></div>
+    </div>
+  </div>
+
+  <!-- C · 圆点 -->
+  <div class="opt">
+    <div class="opt-head"><span class="no">C</span><h2>圆点 ●</h2></div>
+    <div class="opt-note">
+      类似单选钮：<b>实心 = 显示，空心 = 隐藏</b>。形状极简、和 FAB/卡片的圆角语言统一。
+      缺点是"圆点 = 选中"的语义不如对勾直白，第一次见可能要猜一下。
+    </div>
+    <div class="menu">
+      <div class="mm-title">目录页模块 · MODULES</div>
+      <div class="mm-row"><span class="m-ico">🔥</span>连续天数<span class="tail dot on"></span></div>
+      <div class="mm-row"><span class="m-ico">💡</span>今日引导<span class="tail dot on"></span></div>
+      <div class="mm-row off"><span class="m-ico">✨</span>AI 洞察<span class="tail dot"></span></div>
+      <div class="mm-row off"><span class="m-ico">📊</span>统计<span class="tail dot"></span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="compare">
+  <b>推荐 A（对勾）</b>：这就是 iOS/macOS 原生菜单里"显示/隐藏"的标准表达，用户零学习成本；
+  实现上把 Toggle 换成整行 Button + 尾部 checkmark 即可，行高还能再矮一点，菜单更紧凑。
+  选定后我直接改代码，约 15 分钟。
+</div>
+
+</body>
+</html>

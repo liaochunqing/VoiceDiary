@@ -32,7 +32,20 @@ struct DiaryListView: View {
     @AppStorage("contentsGestureHintDone") private var gestureHintDone = false
     @AppStorage(AppSettings.diaryListStyleKey) private var listStyleName = DiaryListStyle.editorial.rawValue
     @State private var showStylePicker = false
+    /// 目录页模块显隐：默认全开，标题行 ≙ 菜单里逐个开关，本地持久化。
+    @AppStorage(AppSettings.contentsShowStreakKey) private var showStreakModule = true
+    @AppStorage(AppSettings.contentsShowPromptKey) private var showPromptModule = true
+    @AppStorage(AppSettings.contentsShowInsightsKey) private var showInsightsModule = true
+    @AppStorage(AppSettings.contentsShowStatsKey) private var showStatsModule = true
+    @AppStorage(AppSettings.contentsModuleHintShownKey) private var moduleHintShown = false
+    @State private var showModuleMenu = false
+    @State private var showModuleToast = false
     private var stats: DataManager.StreakStats { DataManager.streakStats(entries) }
+
+    /// 有模块被隐藏时 ≙ 图标带小圆点，留个「我藏过东西」的视觉锚点。
+    private var anyModuleHidden: Bool {
+        !showStreakModule || !showPromptModule || !showInsightsModule || !showStatsModule
+    }
 
     private var filtered: [DiaryEntry] {
         guard !search.isEmpty else { return entries }
@@ -115,6 +128,27 @@ struct DiaryListView: View {
             }
 
             fab
+
+            // 模块显隐菜单：压暗层点空白收起，菜单固定贴标题行右下。
+            if showModuleMenu {
+                Color.black.opacity(0.18)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) { showModuleMenu = false }
+                    }
+                moduleMenu
+                    .padding(.trailing, Metric.l)
+                    .padding(.top, 44)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
+            }
+
+            if showModuleToast {
+                moduleToast
+                    .padding(.bottom, 110)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .transition(.opacity)
+            }
         }
         .task { await purchaseManager.refresh() }
         // 用户建了自己的第一篇（欢迎页之外）后，目录手势提示功成身退，永久收起。
@@ -240,6 +274,25 @@ struct DiaryListView: View {
                         .font(.system(size: 19, weight: .regular))
                         .foregroundStyle(showSearch ? pal.accent : pal.inkSoft)
                 }
+                // 模块显隐菜单：≙ 图标，有模块被隐藏时带 accent 小圆点。
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        showModuleMenu.toggle()
+                    }
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundStyle(showModuleMenu ? pal.accent : pal.inkSoft)
+                        .overlay(alignment: .topTrailing) {
+                            if anyModuleHidden {
+                                Circle()
+                                    .fill(pal.accent)
+                                    .frame(width: 6, height: 6)
+                                    .offset(x: 4, y: -3)
+                            }
+                        }
+                }
+                .accessibilityLabel("Contents Modules")
                 Button {
                     showStylePicker = true
                 } label: {
@@ -257,17 +310,25 @@ struct DiaryListView: View {
 
             // 今日状态条：streak + 今天是否已写 + 今日 prompt 预览，一键进编辑器。
             // 第一屏的「写今天」紧迫感全靠它——没写时暖色高亮 + 今日提问 + Write 按钮。
-            todayStatusCard
+            if showStreakModule {
+                todayStatusCard
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
-            // 三入口：今日引导 · AI 洞察 · 统计（一排等宽特性卡，醒目可点）
-            HStack(spacing: Metric.s) {
-                featureButton(icon: "lightbulb.fill", label: "Today's Prompt") { showPrompts = true }
-                featureButton(icon: "sparkles", label: "AI Insights") { showInsights = true }
-                featureButton(icon: "chart.bar.fill", label: "Stats") { showStats = true }
+            // 三入口：今日引导 · AI 洞察 · 统计（一排等宽特性卡，醒目可点），可逐个隐藏。
+            if showPromptModule || showInsightsModule || showStatsModule {
+                HStack(spacing: Metric.s) {
+                    if showPromptModule { featureButton(icon: "lightbulb.fill", label: "Today's Prompt") { showPrompts = true } }
+                    if showInsightsModule { featureButton(icon: "sparkles", label: "AI Insights") { showInsights = true } }
+                    if showStatsModule { featureButton(icon: "chart.bar.fill", label: "Stats") { showStats = true } }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(.horizontal, Metric.l)
         .padding(.top, Metric.s)
+        .animation(.spring(response: 0.32, dampingFraction: 0.82),
+                   value: [showStreakModule, showPromptModule, showInsightsModule, showStatsModule])
     }
 
     // MARK: 今日状态条
@@ -383,6 +444,83 @@ struct DiaryListView: View {
             .shadow(color: .black.opacity(0.07), radius: 6, y: 3)
         }
         .buttonStyle(FeatureButtonStyle())
+    }
+
+    // MARK: 模块显隐菜单（≙ 弹出的小面板，显隐唯一控制点）
+
+    private var moduleMenu: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Modules")
+                .font(.dLabel)
+                .tracking(1.2)
+                .foregroundStyle(pal.inkSoft)
+                .padding(.horizontal, Metric.s)
+                .padding(.top, Metric.xs)
+                .padding(.bottom, 2)
+            moduleRow(icon: "flame.fill", label: "Streak", isOn: $showStreakModule)
+            moduleRow(icon: "lightbulb.fill", label: "Today's Prompt", isOn: $showPromptModule)
+            moduleRow(icon: "sparkles", label: "AI Insights", isOn: $showInsightsModule)
+            moduleRow(icon: "chart.bar.fill", label: "Stats", isOn: $showStatsModule)
+        }
+        .padding(Metric.xs)
+        .frame(width: 230)
+        .background(RoundedRectangle(cornerRadius: Metric.cardRadius).fill(pal.card))
+        .overlay(RoundedRectangle(cornerRadius: Metric.cardRadius).stroke(pal.line, lineWidth: 1))
+        .shadow(color: .black.opacity(0.16), radius: 16, y: 8)
+    }
+
+    private func moduleRow(icon: String, label: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
+        Button {
+            isOn.wrappedValue.toggle()
+            if !isOn.wrappedValue { showModuleHintOnce() }
+        } label: {
+            HStack(spacing: Metric.s) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(pal.accent)
+                    .frame(width: 26, height: 26)
+                    .background(
+                        Circle().fill(
+                            LinearGradient(colors: [pal.accentSoft, pal.accentSoft.opacity(0.5)],
+                                           startPoint: .top, endPoint: .bottom))
+                    )
+                    .overlay(Circle().strokeBorder(pal.accent.opacity(0.18), lineWidth: 1))
+                    .opacity(isOn.wrappedValue ? 1 : 0.55)
+                Text(label)
+                    .font(.dSubhead.weight(.semibold))
+                    .foregroundStyle(isOn.wrappedValue ? pal.ink : pal.inkSoft)
+                Spacer(minLength: 0)
+                Image(systemName: isOn.wrappedValue ? "eye.fill" : "eye.slash.fill")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(isOn.wrappedValue ? pal.accent : pal.inkSoft.opacity(0.6))
+                    .frame(width: 26)
+            }
+            .padding(.horizontal, Metric.s)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// 首次隐藏任意模块时弹 toast 教恢复入口，只教一次。
+    private func showModuleHintOnce() {
+        guard !moduleHintShown else { return }
+        moduleHintShown = true
+        withAnimation { showModuleToast = true }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation { showModuleToast = false }
+        }
+    }
+
+    private var moduleToast: some View {
+        Text("Hidden — tap the modules icon to bring it back")
+            .font(.dCaption)
+            .foregroundStyle(pal.onAccent)
+            .padding(.horizontal, Metric.m)
+            .padding(.vertical, Metric.s)
+            .background(pal.ink, in: Capsule())
+            .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
     }
 
     // MARK: 搜索栏

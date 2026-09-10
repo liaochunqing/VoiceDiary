@@ -37,7 +37,6 @@ struct VoiceResult {
 /// 录音面板：录音中 / 停止后共用一个骨架，状态驱动行为切换。
 struct RecordingView: View {
     @Environment(\.palette) private var pal
-    @Environment(\.scenePhase) private var scenePhase
     /// 编辑页是否已有正文：为 true 时停止后才出现「追加 / 覆盖」小分段，
     /// 否则默认追加、不打扰。
     var hasExistingContent: Bool = false
@@ -89,11 +88,8 @@ struct RecordingView: View {
                 transcript = newVal
             }
         }
-        // 切后台保命：正在录音时立即落盘，避免回前台发现录音断了、内容没了。
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .background, stage == .recording { handleInterrupt() }
-        }
-        // 来电/闹钟/其他 App 抢音频 → 中断开始时落盘保住已录内容。
+        // 锁屏、回到主屏或切换 App 都是正常录音状态；只有系统抢占音频时才停止并保存。
+        // 来电/闹钟/Siri/其他 App 抢音频 → 中断开始时落盘保住已录内容。
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { note in
             guard stage == .recording else { return }
             if let info = note.userInfo,
